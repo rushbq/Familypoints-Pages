@@ -190,7 +190,7 @@ export const RoleSelector: React.FC<RoleSelectorProps> = ({ users, onSelectUser 
       )}
       
       <div className="fixed bottom-4 text-nook-brown/40 text-xs font-bold bg-white/50 px-3 py-1 rounded-full">
-        Home Edition v1.3
+        Designed by Clyde v1.3
       </div>
     </div>
   );

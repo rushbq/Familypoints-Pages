@@ -1,8 +1,8 @@
-import { AppState, ScoreItem, ScoreRecord, SecretMessage, ScoreType, User, UserRole, RewardItem } from '../types';
-import { db, initializeDatabase, getStorageInfo, cleanupOldRecords, exportAllData, importAllData } from './database';
+import { AppState, ScoreRecord } from '../types';
+import { db, initializeDatabase, getStorageInfo, cleanupOldRecords, exportAllData, importAllData, getDefaultState } from './database';
 
 // 重新匯出資料庫相關函式，方便其他模組使用
-export { getStorageInfo, cleanupOldRecords, exportAllData, importAllData };
+export { getStorageInfo, cleanupOldRecords, exportAllData, importAllData, getDefaultState };
 
 /**
  * 儲存操作結果介面
@@ -52,34 +52,6 @@ const loadFallbackState = (): AppState => {
   console.warn('⚠️ IndexedDB 不可用，使用預設資料');
   return getDefaultState();
 };
-
-/**
- * 取得預設狀態
- */
-const getDefaultState = (): AppState => ({
-  users: [
-    { id: 'parent_1', name: '爸爸/媽媽', role: UserRole.PARENT, avatar: '👑' },
-    { id: 'child_1', name: '丞鈞', role: UserRole.CHILD, avatar: '🧑' },
-    { id: 'child_2', name: '佑佑', role: UserRole.CHILD, avatar: '🧒' },
-  ],
-  scoreItems: [
-    { id: 'item_1', label: '做家事', points: 10, type: ScoreType.POSITIVE, icon: '🧹' },
-    { id: 'item_2', label: '考試成績優異', points: 20, type: ScoreType.POSITIVE, icon: '💯' },
-    { id: 'item_3', label: '幫忙兄弟', points: 15, type: ScoreType.POSITIVE, icon: '🤝' },
-    { id: 'item_4', label: '早睡早起', points: 5, type: ScoreType.POSITIVE, icon: '⏰' },
-    { id: 'item_5', label: '未整理書包', points: 10, type: ScoreType.NEGATIVE, icon: '🎒' },
-    { id: 'item_6', label: '刻意吵架', points: 20, type: ScoreType.NEGATIVE, icon: '💢' },
-    { id: 'item_7', label: '欺負對方', points: 30, type: ScoreType.NEGATIVE, icon: '😈' },
-    { id: 'item_8', label: '挑食', points: 5, type: ScoreType.NEGATIVE, icon: '🥦' },
-  ],
-  rewardItems: [
-    { id: 'reward_1', label: '玩 Switch (30分)', points: 50, icon: '🎮' },
-    { id: 'reward_2', label: '看電視 (30分)', points: 30, icon: '📺' },
-    { id: 'reward_3', label: '吃零食', points: 20, icon: '🍪' },
-  ],
-  records: [],
-  messages: []
-});
 
 /**
  * 將完整狀態儲存至 IndexedDB

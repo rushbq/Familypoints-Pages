@@ -35,15 +35,19 @@ export class FamilyPointsDB extends Dexie {
 // 單例模式：全域資料庫實例
 export const db = new FamilyPointsDB();
 
-// --- 初始預設資料 ---
+// =============================================
+// 預設資料設定（只需在這裡修改）
+// =============================================
 
-const INITIAL_USERS: User[] = [
+/** 預設使用者清單 */
+export const INITIAL_USERS: User[] = [
   { id: 'parent_1', name: '爸爸/媽媽', role: UserRole.PARENT, avatar: '👑' },
   { id: 'child_1', name: '丞鈞', role: UserRole.CHILD, avatar: '🧑' },
   { id: 'child_2', name: '佑佑', role: UserRole.CHILD, avatar: '🧒' },
 ];
 
-const INITIAL_SCORE_ITEMS: ScoreItem[] = [
+/** 預設評分項目清單 */
+export const INITIAL_SCORE_ITEMS: ScoreItem[] = [
   { id: 'item_1', label: '做家事', points: 10, type: ScoreType.POSITIVE, icon: '🧹' },
   { id: 'item_2', label: '成績優異', points: 20, type: ScoreType.POSITIVE, icon: '💯' },
   { id: 'item_3', label: '互相幫忙', points: 10, type: ScoreType.POSITIVE, icon: '🤝' },
@@ -54,11 +58,26 @@ const INITIAL_SCORE_ITEMS: ScoreItem[] = [
   { id: 'item_8', label: '挑食', points: 5, type: ScoreType.NEGATIVE, icon: '🥦' },
 ];
 
-const INITIAL_REWARD_ITEMS: RewardItem[] = [
+/** 預設獎勵項目清單 */
+export const INITIAL_REWARD_ITEMS: RewardItem[] = [
   { id: 'reward_1', label: '玩 Switch (30分)', points: 30, icon: '🎮' },
   { id: 'reward_2', label: '看電視 (30分)', points: 30, icon: '📺' },
   { id: 'reward_3', label: '使用電腦 (30分)', points: 15, icon: '💻' },
 ];
+
+// =============================================
+
+/**
+ * 取得預設應用程式狀態
+ * 當 IndexedDB 失敗或需要重置時使用
+ */
+export const getDefaultState = () => ({
+  users: INITIAL_USERS,
+  scoreItems: INITIAL_SCORE_ITEMS,
+  rewardItems: INITIAL_REWARD_ITEMS,
+  records: [] as ScoreRecord[],
+  messages: [] as SecretMessage[]
+});
 
 /**
  * 初始化資料庫
