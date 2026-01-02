@@ -3,9 +3,8 @@ import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 
 export default defineConfig({
-  // GitHub Pages 部署需要設定 base 路徑
-  // 請將 'Familypoints' 替換為你的 GitHub 倉庫名稱
-  base: '/Familypoints/',
+  // GitHub Pages 部署設定（倉庫名：Familypoints-Pages）
+  base: '/Familypoints-Pages/',
   server: {
     port: 3000,
     host: '0.0.0.0',

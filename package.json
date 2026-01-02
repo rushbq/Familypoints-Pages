@@ -3,7 +3,7 @@
   "private": true,
   "version": "1.0.0",
   "type": "module",
-  "homepage": "https://rushbq.github.io/Familypoints",
+  "homepage": "https://rushbq.github.io/Familypoints-Pages",
   "scripts": {
     "dev": "vite",
     "build": "vite build",

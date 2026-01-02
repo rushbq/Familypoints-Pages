@@ -39,8 +39,8 @@ export const db = new FamilyPointsDB();
 
 const INITIAL_USERS: User[] = [
   { id: 'parent_1', name: '爸爸/媽媽', role: UserRole.PARENT, avatar: '👑' },
-  { id: 'child_1', name: '丞鈞', role: UserRole.CHILD, avatar: '👦' },
-  { id: 'child_2', name: '佑佑', role: UserRole.CHILD, avatar: '👶' },
+  { id: 'child_1', name: '丞鈞', role: UserRole.CHILD, avatar: '🧑' },
+  { id: 'child_2', name: '佑佑', role: UserRole.CHILD, avatar: '🧒' },
 ];
 
 const INITIAL_SCORE_ITEMS: ScoreItem[] = [
@@ -55,9 +55,9 @@ const INITIAL_SCORE_ITEMS: ScoreItem[] = [
 ];
 
 const INITIAL_REWARD_ITEMS: RewardItem[] = [
-  { id: 'reward_1', label: '玩 Switch (30分)', points: 50, icon: '🎮' },
+  { id: 'reward_1', label: '玩 Switch (30分)', points: 30, icon: '🎮' },
   { id: 'reward_2', label: '看電視 (30分)', points: 30, icon: '📺' },
-  { id: 'reward_3', label: '吃零食', points: 20, icon: '🍪' },
+  { id: 'reward_3', label: '使用電腦 (30分)', points: 15, icon: '💻' },
 ];
 
 /**
