@@ -232,14 +232,14 @@ export const Dashboard: React.FC<DashboardProps> = ({
   return (
     <div className="flex h-screen overflow-hidden bg-[#CDF5E2]">
       {/* 側邊導覽列 (NookPhone 風格) */}
-      <aside className="w-20 md:w-80 bg-nook-cream border-r-8 border-white flex flex-col flex-shrink-0 z-20 shadow-xl relative">
-        <div className="h-6 w-24 bg-nook-beige absolute top-2 left-1/2 -translate-x-1/2 rounded-full hidden md:block"></div>
+      <aside className="w-20 md:w-24 lg:w-80 bg-nook-cream border-r-8 border-white flex flex-col flex-shrink-0 z-20 shadow-xl relative">
+        <div className="h-6 w-24 bg-nook-beige absolute top-2 left-1/2 -translate-x-1/2 rounded-full hidden lg:block"></div>
 
-        <div className="p-4 md:p-8 mt-4 flex items-center justify-center md:justify-start">
-           <div className="w-12 h-12 md:w-14 md:h-14 bg-nook-green text-white rounded-[1.5rem] flex items-center justify-center shadow-[0_4px_0_0_#5EBA9A] border-2 border-white transform -rotate-6">
+        <div className="p-4 lg:p-8 mt-4 flex items-center justify-center lg:justify-start">
+           <div className="w-12 h-12 lg:w-14 lg:h-14 bg-nook-green text-white rounded-[1.5rem] flex items-center justify-center shadow-[0_4px_0_0_#5EBA9A] border-2 border-white transform -rotate-6">
              <Icons.Leaf size={32} />
            </div>
-           <div className="hidden md:block ml-4">
+           <div className="hidden lg:block ml-4">
              <h1 className="font-black text-2xl text-nook-brown leading-none">Home</h1>
              <span className="text-nook-brown/60 font-bold text-sm tracking-widest">SYSTEM</span>
            </div>
@@ -279,9 +279,9 @@ export const Dashboard: React.FC<DashboardProps> = ({
           )}
         </nav>
 
-        <div className="p-4 md:p-6 mt-auto">
+        <div className="p-4 lg:p-6 mt-auto">
            {/* 使用者簡介卡片 */}
-           <div className="bg-nook-yellow/20 p-4 rounded-[2rem] border-2 border-white mb-4 hidden md:flex items-center shadow-sm">
+           <div className="bg-nook-yellow/20 p-4 rounded-[2rem] border-2 border-white mb-4 hidden lg:flex items-center shadow-sm">
                <div className="w-12 h-12 rounded-full bg-white flex items-center justify-center text-2xl border-2 border-nook-brown/10 mr-3">
                  {currentUser.avatar}
                </div>
@@ -293,10 +293,10 @@ export const Dashboard: React.FC<DashboardProps> = ({
 
           <button 
             onClick={onLogout}
-            className="w-full group flex items-center justify-center md:justify-start p-3 rounded-2xl text-nook-brown/40 hover:text-nook-red hover:bg-nook-red/10 transition-colors font-bold"
+            className="w-full group flex items-center justify-center lg:justify-start p-3 rounded-2xl text-nook-brown/40 hover:text-nook-red hover:bg-nook-red/10 transition-colors font-bold"
           >
-            <Icons.LogOut size={24} className="md:mr-2" />
-            <span className="hidden md:inline">離開 (登出)</span>
+            <Icons.LogOut size={24} className="lg:mr-2" />
+            <span className="hidden lg:inline">離開 (登出)</span>
           </button>
         </div>
       </aside>
@@ -354,13 +354,13 @@ const NavItem = ({ active, onClick, icon, label, bgColor, badge = 0 }: { active:
         : 'hover:bg-white/50 hover:scale-105'
     }`}
   >
-    <div className={`w-12 h-12 md:w-14 md:h-14 rounded-[1.2rem] flex items-center justify-center text-white shadow-sm transition-transform group-hover:rotate-6 ${bgColor}`}>
+    <div className={`w-12 h-12 lg:w-14 lg:h-14 rounded-[1.2rem] flex items-center justify-center text-white shadow-sm transition-transform group-hover:rotate-6 ${bgColor}`}>
       {icon}
     </div>
-    <span className={`ml-4 font-black text-lg hidden md:block ${active ? 'text-nook-brown' : 'text-nook-brown/60'}`}>{label}</span>
+    <span className={`ml-4 font-black text-lg hidden lg:block ${active ? 'text-nook-brown' : 'text-nook-brown/60'}`}>{label}</span>
     
     {badge > 0 && (
-        <div className="absolute top-0 right-0 md:top-4 md:right-4 w-6 h-6 bg-nook-red border-2 border-white rounded-full text-white text-xs font-bold flex items-center justify-center animate-bounce">
+        <div className="absolute top-0 right-0 lg:top-4 lg:right-4 w-6 h-6 bg-nook-red border-2 border-white rounded-full text-white text-xs font-bold flex items-center justify-center animate-bounce">
             {badge}
         </div>
     )}
