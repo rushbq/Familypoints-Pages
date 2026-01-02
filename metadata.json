@@ -1,0 +1,5 @@
+{
+  "name": "FamilyPoints - 家庭積分系統",
+  "description": "動物森友會風格的家庭積分管理系統，讓家長可以為孩子加分/扣分，孩子可以用積分兌換獎勵。資料儲存於瀏覽器 LocalStorage。",
+  "version": "1.0.0"
+}
