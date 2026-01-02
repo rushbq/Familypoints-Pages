@@ -48,14 +48,16 @@ export const INITIAL_USERS: User[] = [
 
 /** 預設評分項目清單 */
 export const INITIAL_SCORE_ITEMS: ScoreItem[] = [
-  { id: 'item_1', label: '做家事', points: 10, type: ScoreType.POSITIVE, icon: '🧹' },
-  { id: 'item_2', label: '成績優異', points: 20, type: ScoreType.POSITIVE, icon: '💯' },
-  { id: 'item_3', label: '互相幫忙', points: 10, type: ScoreType.POSITIVE, icon: '🤝' },
-  { id: 'item_4', label: '早睡早起', points: 5, type: ScoreType.POSITIVE, icon: '⏰' },
-  { id: 'item_5', label: '未整理書包', points: 10, type: ScoreType.NEGATIVE, icon: '🎒' },
-  { id: 'item_6', label: '刻意吵架', points: 20, type: ScoreType.NEGATIVE, icon: '💢' },
-  { id: 'item_7', label: '欺負對方', points: 30, type: ScoreType.NEGATIVE, icon: '😈' },
-  { id: 'item_8', label: '挑食', points: 5, type: ScoreType.NEGATIVE, icon: '🥦' },
+  { id: 'item_1', label: '做家事', points: 5, type: ScoreType.POSITIVE, icon: '🧹' },
+  { id: 'item_2', label: '成績優異 (95↑)', points: 10, type: ScoreType.POSITIVE, icon: '💯' },
+  { id: 'item_3', label: '成績優異 (90↑)', points: 5, type: ScoreType.POSITIVE, icon: '💯' },
+  { id: 'item_4', label: '互相幫忙', points: 10, type: ScoreType.POSITIVE, icon: '🤝' },
+  { id: 'item_5', label: '複習課業', points: 5, type: ScoreType.POSITIVE, icon: '📖' },
+  { id: 'item_6', label: '去教會', points: 5, type: ScoreType.POSITIVE, icon: '⛪' },
+  { id: 'item_7', label: '未整理書包', points: 5, type: ScoreType.NEGATIVE, icon: '🎒' },
+  { id: 'item_8', label: '刻意吵架', points: 10, type: ScoreType.NEGATIVE, icon: '💢' },
+  { id: 'item_9', label: '欺負對方', points: 20, type: ScoreType.NEGATIVE, icon: '😈' },
+  { id: 'item_10', label: '未收拾環境', points: 5, type: ScoreType.NEGATIVE, icon: '🦠' },
 ];
 
 /** 預設獎勵項目清單 */
