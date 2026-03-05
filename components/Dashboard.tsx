@@ -10,7 +10,6 @@ import { RechartsWrapper } from './RechartsWrapper';
 import { HistoryLog } from './HistoryLog';
 import { ActionLogger } from './ActionLogger';
 import { SettingsPanel } from './SettingsPanel';
-import { SecretMailbox } from './SecretMailbox';
 import { RewardRedeemer } from './RewardRedeemer'; // Import 新增的獎勵兌換組件
 
 interface DashboardProps {
@@ -27,7 +26,7 @@ interface DashboardProps {
   onUpdateRewardItems: (items: any[]) => void; 
 }
 
-type Tab = 'overview' | 'log' | 'messages' | 'settings';
+type Tab = 'overview' | 'log' | 'settings';
 
 export const Dashboard: React.FC<DashboardProps> = ({ 
   currentUser, 
@@ -60,14 +59,6 @@ export const Dashboard: React.FC<DashboardProps> = ({
   const [redeemingReward, setIsRedeemingReward] = useState<{childId: string} | null>(null);
 
   /**
-   * 取得未讀訊息數量 (僅家長可見)
-   */
-  const getUnreadMessagesCount = () => {
-    if (!isParent) return 0;
-    return data.messages.filter(m => !m.isRead).length;
-  };
-
-  /**
    * 渲染主要內容區域
    */
   const renderContent = () => {
@@ -94,17 +85,19 @@ export const Dashboard: React.FC<DashboardProps> = ({
               <ScoreCard 
                 user={child1} 
                 score={score1} 
-                onAddPoints={() => setIsLoggingAction({ childId: child1.id, type: 'POSITIVE' })}
-                onDeductPoints={() => setIsLoggingAction({ childId: child1.id, type: 'NEGATIVE' })}
+                onAddPoints={() => isParent && setIsLoggingAction({ childId: child1.id, type: 'POSITIVE' })}
+                onDeductPoints={() => isParent && setIsLoggingAction({ childId: child1.id, type: 'NEGATIVE' })}
                 onRedeem={() => setIsRedeemingReward({ childId: child1.id })}
+                canManageScoreActions={isParent}
                 colorTheme="blue"
               />
               <ScoreCard 
                 user={child2} 
                 score={score2} 
-                onAddPoints={() => setIsLoggingAction({ childId: child2.id, type: 'POSITIVE' })}
-                onDeductPoints={() => setIsLoggingAction({ childId: child2.id, type: 'NEGATIVE' })}
+                onAddPoints={() => isParent && setIsLoggingAction({ childId: child2.id, type: 'POSITIVE' })}
+                onDeductPoints={() => isParent && setIsLoggingAction({ childId: child2.id, type: 'NEGATIVE' })}
                 onRedeem={() => setIsRedeemingReward({ childId: child2.id })}
+                canManageScoreActions={isParent}
                 colorTheme="green"
               />
             </div>
@@ -157,16 +150,6 @@ export const Dashboard: React.FC<DashboardProps> = ({
              </div>
            </Card>
         );
-      case 'messages':
-        return (
-          <SecretMailbox 
-            currentUser={currentUser}
-            users={data.users}
-            messages={data.messages}
-            onSendMessage={onSendMessage}
-            onMarkRead={onMarkMessageRead}
-          />
-        );
       case 'settings':
         return isParent ? (
           <SettingsPanel 
@@ -186,7 +169,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
    * 處理加/扣分提交
    */
   const handleActionSubmit = (itemId: string, note?: string) => {
-    if (!loggingAction) return;
+    if (!isParent || !loggingAction) return;
     const item = data.scoreItems.find(i => i.id === itemId);
     if (!item) return;
 
@@ -260,14 +243,6 @@ export const Dashboard: React.FC<DashboardProps> = ({
             label="日誌" 
             bgColor="bg-nook-blue"
           />
-          <NavItem 
-            active={activeTab === 'messages'} 
-            onClick={() => setActiveTab('messages')} 
-            icon={<Icons.Mail size={28} />}
-            label={isParent ? "悄悄話" : "寫信"} 
-            bgColor="bg-nook-green"
-            badge={getUnreadMessagesCount()}
-          />
           {isParent && (
             <NavItem 
               active={activeTab === 'settings'} 
@@ -318,7 +293,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
       </main>
 
       {/* 加扣分操作視窗 (Modal) */}
-      {loggingAction && (
+      {isParent && loggingAction && (
         <ActionLogger 
           isOpen={true}
           onClose={() => setIsLoggingAction(null)}
@@ -368,12 +343,13 @@ const NavItem = ({ active, onClick, icon, label, bgColor, badge = 0 }: { active:
 );
 
 // --- 積分卡片元件 (包含操作按鈕) ---
-const ScoreCard = ({ user, score, onAddPoints, onDeductPoints, onRedeem, colorTheme }: { 
+const ScoreCard = ({ user, score, onAddPoints, onDeductPoints, onRedeem, canManageScoreActions, colorTheme }: { 
   user: User, 
   score: number, 
   onAddPoints: () => void,
   onDeductPoints: () => void,
   onRedeem: () => void, // 新增：兌換函式
+  canManageScoreActions: boolean,
   colorTheme: 'blue' | 'green'
 }) => {
   const isBlue = colorTheme === 'blue';
@@ -409,22 +385,26 @@ const ScoreCard = ({ user, score, onAddPoints, onDeductPoints, onRedeem, colorTh
 
             {/* 操作按鈕區：加分、扣分、兌換 */}
             <div className="grid grid-cols-2 gap-3 mt-auto z-10">
-                <Button 
-                    className="py-3 text-lg col-span-1" 
-                    variant={isBlue ? 'secondary' : 'success'} 
-                    onClick={onAddPoints}
-                    icon={<Icons.PlusCircle size={20} />}
-                >
-                    加分
-                </Button>
-                <Button 
-                    className="py-3 text-lg col-span-1" 
-                    variant="danger" 
-                    onClick={onDeductPoints}
-                    icon={<Icons.MinusCircle size={20} />}
-                >
-                    扣分
-                </Button>
+                {canManageScoreActions && (
+                  <>
+                    <Button 
+                        className="py-3 text-lg col-span-1" 
+                        variant={isBlue ? 'secondary' : 'success'} 
+                        onClick={onAddPoints}
+                        icon={<Icons.PlusCircle size={20} />}
+                    >
+                        加分
+                    </Button>
+                    <Button 
+                        className="py-3 text-lg col-span-1" 
+                        variant="danger" 
+                        onClick={onDeductPoints}
+                        icon={<Icons.MinusCircle size={20} />}
+                    >
+                        扣分
+                    </Button>
+                  </>
+                )}
                 
                 {/* 新增：兌換獎勵按鈕 (紫色風格) */}
                 <button 
