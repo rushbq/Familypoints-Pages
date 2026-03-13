@@ -12,12 +12,13 @@
     "deploy": "gh-pages -d dist"
   },
   "dependencies": {
-    "react": "^19.2.3",
-    "lucide-react": "^0.562.0",
-    "recharts": "^3.6.0",
-    "react-dom": "^19.2.3",
     "dexie": "^4.0.10",
-    "dexie-react-hooks": "^1.1.7"
+    "dexie-react-hooks": "^1.1.7",
+    "firebase": "^12.10.0",
+    "lucide-react": "^0.562.0",
+    "react": "^19.2.3",
+    "react-dom": "^19.2.3",
+    "recharts": "^3.6.0"
   },
   "devDependencies": {
     "@types/node": "^22.14.0",

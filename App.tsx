@@ -1,47 +1,81 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import { loadState, saveState, SaveResult } from './services/storageService';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { onAuthStateChanged, signOut, User as FirebaseUser } from 'firebase/auth';
+import { saveState, SaveResult, subscribeState } from './services/storageService';
 import { AppState, ScoreItem, ScoreRecord, SecretMessage, User, RewardItem } from './types';
 import { RoleSelector } from './components/RoleSelector';
 import { Dashboard } from './components/Dashboard';
+import { CloudLogin } from './components/CloudLogin';
+import { auth, firebaseConfigError } from './services/firebase';
 
 /**
  * 應用程式主元件
  * 負責全域狀態管理 (State Management) 與資料持久化 (Persistence)
- * 使用 IndexedDB (透過 Dexie.js) 進行資料儲存
+ * 目前使用 Firebase Auth + Cloud Firestore 進行雲端同步
  */
 const App: React.FC = () => {
   // 全域狀態
   const [data, setData] = useState<AppState | null>(null);
   // 目前登入的使用者
   const [currentUser, setCurrentUser] = useState<User | null>(null);
+  // Firebase 雲端登入使用者
+  const [cloudUser, setCloudUser] = useState<FirebaseUser | null>(null);
+  // Firebase 驗證狀態
+  const [isAuthLoading, setIsAuthLoading] = useState(true);
   // 載入狀態
   const [isLoading, setIsLoading] = useState(true);
   // 錯誤狀態
   const [error, setError] = useState<string | null>(null);
   // 儲存警告（空間不足時顯示）
   const [saveWarning, setSaveWarning] = useState<string | null>(null);
+  const lastSyncedStateRef = useRef<string | null>(null);
 
-  // 初始化：元件掛載時從 IndexedDB 載入資料
+  // 初始化：監聽 Firebase 登入狀態
   useEffect(() => {
-    const initializeApp = async () => {
-      try {
-        setIsLoading(true);
-        const loadedData = await loadState();
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      setCloudUser(user);
+      setCurrentUser(null);
+      setIsAuthLoading(false);
+    });
+
+    return unsubscribe;
+  }, []);
+
+  // Firebase 登入後，開始監聽 Firestore 雲端資料
+  useEffect(() => {
+    if (!cloudUser) {
+      setData(null);
+      setIsLoading(false);
+      lastSyncedStateRef.current = null;
+      return;
+    }
+
+    setIsLoading(true);
+
+    const unsubscribe = subscribeState(
+      (loadedData) => {
+        lastSyncedStateRef.current = JSON.stringify(loadedData);
         setData(loadedData);
         setError(null);
-      } catch (err) {
-        console.error('載入資料失敗:', err);
-        setError('載入資料失敗，請重新整理頁面');
-      } finally {
         setIsLoading(false);
-      }
-    };
+      },
+      (err) => {
+        console.error('載入雲端資料失敗:', err);
+        setError('載入雲端資料失敗，請重新整理頁面');
+        setIsLoading(false);
+      },
+    );
 
-    initializeApp();
-  }, []);
+    return unsubscribe;
+  }, [cloudUser]);
 
   // 儲存資料的函式（使用 useCallback 避免不必要的重新渲染）
   const persistData = useCallback(async (newData: AppState) => {
+    const serializedState = JSON.stringify(newData);
+
+    if (serializedState === lastSyncedStateRef.current) {
+      return;
+    }
+
     const result: SaveResult = await saveState(newData);
     
     if (!result.success) {
@@ -51,15 +85,17 @@ const App: React.FC = () => {
     } else if (result.storageWarning) {
       setSaveWarning('⚠️ 儲存空間即將用完，建議備份資料後清理舊紀錄');
       setTimeout(() => setSaveWarning(null), 5000);
+    } else {
+      lastSyncedStateRef.current = serializedState;
     }
   }, []);
 
-  // 監聽資料變更：當 data 改變時，自動寫入 IndexedDB
+  // 監聽資料變更：當 data 改變時，自動寫入 Firestore
   useEffect(() => {
-    if (data && !isLoading) {
+    if (data && cloudUser && !isLoading && !isAuthLoading) {
       persistData(data);
     }
-  }, [data, isLoading, persistData]);
+  }, [cloudUser, data, isAuthLoading, isLoading, persistData]);
 
   // --- 事件處理函式 ---
 
@@ -68,6 +104,11 @@ const App: React.FC = () => {
   };
 
   const handleLogout = () => {
+    setCurrentUser(null);
+  };
+
+  const handleCloudLogout = async () => {
+    await signOut(auth);
     setCurrentUser(null);
   };
 
@@ -134,6 +175,33 @@ const App: React.FC = () => {
 
   // --- 渲染邏輯 ---
 
+  if (firebaseConfigError) {
+    return (
+      <div className="h-screen flex flex-col items-center justify-center bg-[#CDF5E2] text-nook-brown p-6 text-center">
+        <div className="text-6xl mb-4">🛠️</div>
+        <p className="text-2xl font-black mb-3">Firebase 尚未設定完成</p>
+        <p className="max-w-2xl font-bold text-nook-brown/70 leading-relaxed">
+          {firebaseConfigError}
+          <br />
+          請先建立 `.env.local` 並填入 Firebase Web App 設定值。
+        </p>
+      </div>
+    );
+  }
+
+  if (isAuthLoading) {
+    return (
+      <div className="h-screen flex flex-col items-center justify-center bg-[#CDF5E2] text-nook-brown">
+        <div className="text-6xl mb-4 animate-bounce">☁️</div>
+        <p className="text-xl font-bold">確認雲端登入狀態中...</p>
+      </div>
+    );
+  }
+
+  if (!cloudUser) {
+    return <CloudLogin />;
+  }
+
   // 載入中狀態
   if (isLoading) {
     return (
@@ -165,6 +233,7 @@ const App: React.FC = () => {
     return (
       <>
         <RoleSelector users={data.users} onSelectUser={handleLogin} />
+        <CloudSessionBar email={cloudUser.email || '已登入雲端帳號'} onSignOut={handleCloudLogout} />
         {/* 儲存警告 Toast */}
         {saveWarning && <SaveWarningToast message={saveWarning} />}
       </>
@@ -186,6 +255,7 @@ const App: React.FC = () => {
         onImportData={handleImportData}
         onUpdateRewardItems={handleUpdateRewardItems}
       />
+      <CloudSessionBar email={cloudUser.email || '已登入雲端帳號'} onSignOut={handleCloudLogout} />
       {/* 儲存警告 Toast */}
       {saveWarning && <SaveWarningToast message={saveWarning} />}
     </>
@@ -198,6 +268,24 @@ const SaveWarningToast: React.FC<{ message: string }> = ({ message }) => (
     <div className="bg-yellow-500 text-white px-6 py-3 rounded-2xl shadow-xl font-bold flex items-center gap-2">
       <span>⚠️</span>
       <span>{message}</span>
+    </div>
+  </div>
+);
+
+const CloudSessionBar: React.FC<{ email: string; onSignOut: () => void }> = ({ email, onSignOut }) => (
+  <div className="fixed top-4 right-4 z-40">
+    <div className="bg-white/90 backdrop-blur-sm border-2 border-white shadow-lg rounded-2xl px-4 py-3 flex items-center gap-3">
+      <div>
+        <p className="text-xs font-black text-nook-brown/50">FIREBASE</p>
+        <p className="text-sm font-bold text-nook-brown max-w-44 truncate">{email}</p>
+      </div>
+      <button
+        type="button"
+        onClick={onSignOut}
+        className="px-3 py-2 rounded-xl bg-nook-brown/10 text-nook-brown font-bold hover:bg-nook-brown/20 transition-colors"
+      >
+        切換帳號
+      </button>
     </div>
   </div>
 );

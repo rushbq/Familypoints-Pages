@@ -260,24 +260,31 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({ appData, onUpdateI
       <Card title="⚠️ 重要提醒" className="bg-nook-yellow/20 border-nook-orange/30">
           <div className="space-y-3">
             <div className="flex items-start gap-3 p-3 bg-white/60 rounded-xl">
+              <span className="text-xl">☁️</span>
+              <div>
+                <p className="font-bold text-nook-brown">資料會同步到 Firebase 雲端</p>
+                <p className="text-sm text-nook-brown/60">只要不同裝置登入同一組 Firebase 帳號，就會看到同一份家庭資料。</p>
+              </div>
+            </div>
+            <div className="flex items-start gap-3 p-3 bg-white/60 rounded-xl">
               <span className="text-xl">📱</span>
               <div>
-                <p className="font-bold text-nook-brown">資料僅存在此瀏覽器</p>
-                <p className="text-sm text-nook-brown/60">使用不同裝置或瀏覽器時，資料不會同步。建議固定使用同一個瀏覽器。</p>
+                <p className="font-bold text-nook-brown">這裡顯示的是瀏覽器快取</p>
+                <p className="text-sm text-nook-brown/60">就算本機快取被清掉，只要雲端資料還在，重新登入後仍可同步回來。</p>
               </div>
             </div>
             <div className="flex items-start gap-3 p-3 bg-white/60 rounded-xl">
               <span className="text-xl">🗑️</span>
               <div>
-                <p className="font-bold text-nook-brown">清除瀏覽器資料會遺失紀錄</p>
-                <p className="text-sm text-nook-brown/60">清除快取、Cookie 或瀏覽資料時，積分紀錄也會被刪除。</p>
+                <p className="font-bold text-nook-brown">仍然建議定期備份</p>
+                <p className="text-sm text-nook-brown/60">雲端同步可以降低遺失風險，但重要資料仍建議偶爾下載 JSON 備份。</p>
               </div>
             </div>
             <div className="flex items-start gap-3 p-3 bg-white/60 rounded-xl">
               <span className="text-xl">🔒</span>
               <div>
-                <p className="font-bold text-nook-brown">無痕/私密模式無法保存</p>
-                <p className="text-sm text-nook-brown/60">請勿使用無痕模式，關閉視窗後資料會全部消失。</p>
+                <p className="font-bold text-nook-brown">無痕/私密模式仍不建議</p>
+                <p className="text-sm text-nook-brown/60">雖然主資料在雲端，但無痕模式會讓登入狀態與本機快取更不穩定。</p>
               </div>
             </div>
             <div className="flex items-start gap-3 p-3 bg-nook-green/20 rounded-xl border-2 border-nook-green/30">
@@ -290,13 +297,13 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({ appData, onUpdateI
           </div>
       </Card>
 
-      {/* 1. 資料管理 (IndexedDB) */}
+      {/* 1. 資料管理 */}
       <Card title="💾 資料管理" className="bg-white border-nook-blue/30">
           {/* 儲存空間顯示 */}
           {storageInfo && (
             <div className="mb-6 p-4 bg-nook-beige/30 rounded-2xl border-2 border-nook-brown/10">
               <div className="flex items-center justify-between mb-2">
-                <span className="font-bold text-nook-brown text-sm">儲存空間使用量</span>
+                <span className="font-bold text-nook-brown text-sm">瀏覽器快取使用量</span>
                 <span className="text-xs font-bold text-nook-brown/60">
                   {storageInfo.usedFormatted} / {storageInfo.quotaFormatted}
                 </span>
@@ -326,8 +333,8 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({ appData, onUpdateI
 
           <div className="flex flex-col md:flex-row gap-6 items-center">
               <div className="flex-1">
-                  <p className="text-nook-brown font-bold mb-2">資料儲存在此瀏覽器的 IndexedDB 中（容量更大！）</p>
-                  <p className="text-nook-brown/60 text-sm">為了避免資料遺失（如清除快取或更換裝置），請定期下載備份檔案。</p>
+                  <p className="text-nook-brown font-bold mb-2">主資料已同步到 Firebase，這裡仍可下載 JSON 備份</p>
+                  <p className="text-nook-brown/60 text-sm">如果你要換帳號、重設資料，或只是想留一份保險備份，建議偶爾下載一次。</p>
               </div>
               <div className="flex flex-wrap gap-4">
                   <Button onClick={handleExport} variant="secondary" icon={<Icons.Download size={20} />}>

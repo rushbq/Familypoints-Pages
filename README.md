@@ -13,7 +13,8 @@
 - 💾 **資料備份** - 支援匯出/匯入備份檔案
 - 🧹 **舊紀錄清理** - 可選擇保留近期資料以節省空間
 - 📱 **響應式設計** - 支援桌面與平板裝置
-- 🔒 **家長密碼保護** - 設定頁面需輸入 PIN 碼
+- ☁️ **雲端同步** - 使用 Firebase 登入後，電腦與手機可共用同一份資料
+- 🔒 **家長密碼保護** - 設定頁面仍需輸入 PIN 碼
 
 ## 🚀 本地開發
 
@@ -30,6 +31,61 @@
    npm run dev
    ```
 3. 開啟瀏覽器前往 http://localhost:3000
+
+## ☁️ Firebase 設定
+
+本專案現在使用 **Firebase Authentication + Cloud Firestore** 作為主資料來源，適合部署在 GitHub Pages 這種純靜態網站上。
+
+### 1. 建立 Firebase 專案
+
+1. 前往 [Firebase Console](https://console.firebase.google.com/)
+2. 建立新專案
+3. 新增一個 `Web app`
+4. 啟用 `Authentication > Sign-in method > Email/Password`
+5. 在 `Authentication > Users` 手動建立你自己的帳號
+6. 建立 `Cloud Firestore` 資料庫，建議區域選 `asia-east1`
+
+### 2. 設定 Firestore Rules
+
+請在 Firebase Console 的 `Firestore Database > Rules` 貼上：
+
+```javascript
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /userStates/{uid} {
+      allow read, write: if request.auth != null && request.auth.uid == uid;
+    }
+  }
+}
+```
+
+### 3. 建立 `.env.local`
+
+複製 [.env.example](.env.example) 為 `.env.local`，然後把 Firebase Web App 提供的設定值填進去：
+
+```bash
+cp .env.example .env.local
+```
+
+Windows PowerShell 也可以直接手動建立 `.env.local`，內容如下：
+
+```env
+VITE_FIREBASE_API_KEY=your_api_key
+VITE_FIREBASE_AUTH_DOMAIN=your_project_id.firebaseapp.com
+VITE_FIREBASE_PROJECT_ID=your_project_id
+VITE_FIREBASE_STORAGE_BUCKET=your_project_id.firebasestorage.app
+VITE_FIREBASE_MESSAGING_SENDER_ID=your_messaging_sender_id
+VITE_FIREBASE_APP_ID=your_app_id
+```
+
+### 4. 第一次資料搬遷
+
+如果你原本已經在某台裝置用過 IndexedDB 版本：
+
+1. 在那台舊裝置先登入新的 Firebase 帳號
+2. 系統偵測到雲端還沒有資料時，會自動把本機 IndexedDB 資料搬到 Firestore
+3. 之後其他裝置只要登入同一組 Firebase 帳號，就能看到相同資料
 
 ## 📦 部署到 GitHub Pages
 
@@ -48,33 +104,32 @@
 
 ## 💾 資料儲存說明
 
-本系統使用瀏覽器的 **IndexedDB** 儲存資料（透過 Dexie.js），相比傳統 LocalStorage 擁有更大容量（50MB+）。
+本系統使用 **Cloud Firestore** 作為主資料來源，瀏覽器本機只保留快取資料，以便加快載入與支援短暫離線狀態。
 
 ### ✅ 優點
 
-- 完全免費，不需要後端伺服器
-- 資料保留在本地，隱私安全
-- 儲存容量大，可容納數萬筆紀錄
-- 支援複雜查詢與索引
+- GitHub Pages 仍可免費部署
+- 同一組 Firebase 帳號可跨裝置同步
+- 保留瀏覽器快取，重新開啟速度較快
+- 不需要自己架伺服器
 
 ### ⚠️ 使用限制與注意事項
 
-**重要提醒：資料僅存在於當前瀏覽器！**
+**重要提醒：所有裝置必須登入同一組 Firebase 帳號，才會看到同一份資料。**
 
 | 限制項目 | 說明 |
 |---------|------|
-| 📱 **瀏覽器綁定** | 資料只存在於「同一個裝置的同一個瀏覽器」中，換瀏覽器或換裝置都看不到資料 |
-| 🔄 **無法同步** | Chrome 與 Edge 是不同瀏覽器，資料不會互通。手機與電腦也無法同步 |
-| 🗑️ **清除快取** | 清除瀏覽器資料、Cookie 或網站資料時，所有積分紀錄都會被刪除 |
-| 🔒 **無痕模式** | 無痕/私密瀏覽模式關閉後資料會全部消失，**請勿使用** |
-| 🌐 **網域綁定** | 從 GitHub Pages 訪問的資料與本地開發時的資料是分開的 |
+| 🔐 **帳號綁定** | 手機、平板、電腦都必須登入同一組 Firebase Email/Password |
+| 🗑️ **建議備份** | 雲端同步雖然可靠，仍建議定期下載 JSON 備份 |
+| 🔒 **無痕模式** | 無痕/私密瀏覽模式不利於保持登入狀態與本機快取，**不建議使用** |
+| 🌐 **首次搬遷** | 舊版 IndexedDB 資料只會從你原本使用的裝置搬上雲端一次，請先在原裝置登入新版本 |
 
 ### 💡 建議使用方式
 
-1. **固定使用同一台裝置的同一個瀏覽器**
-2. **定期備份！** 進入「設定」頁面下載備份檔案（JSON 格式）
-3. **避免清除瀏覽器資料**，或清除前先備份
-4. 如需更換裝置，可透過「匯入備份」功能還原資料
+1. **所有裝置使用同一組 Firebase 帳號**
+2. **第一次上線先用舊裝置登入**，讓舊資料自動搬到雲端
+3. **定期備份！** 進入「設定」頁面下載備份檔案（JSON 格式）
+4. 如需更換帳號或重建資料，可透過「匯入備份」功能還原資料
 
 **建議每週備份一次資料，避免意外遺失珍貴的積分紀錄！**
 
@@ -83,7 +138,9 @@
 - React 19 + TypeScript
 - Vite
 - Tailwind CSS
-- IndexedDB (Dexie.js) - 資料儲存
+- Firebase Authentication - 雲端登入
+- Cloud Firestore - 雲端資料儲存
+- IndexedDB (瀏覽器快取 / 舊資料搬遷)
 - Recharts - 圖表視覺化
 - Lucide React - 圖示庫
 - gh-pages - GitHub Pages 部署
