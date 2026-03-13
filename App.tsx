@@ -31,6 +31,10 @@ const App: React.FC = () => {
 
   // 初始化：監聽 Firebase 登入狀態
   useEffect(() => {
+    if (firebaseConfigError || !auth) {
+      setIsAuthLoading(false);
+      return;
+    }
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       setCloudUser(user);
       setCurrentUser(null);
@@ -68,7 +72,7 @@ const App: React.FC = () => {
     return unsubscribe;
   }, [cloudUser]);
 
-  // 儲存資料的函式（使用 useCallback 避免不必要的重新渲染）
+  // 儲存資料的函式
   const persistData = useCallback(async (newData: AppState) => {
     const serializedState = JSON.stringify(newData);
 
@@ -80,7 +84,6 @@ const App: React.FC = () => {
     
     if (!result.success) {
       setSaveWarning(`⚠️ 儲存失敗: ${result.error}`);
-      // 3 秒後清除警告
       setTimeout(() => setSaveWarning(null), 5000);
     } else if (result.storageWarning) {
       setSaveWarning('⚠️ 儲存空間即將用完，建議備份資料後清理舊紀錄');
@@ -112,7 +115,6 @@ const App: React.FC = () => {
     setCurrentUser(null);
   };
 
-  // 新增歷史紀錄 (加分/扣分/兌換)
   const handleAddRecord = (record: Omit<ScoreRecord, 'id' | 'timestamp'>) => {
     if (!data) return;
     const newRecord: ScoreRecord = {
@@ -126,30 +128,25 @@ const App: React.FC = () => {
     });
   };
 
-  // 更新評分項目列表 (Settings)
   const handleUpdateItems = (items: ScoreItem[]) => {
     if (!data) return;
     setData({ ...data, scoreItems: items });
   };
 
-  // 更新獎勵項目列表 (Settings)
   const handleUpdateRewardItems = (items: RewardItem[]) => {
     if (!data) return;
     setData({ ...data, rewardItems: items });
   };
 
-  // 更新使用者資料 (Settings)
   const handleUpdateUsers = (users: User[]) => {
     if (!data) return;
     setData({ ...data, users: users });
   }
 
-  // 匯入備份資料 (Settings)
   const handleImportData = (newData: AppState) => {
     setData(newData);
   }
 
-  // 發送悄悄話
   const handleSendMessage = (msg: Omit<SecretMessage, 'id' | 'timestamp' | 'isRead'>) => {
     if (!data) return;
     const newMessage: SecretMessage = {
@@ -164,7 +161,6 @@ const App: React.FC = () => {
     });
   };
 
-  // 標記訊息為已讀
   const handleMarkMessageRead = (id: string) => {
     if (!data) return;
     const updatedMessages = data.messages.map(m => 
@@ -202,7 +198,6 @@ const App: React.FC = () => {
     return <CloudLogin />;
   }
 
-  // 載入中狀態
   if (isLoading) {
     return (
       <div className="h-screen flex flex-col items-center justify-center bg-[#CDF5E2] text-nook-brown">
@@ -212,7 +207,6 @@ const App: React.FC = () => {
     );
   }
 
-  // 錯誤狀態
   if (error || !data) {
     return (
       <div className="h-screen flex flex-col items-center justify-center bg-[#CDF5E2] text-nook-brown">
@@ -228,19 +222,22 @@ const App: React.FC = () => {
     );
   }
 
-  // 若未登入，顯示角色選擇頁面
+  // 若未登入角色，顯示角色選擇頁面
   if (!currentUser) {
     return (
       <>
-        <RoleSelector users={data.users} onSelectUser={handleLogin} />
-        <CloudSessionBar email={cloudUser.email || '已登入雲端帳號'} onSignOut={handleCloudLogout} />
-        {/* 儲存警告 Toast */}
+        <RoleSelector
+          users={data.users}
+          onSelectUser={handleLogin}
+          cloudEmail={cloudUser.email || '已登入雲端帳號'}
+          onCloudLogout={handleCloudLogout}
+        />
         {saveWarning && <SaveWarningToast message={saveWarning} />}
       </>
     );
   }
 
-  // 若已登入，顯示儀表板
+  // 若已登入角色，顯示儀表板
   return (
     <>
       <Dashboard 
@@ -254,9 +251,9 @@ const App: React.FC = () => {
         onUpdateUsers={handleUpdateUsers}
         onImportData={handleImportData}
         onUpdateRewardItems={handleUpdateRewardItems}
+        cloudEmail={cloudUser.email || '已登入雲端帳號'}
+        onCloudLogout={handleCloudLogout}
       />
-      <CloudSessionBar email={cloudUser.email || '已登入雲端帳號'} onSignOut={handleCloudLogout} />
-      {/* 儲存警告 Toast */}
       {saveWarning && <SaveWarningToast message={saveWarning} />}
     </>
   );
@@ -264,28 +261,10 @@ const App: React.FC = () => {
 
 // --- 儲存警告 Toast 元件 ---
 const SaveWarningToast: React.FC<{ message: string }> = ({ message }) => (
-  <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-50 animate-pop">
+  <div className="fixed bottom-20 md:bottom-4 left-1/2 -translate-x-1/2 z-50 animate-pop">
     <div className="bg-yellow-500 text-white px-6 py-3 rounded-2xl shadow-xl font-bold flex items-center gap-2">
       <span>⚠️</span>
       <span>{message}</span>
-    </div>
-  </div>
-);
-
-const CloudSessionBar: React.FC<{ email: string; onSignOut: () => void }> = ({ email, onSignOut }) => (
-  <div className="fixed top-4 right-4 z-40">
-    <div className="bg-white/90 backdrop-blur-sm border-2 border-white shadow-lg rounded-2xl px-4 py-3 flex items-center gap-3">
-      <div>
-        <p className="text-xs font-black text-nook-brown/50">FIREBASE</p>
-        <p className="text-sm font-bold text-nook-brown max-w-44 truncate">{email}</p>
-      </div>
-      <button
-        type="button"
-        onClick={onSignOut}
-        className="px-3 py-2 rounded-xl bg-nook-brown/10 text-nook-brown font-bold hover:bg-nook-brown/20 transition-colors"
-      >
-        切換帳號
-      </button>
     </div>
   </div>
 );

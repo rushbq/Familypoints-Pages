@@ -37,7 +37,10 @@ import {
   ArrowLeft,
   Download,
   Upload,
-  Gift // 新增禮物圖示
+  Gift,
+  Hash,
+  TrendingUp,
+  Calendar
 } from 'lucide-react';
 
 export const Icons = {
@@ -79,5 +82,8 @@ export const Icons = {
   ArrowLeft,
   Download,
   Upload,
-  Gift
+  Gift,
+  Hash,
+  TrendingUp,
+  Calendar
 };

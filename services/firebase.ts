@@ -19,9 +19,10 @@ export const firebaseConfigError = missingKeys.length > 0
   ? `Firebase 尚未設定完成，缺少：${missingKeys.join(', ')}`
   : null;
 
-const app = initializeApp(firebaseConfig);
+// 只在設定完整時初始化 Firebase，避免 invalid-api-key 錯誤導致整個 App 崩潰
+const app = !firebaseConfigError ? initializeApp(firebaseConfig) : null;
 
-export const auth = getAuth(app);
-export const firestore = initializeFirestore(app, {
-  localCache: persistentLocalCache({}),
-});
+export const auth = app ? getAuth(app) : null as any;
+export const firestore = app
+  ? initializeFirestore(app, { localCache: persistentLocalCache({}) })
+  : null as any;

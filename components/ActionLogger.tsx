@@ -6,15 +6,18 @@ import { Button } from './ui/Button';
 interface ActionLoggerProps {
   isOpen: boolean;
   onClose: () => void;
-  onSubmit: (itemId: string, note?: string) => void;
+  onSubmit: (itemId: string, note?: string, customPoints?: number) => void;
   items: ScoreItem[];
   type: 'POSITIVE' | 'NEGATIVE';
   targetChildName: string;
 }
 
+const CUSTOM_ITEM_ID = '__custom__';
+
 export const ActionLogger: React.FC<ActionLoggerProps> = ({ isOpen, onClose, onSubmit, items, type, targetChildName }) => {
   const [selectedItemId, setSelectedItemId] = useState<string | null>(null);
   const [note, setNote] = useState('');
+  const [customPoints, setCustomPoints] = useState('');
 
   if (!isOpen) return null;
 
@@ -22,12 +25,20 @@ export const ActionLogger: React.FC<ActionLoggerProps> = ({ isOpen, onClose, onS
     return type === 'POSITIVE' ? item.type === ScoreType.POSITIVE : item.type === ScoreType.NEGATIVE;
   });
 
+  const isCustom = selectedItemId === CUSTOM_ITEM_ID;
+  const customPointsNum = parseInt(customPoints, 10);
+  const isCustomValid = isCustom && customPointsNum > 0 && note.trim().length > 0;
+
   const handleSubmit = () => {
-    if (selectedItemId) {
+    if (isCustom) {
+      if (!isCustomValid) return;
+      onSubmit(CUSTOM_ITEM_ID, note, customPointsNum);
+    } else if (selectedItemId) {
       onSubmit(selectedItemId, note);
     }
   };
 
+  const canSubmit = isCustom ? isCustomValid : !!selectedItemId;
   const isPositive = type === 'POSITIVE';
 
   return (
@@ -89,18 +100,60 @@ export const ActionLogger: React.FC<ActionLoggerProps> = ({ isOpen, onClose, onS
                 )}
               </button>
             ))}
+
+            {/* 「其它」自訂項目卡片 */}
+            <button
+              onClick={() => { setSelectedItemId(CUSTOM_ITEM_ID); setCustomPoints(''); }}
+              className={`relative group flex flex-col items-center justify-between p-4 rounded-[2rem] border-b-8 transition-all duration-150 active:border-b-0 active:translate-y-[8px] h-48 border-dashed ${
+                isCustom
+                  ? isPositive
+                      ? 'bg-white border-nook-green ring-4 ring-nook-green/30'
+                      : 'bg-white border-nook-red ring-4 ring-nook-red/30'
+                  : 'bg-white/60 border-nook-brown/20 hover:border-nook-brown/30'
+              } shadow-sm`}
+            >
+              <div className="flex-1 flex items-center justify-center text-5xl mt-2 group-hover:scale-110 transition-transform">
+                  ✏️
+              </div>
+              <span className="font-bold text-nook-brown text-center leading-tight w-full mt-2">
+                  其它
+              </span>
+              {isCustom && (
+                  <div className="absolute -bottom-10 left-1/2 -translate-x-1/2 bg-nook-brown text-white text-xs px-3 py-1 rounded-full animate-bounce">
+                      已選擇
+                  </div>
+              )}
+            </button>
           </div>
+
+          {/* 「其它」自訂分數輸入 */}
+          {isCustom && (
+            <div className="bg-white rounded-[2rem] p-6 border-4 border-nook-brown/5 shadow-sm mb-4">
+              <label className="block text-nook-brown font-black mb-3 text-lg flex items-center gap-2">
+                 <Icons.Hash size={20} />
+                 <span>自訂分數 <span className="text-nook-red text-sm">*必填</span></span>
+              </label>
+              <input
+                type="number"
+                min="1"
+                value={customPoints}
+                onChange={(e) => setCustomPoints(e.target.value)}
+                placeholder="請輸入分數（正整數）"
+                className="w-full p-4 bg-white border-b-4 border-nook-brown/20 rounded-xl focus:outline-none focus:border-nook-blue transition-colors text-xl font-bold text-nook-brown placeholder-nook-brown/30"
+              />
+            </div>
+          )}
 
           <div className="bg-white rounded-[2rem] p-6 border-4 border-nook-brown/5 shadow-sm">
             <label className="block text-nook-brown font-black mb-3 text-lg flex items-center gap-2">
                <Icons.PenTool size={20} />
-               <span>備註事項 (選填)</span>
+               <span>{isCustom ? '原因' : '備註事項'} {isCustom ? <span className="text-nook-red text-sm">*必填</span> : '(選填)'}</span>
             </label>
             <input
               type="text"
               value={note}
               onChange={(e) => setNote(e.target.value)}
-              placeholder="請輸入詳細內容..."
+              placeholder={isCustom ? '請輸入原因（必填）...' : '請輸入詳細內容...'}
               className="w-full p-4 bg-white border-b-4 border-nook-brown/20 rounded-xl focus:outline-none focus:border-nook-blue transition-colors text-xl font-bold text-nook-brown placeholder-nook-brown/30"
             />
           </div>
@@ -112,7 +165,7 @@ export const ActionLogger: React.FC<ActionLoggerProps> = ({ isOpen, onClose, onS
           <Button 
             variant={isPositive ? 'primary' : 'danger'} 
             className="flex-[2] shadow-xl text-xl" 
-            disabled={!selectedItemId}
+            disabled={!canSubmit}
             onClick={handleSubmit}
             size="lg"
             icon={<Icons.Check size={28} strokeWidth={3} />}
