@@ -455,7 +455,7 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({ appData, onUpdateI
             <div className="mt-6">
             <label className="block text-sm font-bold text-nook-brown mb-3 ml-1">選擇圖示</label>
             <div className="flex gap-3 flex-wrap">
-                {['⭐','🧹','📚','🤝','🎒','💢','🥦','💯','🏃','💤','🎨','🎹','🐶'].map(icon => (
+                {['⭐','🧹','📚','🤝','🎒','💢','🥦','💯','🏃','💤','🎨','🎹','🐶','🦷','🛏️','👕','🍳','✏️','🙏','🧮','🎯','🚿','📖','🧸','💻','🚲','🎻','🧩','🌱','🐱','😡','📱','🍬','👊','⏰','🗣️'].map(icon => (
                     <button 
                     type="button"
                     key={icon}
@@ -525,7 +525,23 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({ appData, onUpdateI
                 </Button>
             </div>
           </div>
-          
+
+          <div className="mt-4 mb-8">
+            <label className="block text-sm font-bold text-nook-brown mb-3 ml-1">選擇圖示</label>
+            <div className="flex gap-3 flex-wrap">
+                {['🎁','🎮','📺','🍦','🍕','🎬','🛍️','🏖️','🎢','🧁','🍫','🎪','🎠','🎡','🎈','🎉','🌈','🎵','🐾','🦄','🍿','🎲','🏕️','🎂','⚽','🤖','🧲','🎭'].map(icon => (
+                    <button
+                    type="button"
+                    key={icon}
+                    onClick={() => setNewReward({...newReward, icon})}
+                    className={`w-12 h-12 rounded-2xl text-2xl flex items-center justify-center border-2 transition-all ${newReward.icon === icon ? 'border-[#A88BFA] bg-[#A88BFA] text-white scale-110 shadow-md' : 'border-nook-brown/10 hover:bg-white hover:border-nook-brown/30 bg-white/50'}`}
+                    >
+                    {icon}
+                    </button>
+                ))}
+            </div>
+          </div>
+
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
              {appData.rewardItems.map(item => (
                 <div key={item.id} className="flex items-center justify-between p-4 bg-white rounded-[1.5rem] border-2 border-[#D8B4FE] shadow-sm">
