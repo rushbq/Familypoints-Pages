@@ -6,6 +6,7 @@ import {
   getStorageInfo as getLocalStorageInfo,
   getDefaultState,
 } from './database';
+import { normalizeScoreItem, normalizeScoreRecord } from './familyUtils';
 import { auth, firestore } from './firebase';
 
 /**
@@ -17,15 +18,24 @@ export interface SaveResult {
   storageWarning?: boolean; // 儲存空間警告 (超過 80%)
 }
 
-const normalizeState = (state?: Partial<AppState>): AppState => {
+export const normalizeAppState = (state?: Partial<AppState>): AppState => {
   const defaults = getDefaultState();
+  const scoreItems = (state?.scoreItems ?? defaults.scoreItems).map(normalizeScoreItem);
+  const rewardItems = state?.rewardItems ?? defaults.rewardItems;
+  const rewardIds = new Set(rewardItems.map((item) => item.id));
+  const scoreItemMap = new Map(scoreItems.map((item) => [item.id, item]));
+  const records = (state?.records ?? defaults.records).map((record) =>
+    normalizeScoreRecord(record, scoreItemMap, rewardIds),
+  );
 
   return {
     users: state?.users ?? defaults.users,
-    scoreItems: state?.scoreItems ?? defaults.scoreItems,
-    rewardItems: state?.rewardItems ?? defaults.rewardItems,
-    records: state?.records ?? defaults.records,
+    scoreItems,
+    rewardItems,
+    records,
     messages: state?.messages ?? defaults.messages,
+    goalRewards: state?.goalRewards ?? defaults.goalRewards,
+    discountCards: state?.discountCards ?? defaults.discountCards,
   };
 };
 
@@ -44,24 +54,28 @@ const loadLocalIndexedDbState = async (): Promise<AppState> => {
   try {
     await initializeDatabase();
 
-    const [users, scoreItems, rewardItems, records, messages] = await Promise.all([
+    const [users, scoreItems, rewardItems, records, messages, goalRewards, discountCards] = await Promise.all([
       localDb.users.toArray(),
       localDb.scoreItems.toArray(),
       localDb.rewardItems.toArray(),
       localDb.records.toArray(),
       localDb.messages.toArray(),
+      localDb.goalRewards.toArray(),
+      localDb.discountCards.toArray(),
     ]);
 
-    return normalizeState({
+    return normalizeAppState({
       users,
       scoreItems,
       rewardItems,
       records,
       messages,
+      goalRewards,
+      discountCards,
     });
   } catch (err) {
     console.warn('⚠️ 無法讀取舊版 IndexedDB，改用預設資料:', err);
-    return normalizeState();
+    return normalizeAppState();
   }
 };
 
@@ -83,7 +97,7 @@ export const loadState = async (): Promise<AppState> => {
       return bootstrapCloudState(uid);
     }
 
-    return normalizeState(snapshot.data() as Partial<AppState>);
+    return normalizeAppState(snapshot.data() as Partial<AppState>);
   } catch (err) {
     console.error('❌ 載入雲端狀態失敗:', err);
     return loadFallbackState();
@@ -95,7 +109,7 @@ export const loadState = async (): Promise<AppState> => {
  */
 const loadFallbackState = (): AppState => {
   console.warn('⚠️ 雲端資料不可用，使用預設資料');
-  return normalizeState();
+  return normalizeAppState();
 };
 
 export const subscribeState = (
@@ -109,7 +123,7 @@ export const subscribeState = (
       getStateRef(uid),
       (snapshot) => {
         if (snapshot.exists()) {
-          onStateChange(normalizeState(snapshot.data() as Partial<AppState>));
+          onStateChange(normalizeAppState(snapshot.data() as Partial<AppState>));
           return;
         }
 
@@ -131,7 +145,7 @@ export const subscribeState = (
 export const saveState = async (state: AppState): Promise<SaveResult> => {
   try {
     const uid = getCurrentUid();
-    await setDoc(getStateRef(uid), normalizeState(state));
+    await setDoc(getStateRef(uid), normalizeAppState(state));
 
     return { success: true, storageWarning: false };
   } catch (err) {
@@ -206,7 +220,7 @@ export const exportAllData = async (): Promise<string> => {
     {
       ...state,
       exportedAt: new Date().toISOString(),
-      version: '3.0-cloud',
+      version: '4.0-cloud',
     },
     null,
     2,
@@ -215,5 +229,5 @@ export const exportAllData = async (): Promise<string> => {
 
 export const importAllData = async (jsonData: string): Promise<void> => {
   const data = JSON.parse(jsonData) as Partial<AppState>;
-  await saveState(normalizeState(data));
+  await saveState(normalizeAppState(data));
 };

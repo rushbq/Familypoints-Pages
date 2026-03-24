@@ -1,10 +1,31 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { ScoreItem, ScoreType, AppState, User, RewardItem } from '../types';
+import {
+  AppState,
+  DiscountCard,
+  GoalReward,
+  GoalRewardStatus,
+  RewardItem,
+  ScoreCategory,
+  ScoreItem,
+  ScoreType,
+  User,
+  UserRole,
+} from '../types';
 import { Card } from './ui/Card';
 import { Button } from './ui/Button';
 import { Icons } from './Icons';
 import { ConfirmationModal } from './ui/ConfirmationModal';
 import { getStorageInfo, cleanupOldRecords } from '../services/storageService';
+import {
+  formatGoalDateRange,
+  getGoalDisplayGroup,
+  getGoalRewardStatusLabel,
+  getScoreCategoryChipClassName,
+  getScoreCategoryLabel,
+  getTodayDateKey,
+  groupScoreItemsByCategory,
+  SCORE_CATEGORY_OPTIONS,
+} from '../services/familyUtils';
 
 interface SettingsPanelProps {
   appData: AppState;
@@ -12,6 +33,9 @@ interface SettingsPanelProps {
   onUpdateUsers: (users: User[]) => void;
   onImportData: (state: AppState) => void;
   onUpdateRewardItems: (items: RewardItem[]) => void; // 新增：更新獎勵函式
+  onUpdateGoalRewards: (updater: (items: GoalReward[]) => GoalReward[]) => void;
+  onUpdateDiscountCards: (updater: (items: DiscountCard[]) => DiscountCard[]) => void;
+  resolver: User;
 }
 
 /**
@@ -29,12 +53,22 @@ interface StorageInfo {
  * 設定面板元件
  * 提供家長管理評分項目、獎勵項目、使用者資料及資料備份
  */
-export const SettingsPanel: React.FC<SettingsPanelProps> = ({ appData, onUpdateItems, onUpdateUsers, onImportData, onUpdateRewardItems }) => {
+export const SettingsPanel: React.FC<SettingsPanelProps> = ({
+  appData,
+  onUpdateItems,
+  onUpdateUsers,
+  onImportData,
+  onUpdateRewardItems,
+  onUpdateGoalRewards,
+  onUpdateDiscountCards,
+  resolver,
+}) => {
   // --- 新增評分項目的暫存狀態 ---
   const [newItem, setNewItem] = useState<Partial<ScoreItem>>({
     label: '',
     points: 5,
     type: ScoreType.POSITIVE,
+    category: ScoreCategory.DAILY,
     icon: '⭐'
   });
 
@@ -43,6 +77,16 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({ appData, onUpdateI
     label: '',
     points: 30,
     icon: '🎁'
+  });
+
+  const childUsers = appData.users.filter((user) => user.role === UserRole.CHILD);
+  const childUserIdsKey = childUsers.map((user) => user.id).join('|');
+
+  const [newGoal, setNewGoal] = useState({
+    childId: childUsers[0]?.id ?? '',
+    startDate: getTodayDateKey(),
+    endDate: getTodayDateKey(),
+    targetText: '',
   });
 
   // --- 儲存空間資訊 ---
@@ -76,6 +120,15 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({ appData, onUpdateI
     loadStorageInfo();
   }, [appData]); // 當資料更新時重新載入
 
+  useEffect(() => {
+    if (!childUsers.length) return;
+
+    setNewGoal((prev) => {
+      const nextChildId = childUsers.some((user) => user.id === prev.childId) ? prev.childId : childUsers[0].id;
+      return nextChildId === prev.childId ? prev : { ...prev, childId: nextChildId };
+    });
+  }, [childUserIdsKey]);
+
   // === 評分項目邏輯 ===
   
   const handleDeleteScoreItem = (id: string) => {
@@ -98,11 +151,12 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({ appData, onUpdateI
       label: newItem.label,
       points: Number(newItem.points),
       type: newItem.type || ScoreType.POSITIVE,
+      category: newItem.category || ScoreCategory.DAILY,
       icon: newItem.icon
     };
 
     onUpdateItems([...appData.scoreItems, item]);
-    setNewItem({ label: '', points: 5, type: ScoreType.POSITIVE, icon: '⭐' });
+    setNewItem({ label: '', points: 5, type: ScoreType.POSITIVE, category: ScoreCategory.DAILY, icon: '⭐' });
   };
 
   // === 獎勵項目邏輯 (New) ===
@@ -131,6 +185,105 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({ appData, onUpdateI
 
     onUpdateRewardItems([...appData.rewardItems, item]);
     setNewReward({ label: '', points: 30, icon: '🎁' });
+  };
+
+  const handleAddGoalReward = () => {
+    if (!newGoal.childId || !newGoal.targetText.trim() || !newGoal.startDate || !newGoal.endDate) {
+      return;
+    }
+
+    if (newGoal.startDate > newGoal.endDate) {
+      setModalConfig({
+        isOpen: true,
+        title: '日期設定錯誤',
+        message: '起始日期不能晚於結束日期。',
+        isAlert: true,
+        variant: 'danger',
+      });
+      return;
+    }
+
+    const goal: GoalReward = {
+      id: Date.now().toString(),
+      childId: newGoal.childId,
+      targetText: newGoal.targetText.trim(),
+      startDate: newGoal.startDate,
+      endDate: newGoal.endDate,
+      status: GoalRewardStatus.ACTIVE,
+      createdAt: Date.now(),
+    };
+
+    onUpdateGoalRewards((items) => [...items, goal]);
+    setNewGoal({
+      childId: newGoal.childId,
+      startDate: getTodayDateKey(),
+      endDate: getTodayDateKey(),
+      targetText: '',
+    });
+  };
+
+  const handleResolveGoalReward = (goal: GoalReward, status: GoalRewardStatus.ACHIEVED | GoalRewardStatus.NOT_ACHIEVED) => {
+    const title = status === GoalRewardStatus.ACHIEVED ? '確認達成目標' : '確認未達成';
+    const message = status === GoalRewardStatus.ACHIEVED
+      ? '確認後會立即發放一張 5 折卡，且同一個目標只會發一次。'
+      : '確認後此目標會標記為未達成，不會發放 5 折卡。';
+
+    setModalConfig({
+      isOpen: true,
+      title,
+      message,
+      variant: status === GoalRewardStatus.ACHIEVED ? 'primary' : 'danger',
+      onConfirm: () => {
+        const resolvedAt = Date.now();
+        onUpdateGoalRewards((items) =>
+          items.map((item) =>
+            item.id === goal.id
+              ? {
+                  ...item,
+                  status,
+                  resolvedAt,
+                  resolvedById: resolver.id,
+                  resolvedByName: resolver.name,
+                }
+              : item,
+          ),
+        );
+
+        if (status === GoalRewardStatus.ACHIEVED) {
+          onUpdateDiscountCards((items) => {
+            if (items.some((card) => card.goalId === goal.id)) {
+              return items;
+            }
+
+            return [
+              ...items,
+              {
+                id: `card_${goal.id}`,
+                childId: goal.childId,
+                goalId: goal.id,
+                issuedAt: resolvedAt,
+                usedAt: null,
+                usedById: null,
+                usedByName: null,
+                usedOnRecordId: null,
+              },
+            ];
+          });
+        }
+      },
+    });
+  };
+
+  const handleDeleteGoalReward = (goalId: string) => {
+    setModalConfig({
+      isOpen: true,
+      title: '刪除目標',
+      message: '確定要刪除這個未判定目標嗎？刪除後無法復原。',
+      variant: 'danger',
+      onConfirm: () => {
+        onUpdateGoalRewards((items) => items.filter((item) => item.id !== goalId));
+      },
+    });
   };
 
   // === 使用者編輯邏輯 ===
@@ -249,9 +402,15 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({ appData, onUpdateI
     e.target.value = ''; // reset
   };
 
-  // 篩選出加分與扣分項目以便分開顯示
-  const positiveItems = appData.scoreItems.filter(i => i.type === ScoreType.POSITIVE);
-  const negativeItems = appData.scoreItems.filter(i => i.type === ScoreType.NEGATIVE);
+  // 篩選出加分與扣分項目以便分組顯示
+  const positiveItemsByCategory = groupScoreItemsByCategory(appData.scoreItems, ScoreType.POSITIVE);
+  const negativeItemsByCategory = groupScoreItemsByCategory(appData.scoreItems, ScoreType.NEGATIVE);
+  const today = getTodayDateKey();
+  const goalRewards = [...appData.goalRewards].sort((a, b) => b.createdAt - a.createdAt);
+  const activeGoals = goalRewards.filter((goal) => getGoalDisplayGroup(goal, today) === 'active');
+  const pendingGoals = goalRewards.filter((goal) => getGoalDisplayGroup(goal, today) === 'pending');
+  const achievedGoals = goalRewards.filter((goal) => getGoalDisplayGroup(goal, today) === 'achieved');
+  const notAchievedGoals = goalRewards.filter((goal) => getGoalDisplayGroup(goal, today) === 'notAchieved');
 
   return (
     <div className="space-y-12">
@@ -419,7 +578,7 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({ appData, onUpdateI
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         {/* 新增評分項目表單 */}
         <Card title="🔧 新增評分項目" className="lg:col-span-2 bg-nook-cream border-ac-brown/10">
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-6 items-end">
+            <div className="grid grid-cols-1 md:grid-cols-5 gap-6 items-end">
             <div className="col-span-1 md:col-span-2">
                 <label className="block text-sm font-bold text-nook-brown mb-2 ml-1">項目名稱</label>
                 <input 
@@ -450,6 +609,18 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({ appData, onUpdateI
                 <option value={ScoreType.NEGATIVE}>扣分項目 (-)</option>
                 </select>
             </div>
+            <div>
+                <label className="block text-sm font-bold text-nook-brown mb-2 ml-1">分類</label>
+                <select
+                value={newItem.category}
+                onChange={e => setNewItem({...newItem, category: Number(e.target.value) as ScoreCategory})}
+                className="w-full p-4 border-2 border-nook-brown/10 rounded-2xl focus:ring-4 focus:ring-nook-blue/20 focus:border-nook-blue outline-none bg-white text-nook-brown font-bold cursor-pointer"
+                >
+                {SCORE_CATEGORY_OPTIONS.map(option => (
+                  <option key={option.value} value={option.value}>{option.label}</option>
+                ))}
+                </select>
+            </div>
             </div>
             
             <div className="mt-6">
@@ -478,9 +649,29 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({ appData, onUpdateI
                 <h3 className="font-black text-nook-brown text-xl flex items-center justify-center gap-2"><Icons.Trophy className="text-nook-greenDark"/> 加分項目</h3>
             </div>
             <div className="space-y-3 h-96 overflow-y-auto pr-2 custom-scrollbar">
-                {positiveItems.map(item => (
-                    <ItemRow key={item.id} label={item.label} points={item.points} icon={item.icon} type={item.type} onDelete={() => handleDeleteScoreItem(item.id)} />
-                ))}
+                {SCORE_CATEGORY_OPTIONS.map(option => {
+                  const items = positiveItemsByCategory.get(option.value) ?? [];
+                  if (!items.length) return null;
+
+                  return (
+                    <div key={option.value} className="space-y-3">
+                      <div className={`px-4 py-2 rounded-2xl border-2 ${getScoreCategoryChipClassName(option.value)}`}>
+                        <span className="font-black">{option.label}</span>
+                      </div>
+                      {items.map(item => (
+                        <ItemRow
+                          key={item.id}
+                          label={item.label}
+                          points={item.points}
+                          icon={item.icon}
+                          type={item.type}
+                          category={item.category}
+                          onDelete={() => handleDeleteScoreItem(item.id)}
+                        />
+                      ))}
+                    </div>
+                  );
+                })}
             </div>
         </div>
 
@@ -490,14 +681,142 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({ appData, onUpdateI
                 <h3 className="font-black text-nook-brown text-xl flex items-center justify-center gap-2"><Icons.AlertCircle className="text-nook-red"/> 扣分項目</h3>
             </div>
             <div className="space-y-3 h-96 overflow-y-auto pr-2 custom-scrollbar">
-                {negativeItems.map(item => (
-                    <ItemRow key={item.id} label={item.label} points={item.points} icon={item.icon} type={item.type} onDelete={() => handleDeleteScoreItem(item.id)} />
-                ))}
+                {SCORE_CATEGORY_OPTIONS.map(option => {
+                  const items = negativeItemsByCategory.get(option.value) ?? [];
+                  if (!items.length) return null;
+
+                  return (
+                    <div key={option.value} className="space-y-3">
+                      <div className={`px-4 py-2 rounded-2xl border-2 ${getScoreCategoryChipClassName(option.value)}`}>
+                        <span className="font-black">{option.label}</span>
+                      </div>
+                      {items.map(item => (
+                        <ItemRow
+                          key={item.id}
+                          label={item.label}
+                          points={item.points}
+                          icon={item.icon}
+                          type={item.type}
+                          category={item.category}
+                          onDelete={() => handleDeleteScoreItem(item.id)}
+                        />
+                      ))}
+                    </div>
+                  );
+                })}
             </div>
         </div>
       </div>
 
-      {/* 4. 獎勵項目管理 (New) */}
+      {/* 4. 目標獎勵管理 */}
+      <Card title="🎯 目標獎勵管理" className="bg-[#FFF7D7] border-nook-yellow/40">
+          <div className="grid grid-cols-1 lg:grid-cols-5 gap-6 items-end mb-8">
+            <div>
+              <label className="block text-sm font-bold text-nook-brown mb-2 ml-1">孩子</label>
+              <select
+                value={newGoal.childId}
+                onChange={(e) => setNewGoal({ ...newGoal, childId: e.target.value })}
+                className="w-full p-4 border-2 border-nook-brown/10 rounded-2xl focus:ring-4 focus:ring-nook-yellow/30 focus:border-nook-orange outline-none bg-white text-nook-brown font-bold cursor-pointer"
+              >
+                {childUsers.map((child) => (
+                  <option key={child.id} value={child.id}>{child.name}</option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-bold text-nook-brown mb-2 ml-1">開始日期</label>
+              <input
+                type="date"
+                value={newGoal.startDate}
+                onChange={(e) => setNewGoal({ ...newGoal, startDate: e.target.value })}
+                className="w-full p-4 border-2 border-nook-brown/10 rounded-2xl focus:ring-4 focus:ring-nook-yellow/30 focus:border-nook-orange outline-none bg-white text-nook-brown font-bold"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-bold text-nook-brown mb-2 ml-1">結束日期</label>
+              <input
+                type="date"
+                value={newGoal.endDate}
+                onChange={(e) => setNewGoal({ ...newGoal, endDate: e.target.value })}
+                className="w-full p-4 border-2 border-nook-brown/10 rounded-2xl focus:ring-4 focus:ring-nook-yellow/30 focus:border-nook-orange outline-none bg-white text-nook-brown font-bold"
+              />
+            </div>
+            <div className="lg:col-span-2">
+              <label className="block text-sm font-bold text-nook-brown mb-2 ml-1">目標內容</label>
+              <div className="flex flex-col md:flex-row gap-4">
+                <input
+                  type="text"
+                  value={newGoal.targetText}
+                  onChange={(e) => setNewGoal({ ...newGoal, targetText: e.target.value })}
+                  className="flex-1 p-4 border-2 border-nook-brown/10 rounded-2xl focus:ring-4 focus:ring-nook-yellow/30 focus:border-nook-orange outline-none bg-white text-nook-brown font-bold"
+                  placeholder="例如：這週每天主動整理書包"
+                />
+                <Button onClick={handleAddGoalReward} className="bg-nook-orange text-white border-nook-orangeDark hover:bg-nook-orange/90" icon={<Icons.Plus size={20} />}>
+                  新增目標
+                </Button>
+              </div>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+            <GoalSection
+              title="進行中"
+              goals={activeGoals}
+              users={appData.users}
+              appData={appData}
+              emptyText="目前沒有進行中的目標"
+              actionRenderer={(goal) => (
+                <>
+                  <Button size="sm" variant="primary" onClick={() => handleResolveGoalReward(goal, GoalRewardStatus.ACHIEVED)}>
+                    標記達成
+                  </Button>
+                  <Button size="sm" variant="danger" onClick={() => handleResolveGoalReward(goal, GoalRewardStatus.NOT_ACHIEVED)}>
+                    標記未達成
+                  </Button>
+                  <Button size="sm" variant="ghost" onClick={() => handleDeleteGoalReward(goal.id)}>
+                    刪除
+                  </Button>
+                </>
+              )}
+            />
+            <GoalSection
+              title="已截止待判定"
+              goals={pendingGoals}
+              users={appData.users}
+              appData={appData}
+              emptyText="目前沒有待判定目標"
+              actionRenderer={(goal) => (
+                <>
+                  <Button size="sm" variant="primary" onClick={() => handleResolveGoalReward(goal, GoalRewardStatus.ACHIEVED)}>
+                    標記達成
+                  </Button>
+                  <Button size="sm" variant="danger" onClick={() => handleResolveGoalReward(goal, GoalRewardStatus.NOT_ACHIEVED)}>
+                    標記未達成
+                  </Button>
+                  <Button size="sm" variant="ghost" onClick={() => handleDeleteGoalReward(goal.id)}>
+                    刪除
+                  </Button>
+                </>
+              )}
+            />
+            <GoalSection
+              title="已達成"
+              goals={achievedGoals}
+              users={appData.users}
+              appData={appData}
+              emptyText="目前沒有已達成目標"
+            />
+            <GoalSection
+              title="未達成"
+              goals={notAchievedGoals}
+              users={appData.users}
+              appData={appData}
+              emptyText="目前沒有未達成目標"
+            />
+          </div>
+      </Card>
+
+      {/* 5. 獎勵項目管理 (New) */}
       <Card title="🎁 獎勵兌換項目管理" className="bg-[#F3E8FF] border-[#D8B4FE]">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-6 items-end mb-8">
             <div className="col-span-1 md:col-span-2">
@@ -595,10 +914,11 @@ interface ItemRowProps {
   points: number;
   icon?: string;
   type?: ScoreType;
+  category?: ScoreCategory;
   onDelete: () => void;
 }
 
-const ItemRow: React.FC<ItemRowProps> = ({ label, points, icon, type, onDelete }) => (
+const ItemRow: React.FC<ItemRowProps> = ({ label, points, icon, type, category, onDelete }) => (
   <div className="flex items-center justify-between p-4 bg-white rounded-[1.5rem] border-2 border-nook-brown/5 hover:border-nook-brown/20 transition-all shadow-sm group">
     <div className="flex items-center gap-4">
       <div className="w-12 h-12 bg-nook-beige rounded-2xl flex items-center justify-center text-2xl group-hover:scale-110 transition-transform">
@@ -606,8 +926,15 @@ const ItemRow: React.FC<ItemRowProps> = ({ label, points, icon, type, onDelete }
       </div>
       <div>
         <div className="font-bold text-nook-brown text-lg">{label}</div>
-        <div className={`text-xs font-black px-2 py-0.5 rounded-full inline-block ${type === ScoreType.POSITIVE ? 'bg-nook-green/20 text-nook-greenDark' : 'bg-nook-red/20 text-nook-red'}`}>
-          {type === ScoreType.POSITIVE ? '+' : '-'}{points}
+        <div className="flex flex-wrap items-center gap-2 mt-1">
+          <div className={`text-xs font-black px-2 py-0.5 rounded-full inline-block ${type === ScoreType.POSITIVE ? 'bg-nook-green/20 text-nook-greenDark' : 'bg-nook-red/20 text-nook-red'}`}>
+            {type === ScoreType.POSITIVE ? '+' : '-'}{points}
+          </div>
+          {category && (
+            <div className={`text-xs font-black px-2 py-0.5 rounded-full border inline-block ${getScoreCategoryChipClassName(category)}`}>
+              {getScoreCategoryLabel(category)}
+            </div>
+          )}
         </div>
       </div>
     </div>
@@ -621,5 +948,71 @@ const ItemRow: React.FC<ItemRowProps> = ({ label, points, icon, type, onDelete }
     >
       <Icons.Trash2 size={20} />
     </button>
+  </div>
+);
+
+interface GoalSectionProps {
+  title: string;
+  goals: GoalReward[];
+  users: User[];
+  appData: AppState;
+  emptyText: string;
+  actionRenderer?: (goal: GoalReward) => React.ReactNode;
+}
+
+const GoalSection: React.FC<GoalSectionProps> = ({ title, goals, users, appData, emptyText, actionRenderer }) => (
+  <div className="space-y-4">
+    <div className="bg-white/70 p-4 rounded-[2rem] border-2 border-white shadow-sm">
+      <div className="flex items-center justify-between gap-3">
+        <h3 className="font-black text-nook-brown text-xl">{title}</h3>
+        <span className="text-xs font-black text-nook-brown/50 bg-nook-beige px-3 py-1 rounded-full">{goals.length} 筆</span>
+      </div>
+    </div>
+
+    <div className="space-y-3 max-h-[28rem] overflow-y-auto pr-2 custom-scrollbar">
+      {goals.map((goal) => {
+        const child = users.find((user) => user.id === goal.childId);
+        const linkedCardCount = appData.discountCards.filter((card) => card.goalId === goal.id).length;
+
+        return (
+          <div key={goal.id} className="p-4 bg-white rounded-[1.75rem] border-2 border-nook-brown/5 shadow-sm">
+            <div className="flex flex-wrap items-center gap-2 mb-3">
+              <span className="text-sm font-black px-3 py-1 rounded-full bg-nook-blue/10 text-nook-blueDark">
+                {child?.name ?? '未指定孩子'}
+              </span>
+              <span className="text-xs font-black px-3 py-1 rounded-full bg-nook-yellow/20 text-nook-orangeDark">
+                {getGoalRewardStatusLabel(goal.status)}
+              </span>
+              {linkedCardCount > 0 && (
+                <span className="text-xs font-black px-3 py-1 rounded-full bg-[#F3E8FF] text-[#7C3AED]">
+                  已發 5 折卡
+                </span>
+              )}
+            </div>
+
+            <p className="font-bold text-nook-brown text-lg leading-relaxed">{goal.targetText}</p>
+            <p className="text-sm font-bold text-nook-brown/50 mt-2">{formatGoalDateRange(goal)}</p>
+
+            {goal.resolvedByName && (
+              <p className="text-xs font-bold text-nook-brown/40 mt-2">
+                判定者：{goal.resolvedByName}
+              </p>
+            )}
+
+            {actionRenderer && (
+              <div className="flex flex-wrap gap-2 mt-4">
+                {actionRenderer(goal)}
+              </div>
+            )}
+          </div>
+        );
+      })}
+
+      {goals.length === 0 && (
+        <div className="text-center py-10 rounded-[2rem] border-2 border-dashed border-nook-brown/10 bg-white/50 text-nook-brown/40 font-bold">
+          {emptyText}
+        </div>
+      )}
+    </div>
   </div>
 );

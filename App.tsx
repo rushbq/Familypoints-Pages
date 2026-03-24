@@ -1,7 +1,16 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { onAuthStateChanged, signOut, User as FirebaseUser } from 'firebase/auth';
-import { saveState, SaveResult, subscribeState } from './services/storageService';
-import { AppState, ScoreItem, ScoreRecord, SecretMessage, User, RewardItem } from './types';
+import { normalizeAppState, saveState, SaveResult, subscribeState } from './services/storageService';
+import {
+  AppState,
+  DiscountCard,
+  GoalReward,
+  RewardItem,
+  ScoreItem,
+  ScoreRecord,
+  SecretMessage,
+  User,
+} from './types';
 import { RoleSelector } from './components/RoleSelector';
 import { Dashboard } from './components/Dashboard';
 import { CloudLogin } from './components/CloudLogin';
@@ -115,58 +124,65 @@ const App: React.FC = () => {
     setCurrentUser(null);
   };
 
-  const handleAddRecord = (record: Omit<ScoreRecord, 'id' | 'timestamp'>) => {
-    if (!data) return;
+  const handleAddRecord = (record: Omit<ScoreRecord, 'id' | 'timestamp'>): ScoreRecord | null => {
+    if (!data) return null;
     const newRecord: ScoreRecord = {
       ...record,
       id: Date.now().toString(),
       timestamp: Date.now()
     };
-    setData({
-      ...data,
-      records: [...data.records, newRecord]
-    });
+    setData((prev) => (prev ? {
+      ...prev,
+      records: [...prev.records, newRecord]
+    } : prev));
+    return newRecord;
   };
 
   const handleUpdateItems = (items: ScoreItem[]) => {
-    if (!data) return;
-    setData({ ...data, scoreItems: items });
+    setData((prev) => (prev ? { ...prev, scoreItems: items } : prev));
   };
 
   const handleUpdateRewardItems = (items: RewardItem[]) => {
-    if (!data) return;
-    setData({ ...data, rewardItems: items });
+    setData((prev) => (prev ? { ...prev, rewardItems: items } : prev));
   };
 
   const handleUpdateUsers = (users: User[]) => {
-    if (!data) return;
-    setData({ ...data, users: users });
-  }
+    setData((prev) => (prev ? { ...prev, users } : prev));
+  };
+
+  const handleUpdateGoalRewards = (updater: (items: GoalReward[]) => GoalReward[]) => {
+    setData((prev) => (prev ? { ...prev, goalRewards: updater(prev.goalRewards) } : prev));
+  };
+
+  const handleUpdateDiscountCards = (updater: (items: DiscountCard[]) => DiscountCard[]) => {
+    setData((prev) => (prev ? { ...prev, discountCards: updater(prev.discountCards) } : prev));
+  };
 
   const handleImportData = (newData: AppState) => {
-    setData(newData);
-  }
+    setData(normalizeAppState(newData));
+  };
 
   const handleSendMessage = (msg: Omit<SecretMessage, 'id' | 'timestamp' | 'isRead'>) => {
-    if (!data) return;
     const newMessage: SecretMessage = {
       ...msg,
       id: Date.now().toString(),
       timestamp: Date.now(),
       isRead: false
     };
-    setData({
-      ...data,
-      messages: [...data.messages, newMessage]
-    });
+    setData((prev) => (prev ? {
+      ...prev,
+      messages: [...prev.messages, newMessage]
+    } : prev));
   };
 
   const handleMarkMessageRead = (id: string) => {
-    if (!data) return;
-    const updatedMessages = data.messages.map(m => 
-      m.id === id ? { ...m, isRead: true } : m
-    );
-    setData({ ...data, messages: updatedMessages });
+    setData((prev) => {
+      if (!prev) return prev;
+      const updatedMessages = prev.messages.map(m => 
+        m.id === id ? { ...m, isRead: true } : m
+      );
+      return { ...prev, messages: updatedMessages };
+    });
   };
 
   // --- 渲染邏輯 ---
@@ -251,6 +267,8 @@ const App: React.FC = () => {
         onUpdateUsers={handleUpdateUsers}
         onImportData={handleImportData}
         onUpdateRewardItems={handleUpdateRewardItems}
+        onUpdateGoalRewards={handleUpdateGoalRewards}
+        onUpdateDiscountCards={handleUpdateDiscountCards}
         cloudEmail={cloudUser.email || '已登入雲端帳號'}
         onCloudLogout={handleCloudLogout}
       />

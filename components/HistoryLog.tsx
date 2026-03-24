@@ -1,6 +1,7 @@
 import React from 'react';
 import { ScoreRecord } from '../types';
 import { Icons } from './Icons';
+import { getScoreCategoryChipClassName, getScoreCategoryLabel } from '../services/familyUtils';
 
 interface HistoryLogProps {
   records: ScoreRecord[];
@@ -56,6 +57,11 @@ export const HistoryLog: React.FC<HistoryLogProps> = ({ records, showAll }) => {
                 <span className={`text-xs font-bold px-2 py-0.5 rounded-full text-white ${record.pointsChange > 0 ? 'bg-nook-green/60' : 'bg-nook-red/60'}`}>
                     {record.childName}
                 </span>
+                {record.scoreCategory && (
+                  <span className={`text-xs font-black px-2 py-0.5 rounded-full border ${getScoreCategoryChipClassName(record.scoreCategory)}`}>
+                    {getScoreCategoryLabel(record.scoreCategory)}
+                  </span>
+                )}
                 <span className="text-xs font-bold text-nook-brown/40">by {record.createdByName}</span>
              </div>
              

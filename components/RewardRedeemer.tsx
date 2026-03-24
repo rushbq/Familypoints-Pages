@@ -1,27 +1,60 @@
-import React, { useState } from 'react';
-import { RewardItem } from '../types';
+import React, { useEffect, useState } from 'react';
+import { DiscountCard, RewardItem } from '../types';
 import { Icons } from './Icons';
 import { Button } from './ui/Button';
 import { ConfirmationModal } from './ui/ConfirmationModal';
+import { getDiscountedRewardCost } from '../services/familyUtils';
 
 interface RewardRedeemerProps {
   isOpen: boolean;                  // 是否開啟視窗
   onClose: () => void;              // 關閉視窗函式
-  onSubmit: (itemId: string) => void; // 確認兌換函式
+  onSubmit: (itemId: string, useDiscountCard: boolean) => void; // 確認兌換函式
   items: RewardItem[];              // 獎勵項目列表
   currentScore: number;             // 目前該使用者的分數
   targetChildName: string;          // 目標使用者名稱
+  availableDiscountCards: DiscountCard[];
 }
 
 /**
  * 獎勵兌換視窗元件
  * 類似動森的「哩數兌換」介面
  */
-export const RewardRedeemer: React.FC<RewardRedeemerProps> = ({ isOpen, onClose, onSubmit, items, currentScore, targetChildName }) => {
+export const RewardRedeemer: React.FC<RewardRedeemerProps> = ({
+  isOpen,
+  onClose,
+  onSubmit,
+  items,
+  currentScore,
+  targetChildName,
+  availableDiscountCards,
+}) => {
   const [selectedItemId, setSelectedItemId] = useState<string | null>(null);
-  
-  // 新增：控制確認對話框的狀態
   const [showConfirm, setShowConfirm] = useState(false);
+  const [useDiscountCard, setUseDiscountCard] = useState(false);
+  const hasDiscountCards = availableDiscountCards.length > 0;
+
+  useEffect(() => {
+    if (!isOpen) return;
+
+    setSelectedItemId(null);
+    setShowConfirm(false);
+    setUseDiscountCard(false);
+  }, [isOpen, targetChildName]);
+
+  useEffect(() => {
+    if (!selectedItemId) return;
+
+    const selected = items.find((item) => item.id === selectedItemId);
+    if (!selected) {
+      setSelectedItemId(null);
+      return;
+    }
+
+    const cost = useDiscountCard && hasDiscountCards ? getDiscountedRewardCost(selected.points) : selected.points;
+    if (currentScore < cost) {
+      setSelectedItemId(null);
+    }
+  }, [currentScore, hasDiscountCards, items, selectedItemId, useDiscountCard]);
 
   if (!isOpen) return null;
 
@@ -33,12 +66,15 @@ export const RewardRedeemer: React.FC<RewardRedeemerProps> = ({ isOpen, onClose,
 
   const handleConfirmRedeem = () => {
     if (selectedItemId) {
-      onSubmit(selectedItemId);
+      onSubmit(selectedItemId, useDiscountCard && hasDiscountCards);
       setShowConfirm(false);
     }
   };
 
   const selectedItem = items.find(i => i.id === selectedItemId);
+  const selectedCost = selectedItem
+    ? (useDiscountCard && hasDiscountCards ? getDiscountedRewardCost(selectedItem.points) : selectedItem.points)
+    : 0;
 
   return (
     <>
@@ -59,6 +95,9 @@ export const RewardRedeemer: React.FC<RewardRedeemerProps> = ({ isOpen, onClose,
                   <p className="font-bold opacity-80 text-lg">
                       {targetChildName} 目前持有：<span className="text-yellow-300 text-xl">{currentScore}</span> 分
                   </p>
+                  <p className="font-bold opacity-80 text-sm mt-1">
+                      可用 5 折卡：<span className="text-yellow-300 text-lg">{availableDiscountCards.length}</span> 張
+                  </p>
               </div>
             </div>
             <button onClick={onClose} className="bg-white/20 hover:bg-white/40 p-3 rounded-full transition-colors">
@@ -68,11 +107,35 @@ export const RewardRedeemer: React.FC<RewardRedeemerProps> = ({ isOpen, onClose,
 
           {/* 獎勵列表內容區 */}
           <div className="p-8 overflow-y-auto flex-1 bg-nook-beige/30">
+            <div className="mb-6 p-5 rounded-[2rem] border-2 border-white bg-white/70">
+              <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                <div>
+                  <p className="font-black text-nook-brown text-lg">5 折卡</p>
+                  <p className="text-sm font-bold text-nook-brown/60">
+                    使用後，這次兌換成本會變成原價的一半，奇數時無條件進位。
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  disabled={!hasDiscountCards}
+                  onClick={() => hasDiscountCards && setUseDiscountCard((prev) => !prev)}
+                  className={`px-5 py-3 rounded-full border-2 font-black transition-all ${
+                    useDiscountCard && hasDiscountCards
+                      ? 'bg-[#A88BFA] text-white border-[#8B5CF6]'
+                      : hasDiscountCards
+                        ? 'bg-white text-nook-brown border-nook-brown/10 hover:border-nook-brown/30'
+                        : 'bg-nook-brown/5 text-nook-brown/30 border-transparent cursor-not-allowed'
+                  }`}
+                >
+                  {hasDiscountCards ? (useDiscountCard ? '本次兌換使用 5 折卡' : '切換成使用 5 折卡') : '目前沒有 5 折卡'}
+                </button>
+              </div>
+            </div>
             
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 mb-8">
               {items.map(item => {
-                // 檢查分數是否足夠
-                const canAfford = currentScore >= item.points;
+                const finalCost = useDiscountCard && hasDiscountCards ? getDiscountedRewardCost(item.points) : item.points;
+                const canAfford = currentScore >= finalCost;
 
                 return (
                   <button
@@ -89,7 +152,7 @@ export const RewardRedeemer: React.FC<RewardRedeemerProps> = ({ isOpen, onClose,
                   >
                     {/* 價格標籤 */}
                     <div className={`absolute top-3 right-3 px-3 py-1 rounded-full text-white font-black text-sm bg-nook-orange shadow-sm`}>
-                        {item.points} pt
+                        {finalCost} pt
                     </div>
 
                     {/* 圖示 */}
@@ -98,9 +161,16 @@ export const RewardRedeemer: React.FC<RewardRedeemerProps> = ({ isOpen, onClose,
                     </div>
                     
                     {/* 名稱 */}
-                    <span className="font-bold text-nook-brown text-center leading-tight w-full line-clamp-2 mt-2 text-lg">
-                        {item.label}
-                    </span>
+                    <div className="w-full mt-2">
+                      <span className="font-bold text-nook-brown text-center leading-tight w-full line-clamp-2 text-lg block">
+                          {item.label}
+                      </span>
+                      {useDiscountCard && hasDiscountCards && (
+                        <span className="text-xs font-bold text-nook-brown/40 mt-1 block text-center">
+                          原價 {item.points} pt
+                        </span>
+                      )}
+                    </div>
 
                     {/* 選中標記 */}
                     {selectedItemId === item.id && (
@@ -144,7 +214,7 @@ export const RewardRedeemer: React.FC<RewardRedeemerProps> = ({ isOpen, onClose,
         onClose={() => setShowConfirm(false)}
         onConfirm={handleConfirmRedeem}
         title="兌換確認"
-        message={`確定要花費 ${selectedItem?.points} 積分來兌換「${selectedItem?.label}」嗎？`}
+        message={`確定要兌換「${selectedItem?.label}」嗎？\n原價：${selectedItem?.points ?? 0} 分\n實付：${selectedCost} 分${useDiscountCard && hasDiscountCards ? '\n本次會消耗 1 張 5 折卡。' : ''}`}
         confirmText="沒問題！"
         cancelText="再想想"
       />

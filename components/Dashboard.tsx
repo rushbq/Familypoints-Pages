@@ -1,5 +1,17 @@
 import React, { useState } from 'react';
-import { User, UserRole, AppState, ScoreItem, ScoreRecord, SecretMessage } from '../types';
+import {
+  AppState,
+  DiscountCard,
+  GoalReward,
+  RewardItem,
+  ScoreCategory,
+  ScoreItem,
+  ScoreRecord,
+  ScoreType,
+  SecretMessage,
+  User,
+  UserRole,
+} from '../types';
 import { Button } from './ui/Button';
 import { Icons } from './Icons';
 import { calculateScore } from '../services/storageService';
@@ -11,18 +23,32 @@ import { HistoryLog } from './HistoryLog';
 import { ActionLogger } from './ActionLogger';
 import { SettingsPanel } from './SettingsPanel';
 import { RewardRedeemer } from './RewardRedeemer';
+import {
+  formatGoalDateRange,
+  getDiscountedRewardCost,
+  getScoreCategoryChipClassName,
+  getScoreCategoryLabel,
+  getTodayDateKey,
+  getUnusedDiscountCards,
+  groupScoreItemsByCategory,
+  isGoalPendingDecision,
+  isGoalWithinActiveWindow,
+  SCORE_CATEGORY_OPTIONS,
+} from '../services/familyUtils';
 
 interface DashboardProps {
   currentUser: User;
   data: AppState;
   onLogout: () => void;
-  onAddRecord: (record: Omit<ScoreRecord, 'id' | 'timestamp'>) => void;
+  onAddRecord: (record: Omit<ScoreRecord, 'id' | 'timestamp'>) => ScoreRecord | null;
   onUpdateItems: (items: ScoreItem[]) => void;
   onSendMessage: (msg: Omit<SecretMessage, 'id' | 'timestamp' | 'isRead'>) => void;
   onMarkMessageRead: (id: string) => void;
   onUpdateUsers: (users: User[]) => void;
   onImportData: (state: AppState) => void;
-  onUpdateRewardItems: (items: any[]) => void;
+  onUpdateRewardItems: (items: RewardItem[]) => void;
+  onUpdateGoalRewards: (updater: (items: GoalReward[]) => GoalReward[]) => void;
+  onUpdateDiscountCards: (updater: (items: DiscountCard[]) => DiscountCard[]) => void;
   cloudEmail: string;
   onCloudLogout: () => void;
 }
@@ -40,6 +66,8 @@ export const Dashboard: React.FC<DashboardProps> = ({
   onUpdateUsers,
   onImportData,
   onUpdateRewardItems,
+  onUpdateGoalRewards,
+  onUpdateDiscountCards,
   cloudEmail,
   onCloudLogout,
 }) => {
@@ -58,6 +86,11 @@ export const Dashboard: React.FC<DashboardProps> = ({
     user: child,
     score: calculateScore(child.id, data.records),
   }));
+  const today = getTodayDateKey();
+  const visibleChildIds = new Set(visibleChildren.map((child) => child.id));
+  const visibleGoals = data.goalRewards.filter((goal) => visibleChildIds.has(goal.childId));
+  const activeGoalReminders = visibleGoals.filter((goal) => isGoalWithinActiveWindow(goal, today));
+  const pendingGoalReminders = visibleGoals.filter((goal) => isGoalPendingDecision(goal, today));
 
   // 色彩主題輪替
   const colorThemes: Array<'blue' | 'green'> = ['blue', 'green'];
@@ -96,6 +129,15 @@ export const Dashboard: React.FC<DashboardProps> = ({
                 </div>
             </div>
 
+            {isParent && (
+              <ParentGoalReminderSection
+                goals={activeGoalReminders}
+                pendingGoals={pendingGoalReminders}
+                users={data.users}
+                discountCards={data.discountCards}
+              />
+            )}
+
             {/* 成員積分卡片區塊 - 動態渲染 */}
             <div className={`grid gap-6 md:gap-8 ${visibleChildren.length === 1 ? 'grid-cols-1 max-w-lg mx-auto' : 'grid-cols-1 md:grid-cols-2'}`}>
               {childScores.map((cs, idx) => (
@@ -108,6 +150,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
                   onRedeem={() => setIsRedeemingReward({ childId: cs.user.id })}
                   canManageScoreActions={isParent}
                   colorTheme={colorThemes[idx % colorThemes.length]}
+                  availableDiscountCardCount={getUnusedDiscountCards(data.discountCards, cs.user.id).length}
                 />
               ))}
             </div>
@@ -132,6 +175,9 @@ export const Dashboard: React.FC<DashboardProps> = ({
                   records={data.records}
                   score={childScores[0]?.score ?? 0}
                   rewardItems={data.rewardItems}
+                  scoreItems={data.scoreItems}
+                  goalRewards={activeGoalReminders.filter((goal) => goal.childId === currentUser.id)}
+                  availableDiscountCardCount={getUnusedDiscountCards(data.discountCards, currentUser.id).length}
                 />
              )}
           </div>
@@ -184,6 +230,9 @@ export const Dashboard: React.FC<DashboardProps> = ({
             onUpdateUsers={onUpdateUsers}
             onImportData={onImportData}
             onUpdateRewardItems={onUpdateRewardItems}
+            onUpdateGoalRewards={onUpdateGoalRewards}
+            onUpdateDiscountCards={onUpdateDiscountCards}
+            resolver={currentUser}
           />
         ) : <div className="p-12 md:p-20 text-center font-bold text-nook-brown/50 text-lg md:text-xl">🚧 施工中，閒人勿進！ 🚧</div>;
       default:
@@ -194,7 +243,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
   /**
    * 處理加/扣分提交
    */
-  const handleActionSubmit = (itemId: string, note?: string, customPoints?: number) => {
+  const handleActionSubmit = (itemId: string, note?: string, customPoints?: number, category?: ScoreCategory) => {
     if (!isParent || !loggingAction) return;
     const child = data.users.find(u => u.id === loggingAction.childId);
 
@@ -206,6 +255,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
         itemId: '__custom__',
         itemName: '其它',
         pointsChange: loggingAction.type === 'POSITIVE' ? customPoints : -customPoints,
+        scoreCategory: category ?? ScoreCategory.DAILY,
         note,
         createdById: currentUser.id,
         createdByName: currentUser.name
@@ -223,6 +273,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
       itemId: item.id,
       itemName: item.label,
       pointsChange: item.type === 'POSITIVE' ? item.points : -item.points,
+      scoreCategory: item.category,
       note,
       createdById: currentUser.id,
       createdByName: currentUser.name
@@ -233,25 +284,45 @@ export const Dashboard: React.FC<DashboardProps> = ({
   /**
    * 處理獎勵兌換提交
    */
-  const handleRedeemSubmit = (itemId: string) => {
+  const handleRedeemSubmit = (itemId: string, useDiscountCard: boolean) => {
     if (!redeemingReward) return;
     const reward = data.rewardItems.find(r => r.id === itemId);
     if (!reward) return;
 
     const child = data.users.find(u => u.id === redeemingReward.childId);
+    const availableCards = getUnusedDiscountCards(data.discountCards, redeemingReward.childId);
+    const cardToUse = useDiscountCard ? availableCards[0] : undefined;
+    const finalCost = cardToUse ? getDiscountedRewardCost(reward.points) : reward.points;
 
-    onAddRecord({
+    const record = onAddRecord({
         childId: redeemingReward.childId,
         childName: child?.name || 'Unknown',
         itemId: reward.id,
         itemName: `兌換：${reward.label}`,
-        pointsChange: -reward.points,
-        note: '獎勵兌換',
+        pointsChange: -finalCost,
+        scoreCategory: null,
+        note: `獎勵兌換｜原價 ${reward.points} 分｜實付 ${finalCost} 分｜${cardToUse ? '使用 5 折卡' : '未使用 5 折卡'}`,
         createdById: currentUser.id,
         createdByName: currentUser.name
     });
+
+    if (record && cardToUse) {
+      onUpdateDiscountCards((items) =>
+        items.map((item) =>
+          item.id === cardToUse.id
+            ? {
+                ...item,
+                usedAt: Date.now(),
+                usedById: currentUser.id,
+                usedByName: currentUser.name,
+                usedOnRecordId: record.id,
+              }
+            : item,
+        ),
+      );
+    }
     setIsRedeemingReward(null);
-  }
+  };
 
   // 計算兌換時的目前分數
   const getRedeemScore = (childId: string) => {
@@ -264,24 +335,21 @@ export const Dashboard: React.FC<DashboardProps> = ({
       <aside className="hidden md:flex w-24 lg:w-80 bg-nook-cream border-r-8 border-white flex-col flex-shrink-0 z-20 shadow-xl relative">
         <div className="h-6 w-24 bg-nook-beige absolute top-2 left-1/2 -translate-x-1/2 rounded-full hidden lg:block"></div>
 
-        <div className="p-4 lg:p-8 mt-4 flex items-center justify-center lg:justify-start">
+        <button
+          type="button"
+          onClick={() => setActiveTab('overview')}
+          className="p-4 lg:p-8 mt-4 flex items-center justify-center lg:justify-start text-left hover:scale-[1.01] transition-transform"
+        >
            <div className="w-12 h-12 lg:w-14 lg:h-14 bg-nook-green text-white rounded-[1.5rem] flex items-center justify-center shadow-[0_4px_0_0_#5EBA9A] border-2 border-white transform -rotate-6">
              <Icons.Leaf size={32} />
            </div>
            <div className="hidden lg:block ml-4">
-             <h1 className="font-black text-2xl text-nook-brown leading-none">Home</h1>
-             <span className="text-nook-brown/60 font-bold text-sm tracking-widest">SYSTEM</span>
+             <h1 className="font-black text-2xl text-nook-brown leading-none">Sweet Home</h1>
+             <span className="text-nook-brown/60 font-bold text-sm tracking-widest">DASHBOARD</span>
            </div>
-        </div>
+        </button>
         
         <nav className="flex-1 px-2 lg:px-4 py-2 space-y-4 overflow-y-auto no-scrollbar">
-          <NavItem 
-            active={activeTab === 'overview'} 
-            onClick={() => setActiveTab('overview')} 
-            icon={<Icons.Home size={24} />} 
-            label="首頁" 
-            bgColor="bg-nook-orange"
-          />
           <NavItem 
             active={activeTab === 'log'} 
             onClick={() => setActiveTab('log')} 
@@ -438,6 +506,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
             items={data.rewardItems}
             currentScore={getRedeemScore(redeemingReward.childId)}
             targetChildName={data.users.find(u => u.id === redeemingReward.childId)?.name || ''}
+            availableDiscountCards={getUnusedDiscountCards(data.discountCards, redeemingReward.childId)}
           />
       )}
     </div>
@@ -524,11 +593,85 @@ const getEncouragement = (score: number): string => {
   return msgs[dayIndex];
 };
 
-const ChildOverviewSection = ({ currentUser, records, score, rewardItems }: {
+const ParentGoalReminderSection = ({
+  goals,
+  pendingGoals,
+  users,
+  discountCards,
+}: {
+  goals: GoalReward[];
+  pendingGoals: GoalReward[];
+  users: User[];
+  discountCards: DiscountCard[];
+}) => {
+  if (goals.length === 0 && pendingGoals.length === 0) {
+    return null;
+  }
+
+  const renderGoalCard = (goal: GoalReward, tone: 'active' | 'pending') => {
+    const child = users.find((user) => user.id === goal.childId);
+    const hasIssuedCard = discountCards.some((card) => card.goalId === goal.id);
+
+    return (
+      <div
+        key={goal.id}
+        className={`p-4 rounded-[1.75rem] border-2 ${
+          tone === 'pending'
+            ? 'bg-nook-red/10 border-nook-red/20'
+            : 'bg-white border-white'
+        }`}
+      >
+        <div className="flex flex-wrap items-center gap-2 mb-2">
+          <span className="text-sm font-black px-3 py-1 rounded-full bg-nook-blue/10 text-nook-blueDark">
+            {child?.name ?? '未指定孩子'}
+          </span>
+          <span className="text-xs font-black px-3 py-1 rounded-full bg-nook-yellow/20 text-nook-orangeDark">
+            {tone === 'pending' ? '已截止待判定' : '進行中提醒'}
+          </span>
+          {hasIssuedCard && (
+            <span className="text-xs font-black px-3 py-1 rounded-full bg-[#F3E8FF] text-[#7C3AED]">
+              已發 5 折卡
+            </span>
+          )}
+        </div>
+        <p className="font-bold text-nook-brown leading-relaxed">{goal.targetText}</p>
+        <p className="text-xs font-bold text-nook-brown/50 mt-2">{formatGoalDateRange(goal)}</p>
+      </div>
+    );
+  };
+
+  return (
+    <Card className="border-4 border-white bg-white/70">
+      <div className="flex items-center mb-4 gap-2">
+        <div className="p-2 bg-nook-orange rounded-lg text-white"><Icons.Calendar size={20} /></div>
+        <h3 className="text-lg md:text-xl font-bold text-nook-brown">目標提醒</h3>
+      </div>
+      <div className="space-y-4">
+        {pendingGoals.length > 0 && (
+          <div className="space-y-3">
+            <p className="font-black text-nook-red">以下目標已超過截止日期，請家長判定是否達成。</p>
+            {pendingGoals.map((goal) => renderGoalCard(goal, 'pending'))}
+          </div>
+        )}
+        {goals.length > 0 && (
+          <div className="space-y-3">
+            <p className="font-black text-nook-brown/70">目前仍在進行中的目標：</p>
+            {goals.map((goal) => renderGoalCard(goal, 'active'))}
+          </div>
+        )}
+      </div>
+    </Card>
+  );
+};
+
+const ChildOverviewSection = ({ currentUser, records, score, rewardItems, scoreItems, goalRewards, availableDiscountCardCount }: {
   currentUser: User;
   records: ScoreRecord[];
   score: number;
   rewardItems: { id: string; label: string; points: number; icon?: string }[];
+  scoreItems: ScoreItem[];
+  goalRewards: GoalReward[];
+  availableDiscountCardCount: number;
 }) => {
   const myRecords = records.filter(r => r.childId === currentUser.id);
   const recentRecords = [...myRecords].sort((a, b) => b.timestamp - a.timestamp).slice(0, 5);
@@ -546,9 +689,29 @@ const ChildOverviewSection = ({ currentUser, records, score, rewardItems }: {
   // 最近可兌換的獎勵（分數最接近且買得起的）
   const affordableRewards = rewardItems.filter(r => r.points <= score).sort((a, b) => b.points - a.points);
   const nextReward = rewardItems.filter(r => r.points > score).sort((a, b) => a.points - b.points)[0];
+  const positiveItemsByCategory = groupScoreItemsByCategory(scoreItems, ScoreType.POSITIVE);
+  const negativeItemsByCategory = groupScoreItemsByCategory(scoreItems, ScoreType.NEGATIVE);
 
   return (
     <div className="space-y-4 md:space-y-6">
+      {goalRewards.length > 0 && (
+        <Card className="border-4 border-nook-orange/30 bg-nook-orange/10">
+          <div className="flex items-center mb-4 gap-2">
+            <div className="p-2 bg-nook-orange rounded-lg text-white"><Icons.Calendar size={20} /></div>
+            <h3 className="text-lg md:text-xl font-bold text-nook-brown">這段時間的努力目標</h3>
+          </div>
+          <div className="space-y-3">
+            {goalRewards.map((goal) => (
+              <div key={goal.id} className="bg-white/80 rounded-[1.5rem] p-4 border-2 border-white">
+                <p className="font-black text-nook-brown leading-relaxed">{goal.targetText}</p>
+                <p className="text-sm font-bold text-nook-brown/50 mt-2">{formatGoalDateRange(goal)}</p>
+                <p className="text-sm font-bold text-nook-orangeDark mt-2">加油，持續努力就有機會拿到 5 折卡！</p>
+              </div>
+            ))}
+          </div>
+        </Card>
+      )}
+
       {/* 鼓勵語句 */}
       <Card className="border-4 border-nook-yellow/40 bg-nook-yellow/10">
         <div className="flex items-center gap-3">
@@ -567,7 +730,21 @@ const ChildOverviewSection = ({ currentUser, records, score, rewardItems }: {
                 你有足夠的分數兌換獎勵了！快去看看吧 🎉
               </p>
             )}
+            <p className="text-sm text-[#7C3AED] font-bold mt-2">
+              你現在有 {availableDiscountCardCount} 張 5 折卡，可以在兌換獎勵時使用。
+            </p>
           </div>
+        </div>
+      </Card>
+
+      <Card className="border-4 border-white bg-white/60">
+        <div className="flex items-center mb-4 gap-2">
+          <div className="p-2 bg-nook-green rounded-lg text-white"><Icons.BookOpen size={20} /></div>
+          <h3 className="text-lg md:text-xl font-bold text-nook-brown">積分項目指南</h3>
+        </div>
+        <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
+          <ScoreGuidePanel title="可以怎麼加分" itemsByCategory={positiveItemsByCategory} type={ScoreType.POSITIVE} />
+          <ScoreGuidePanel title="哪些行為會扣分" itemsByCategory={negativeItemsByCategory} type={ScoreType.NEGATIVE} />
         </div>
       </Card>
 
@@ -626,15 +803,62 @@ const ChildOverviewSection = ({ currentUser, records, score, rewardItems }: {
   );
 };
 
+const ScoreGuidePanel = ({
+  title,
+  itemsByCategory,
+  type,
+}: {
+  title: string;
+  itemsByCategory: Map<ScoreCategory, ScoreItem[]>;
+  type: ScoreType;
+}) => (
+  <div className="rounded-[1.75rem] border-2 border-white bg-white/80 p-4">
+    <h4 className="font-black text-nook-brown text-lg mb-4">{title}</h4>
+    <div className="space-y-4">
+      {SCORE_CATEGORY_OPTIONS.map((option) => {
+        const items = itemsByCategory.get(option.value) ?? [];
+        if (!items.length) return null;
+
+        return (
+          <div key={option.value} className="space-y-2">
+            <div className={`px-3 py-2 rounded-full border text-sm font-black inline-flex ${getScoreCategoryChipClassName(option.value)}`}>
+              {option.label}
+            </div>
+            <div className="space-y-2">
+              {items.map((item) => (
+                <div key={item.id} className="flex items-center justify-between gap-3 bg-nook-beige/30 rounded-2xl px-4 py-3">
+                  <div className="flex items-center gap-3 min-w-0">
+                    <div className="w-10 h-10 rounded-2xl bg-white flex items-center justify-center text-xl flex-shrink-0">
+                      {item.icon || (type === ScoreType.POSITIVE ? '⭐' : '⚠️')}
+                    </div>
+                    <div className="min-w-0">
+                      <p className="font-bold text-nook-brown truncate">{item.label}</p>
+                      <p className="text-xs font-bold text-nook-brown/40">{getScoreCategoryLabel(item.category)}</p>
+                    </div>
+                  </div>
+                  <div className={`text-sm font-black px-3 py-1 rounded-full ${type === ScoreType.POSITIVE ? 'bg-nook-green/20 text-nook-greenDark' : 'bg-nook-red/20 text-nook-red'}`}>
+                    {type === ScoreType.POSITIVE ? '+' : '-'}{item.points}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  </div>
+);
+
 // --- 積分卡片元件 (包含操作按鈕) ---
-const ScoreCard = ({ user, score, onAddPoints, onDeductPoints, onRedeem, canManageScoreActions, colorTheme }: { 
+const ScoreCard = ({ user, score, onAddPoints, onDeductPoints, onRedeem, canManageScoreActions, colorTheme, availableDiscountCardCount }: { 
   user: User, 
   score: number, 
   onAddPoints: () => void,
   onDeductPoints: () => void,
   onRedeem: () => void,
   canManageScoreActions: boolean,
-  colorTheme: 'blue' | 'green'
+  colorTheme: 'blue' | 'green',
+  availableDiscountCardCount: number,
 }) => {
   const isBlue = colorTheme === 'blue';
   
@@ -653,8 +877,13 @@ const ScoreCard = ({ user, score, onAddPoints, onDeductPoints, onRedeem, canMana
                     </div>
                     <div>
                         <h3 className="text-xl md:text-2xl font-black text-nook-brown">{user.name}</h3>
-                        <div className={`px-2 md:px-3 py-0.5 md:py-1 rounded-full text-white text-[10px] md:text-xs font-bold inline-block shadow-sm ${isBlue ? 'bg-nook-blue' : 'bg-nook-green'}`}>
-                             目前總分
+                        <div className="flex flex-wrap items-center gap-2 mt-1">
+                          <div className={`px-2 md:px-3 py-0.5 md:py-1 rounded-full text-white text-[10px] md:text-xs font-bold inline-block shadow-sm ${isBlue ? 'bg-nook-blue' : 'bg-nook-green'}`}>
+                               目前總分
+                          </div>
+                          <div className="px-2 md:px-3 py-0.5 md:py-1 rounded-full text-[10px] md:text-xs font-black inline-block shadow-sm bg-[#F3E8FF] text-[#7C3AED]">
+                               5 折卡 {availableDiscountCardCount} 張
+                          </div>
                         </div>
                     </div>
                 </div>

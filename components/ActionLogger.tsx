@@ -1,12 +1,13 @@
-import React, { useState } from 'react';
-import { ScoreItem, ScoreType } from '../types';
+import React, { useEffect, useState } from 'react';
+import { ScoreCategory, ScoreItem, ScoreType } from '../types';
 import { Icons } from './Icons';
 import { Button } from './ui/Button';
+import { SCORE_CATEGORY_OPTIONS, getScoreCategoryChipClassName } from '../services/familyUtils';
 
 interface ActionLoggerProps {
   isOpen: boolean;
   onClose: () => void;
-  onSubmit: (itemId: string, note?: string, customPoints?: number) => void;
+  onSubmit: (itemId: string, note?: string, customPoints?: number, category?: ScoreCategory) => void;
   items: ScoreItem[];
   type: 'POSITIVE' | 'NEGATIVE';
   targetChildName: string;
@@ -18,11 +19,26 @@ export const ActionLogger: React.FC<ActionLoggerProps> = ({ isOpen, onClose, onS
   const [selectedItemId, setSelectedItemId] = useState<string | null>(null);
   const [note, setNote] = useState('');
   const [customPoints, setCustomPoints] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState<ScoreCategory>(ScoreCategory.ACADEMIC);
+
+  useEffect(() => {
+    setSelectedItemId(null);
+  }, [selectedCategory, type]);
+
+  useEffect(() => {
+    if (!isOpen) return;
+
+    setSelectedItemId(null);
+    setNote('');
+    setCustomPoints('');
+    setSelectedCategory(ScoreCategory.ACADEMIC);
+  }, [isOpen, type]);
 
   if (!isOpen) return null;
 
-  const filteredItems = items.filter(item => {
-    return type === 'POSITIVE' ? item.type === ScoreType.POSITIVE : item.type === ScoreType.NEGATIVE;
+  const filteredItems = items.filter((item) => {
+    const matchesType = type === 'POSITIVE' ? item.type === ScoreType.POSITIVE : item.type === ScoreType.NEGATIVE;
+    return matchesType && item.category === selectedCategory;
   });
 
   const isCustom = selectedItemId === CUSTOM_ITEM_ID;
@@ -32,9 +48,9 @@ export const ActionLogger: React.FC<ActionLoggerProps> = ({ isOpen, onClose, onS
   const handleSubmit = () => {
     if (isCustom) {
       if (!isCustomValid) return;
-      onSubmit(CUSTOM_ITEM_ID, note, customPointsNum);
+      onSubmit(CUSTOM_ITEM_ID, note, customPointsNum, selectedCategory);
     } else if (selectedItemId) {
-      onSubmit(selectedItemId, note);
+      onSubmit(selectedItemId, note, undefined, selectedCategory);
     }
   };
 
@@ -66,6 +82,31 @@ export const ActionLogger: React.FC<ActionLoggerProps> = ({ isOpen, onClose, onS
 
         {/* Content */}
         <div className="p-8 overflow-y-auto flex-1 bg-nook-beige/30">
+          <div className="mb-6">
+            <div className="flex items-center gap-2 mb-3">
+              <Icons.Hash size={18} className="text-nook-brown/60" />
+              <span className="font-black text-nook-brown">先選分類</span>
+            </div>
+            <div className="flex flex-wrap gap-3">
+              {SCORE_CATEGORY_OPTIONS.map((option) => {
+                const isActive = option.value === selectedCategory;
+                return (
+                  <button
+                    key={option.value}
+                    type="button"
+                    onClick={() => setSelectedCategory(option.value)}
+                    className={`px-4 py-2 rounded-full border-2 font-bold transition-all ${
+                      isActive
+                        ? `${getScoreCategoryChipClassName(option.value)} scale-105 shadow-sm`
+                        : 'bg-white text-nook-brown/60 border-white hover:text-nook-brown hover:border-nook-brown/20'
+                    }`}
+                  >
+                    {option.label}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
           
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 mb-8">
             {filteredItems.map(item => (
@@ -125,6 +166,12 @@ export const ActionLogger: React.FC<ActionLoggerProps> = ({ isOpen, onClose, onS
               )}
             </button>
           </div>
+
+          {filteredItems.length === 0 && (
+            <div className="mb-8 text-center py-8 rounded-[2rem] border-2 border-dashed border-nook-brown/15 bg-white/60 text-nook-brown/50 font-bold">
+              這個分類目前還沒有可選項目，可以改選其他分類或使用「其它」。
+            </div>
+          )}
 
           {/* 「其它」自訂分數輸入 */}
           {isCustom && (

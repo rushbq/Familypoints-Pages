@@ -29,6 +29,18 @@ export enum ScoreType {
 }
 
 /**
+ * 評分類別
+ * 1: 學業
+ * 2: 活動
+ * 3: 日常
+ */
+export enum ScoreCategory {
+  ACADEMIC = 1,
+  ACTIVITY = 2,
+  DAILY = 3,
+}
+
+/**
  * 評分項目介面 (例如：做家事、吵架)
  */
 export interface ScoreItem {
@@ -36,6 +48,7 @@ export interface ScoreItem {
   label: string;
   points: number; // 定義時皆為正數，邏輯層會根據 type 決定加減
   type: ScoreType;
+  category: ScoreCategory;
   icon?: string;
 }
 
@@ -60,6 +73,7 @@ export interface ScoreRecord {
   itemId: string;
   itemName: string;
   pointsChange: number; // 實際的分數變化 (+10 或 -30)
+  scoreCategory?: ScoreCategory | null; // 僅加分 / 扣分紀錄使用
   timestamp: number;    // 發生時間
   note?: string;        // 備註
   createdById: string;  // 建立者 ID
@@ -78,6 +92,36 @@ export interface SecretMessage {
   isRead: boolean;
 }
 
+export enum GoalRewardStatus {
+  ACTIVE = 'ACTIVE',
+  ACHIEVED = 'ACHIEVED',
+  NOT_ACHIEVED = 'NOT_ACHIEVED',
+}
+
+export interface GoalReward {
+  id: string;
+  childId: string;
+  targetText: string;
+  startDate: string; // YYYY-MM-DD
+  endDate: string;   // YYYY-MM-DD
+  status: GoalRewardStatus;
+  createdAt: number;
+  resolvedAt?: number | null;
+  resolvedById?: string | null;
+  resolvedByName?: string | null;
+}
+
+export interface DiscountCard {
+  id: string;
+  childId: string;
+  goalId: string;
+  issuedAt: number;
+  usedAt?: number | null;
+  usedById?: string | null;
+  usedByName?: string | null;
+  usedOnRecordId?: string | null;
+}
+
 /**
  * 應用程式全域狀態介面
  * 儲存所有資料結構
@@ -88,4 +132,6 @@ export interface AppState {
   rewardItems: RewardItem[];// 獎勵項目列表 (New)
   records: ScoreRecord[];   // 歷史紀錄
   messages: SecretMessage[];// 信件紀錄
+  goalRewards: GoalReward[];// 目標獎勵
+  discountCards: DiscountCard[];// 打折卡
 }

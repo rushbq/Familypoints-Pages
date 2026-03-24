@@ -1,5 +1,17 @@
 import Dexie, { Table } from 'dexie';
-import { User, ScoreItem, RewardItem, ScoreRecord, SecretMessage, UserRole, ScoreType } from '../types';
+import {
+  DiscountCard,
+  GoalReward,
+  RewardItem,
+  ScoreCategory,
+  ScoreItem,
+  ScoreRecord,
+  ScoreType,
+  SecretMessage,
+  User,
+  UserRole,
+} from '../types';
+import { inferScoreItemCategory, normalizeScoreItem, normalizeScoreRecord } from './familyUtils';
 
 /**
  * FamilyPointsDB - 使用 Dexie.js 封裝 IndexedDB
@@ -16,6 +28,8 @@ export class FamilyPointsDB extends Dexie {
   rewardItems!: Table<RewardItem, string>;
   records!: Table<ScoreRecord, string>;
   messages!: Table<SecretMessage, string>;
+  goalRewards!: Table<GoalReward, string>;
+  discountCards!: Table<DiscountCard, string>;
 
   constructor() {
     super('FamilyPointsDB');
@@ -28,6 +42,32 @@ export class FamilyPointsDB extends Dexie {
       rewardItems: 'id',                    // 主鍵 id
       records: 'id, childId, timestamp',    // 主鍵 id，索引 childId 和 timestamp
       messages: 'id, fromChildId, isRead, timestamp' // 主鍵 id，多重索引
+    });
+
+    this.version(2).stores({
+      users: 'id, role',
+      scoreItems: 'id, type, category',
+      rewardItems: 'id',
+      records: 'id, childId, timestamp, scoreCategory',
+      messages: 'id, fromChildId, isRead, timestamp',
+      goalRewards: 'id, childId, status, startDate, endDate, createdAt',
+      discountCards: 'id, childId, goalId, issuedAt, usedAt',
+    }).upgrade(async (tx) => {
+      const scoreItemsTable = tx.table<ScoreItem, string>('scoreItems');
+      const rewardItemsTable = tx.table<RewardItem, string>('rewardItems');
+      const recordsTable = tx.table<ScoreRecord, string>('records');
+
+      await scoreItemsTable.toCollection().modify((item) => {
+        item.category = inferScoreItemCategory(item);
+      });
+
+      const scoreItems = (await scoreItemsTable.toArray()).map(normalizeScoreItem);
+      const rewardIds = new Set((await rewardItemsTable.toArray()).map((item) => item.id));
+      const scoreItemMap = new Map(scoreItems.map((item) => [item.id, item]));
+
+      await recordsTable.toCollection().modify((record) => {
+        record.scoreCategory = normalizeScoreRecord(record, scoreItemMap, rewardIds).scoreCategory;
+      });
     });
   }
 }
@@ -48,16 +88,16 @@ export const INITIAL_USERS: User[] = [
 
 /** 預設評分項目清單 */
 export const INITIAL_SCORE_ITEMS: ScoreItem[] = [
-  { id: 'item_1', label: '做家事', points: 5, type: ScoreType.POSITIVE, icon: '🧹' },
-  { id: 'item_2', label: '成績優異 (95↑)', points: 10, type: ScoreType.POSITIVE, icon: '💯' },
-  { id: 'item_3', label: '成績優異 (90↑)', points: 5, type: ScoreType.POSITIVE, icon: '💯' },
-  { id: 'item_4', label: '互相幫忙', points: 10, type: ScoreType.POSITIVE, icon: '🤝' },
-  { id: 'item_5', label: '複習課業', points: 5, type: ScoreType.POSITIVE, icon: '📖' },
-  { id: 'item_6', label: '去教會', points: 5, type: ScoreType.POSITIVE, icon: '⛪' },
-  { id: 'item_7', label: '未整理書包', points: 5, type: ScoreType.NEGATIVE, icon: '🎒' },
-  { id: 'item_8', label: '刻意吵架', points: 10, type: ScoreType.NEGATIVE, icon: '💢' },
-  { id: 'item_9', label: '欺負對方', points: 20, type: ScoreType.NEGATIVE, icon: '😈' },
-  { id: 'item_10', label: '未收拾環境', points: 5, type: ScoreType.NEGATIVE, icon: '🦠' },
+  { id: 'item_1', label: '做家事', points: 5, type: ScoreType.POSITIVE, category: ScoreCategory.DAILY, icon: '🧹' },
+  { id: 'item_2', label: '成績優異 (95↑)', points: 10, type: ScoreType.POSITIVE, category: ScoreCategory.ACADEMIC, icon: '💯' },
+  { id: 'item_3', label: '成績優異 (90↑)', points: 5, type: ScoreType.POSITIVE, category: ScoreCategory.ACADEMIC, icon: '💯' },
+  { id: 'item_4', label: '互相幫忙', points: 10, type: ScoreType.POSITIVE, category: ScoreCategory.DAILY, icon: '🤝' },
+  { id: 'item_5', label: '複習課業', points: 5, type: ScoreType.POSITIVE, category: ScoreCategory.ACADEMIC, icon: '📖' },
+  { id: 'item_6', label: '去教會', points: 5, type: ScoreType.POSITIVE, category: ScoreCategory.ACTIVITY, icon: '⛪' },
+  { id: 'item_7', label: '未整理書包', points: 5, type: ScoreType.NEGATIVE, category: ScoreCategory.DAILY, icon: '🎒' },
+  { id: 'item_8', label: '刻意吵架', points: 10, type: ScoreType.NEGATIVE, category: ScoreCategory.DAILY, icon: '💢' },
+  { id: 'item_9', label: '欺負對方', points: 20, type: ScoreType.NEGATIVE, category: ScoreCategory.DAILY, icon: '😈' },
+  { id: 'item_10', label: '未收拾環境', points: 5, type: ScoreType.NEGATIVE, category: ScoreCategory.DAILY, icon: '🦠' },
 ];
 
 /** 預設獎勵項目清單 */
@@ -78,7 +118,9 @@ export const getDefaultState = () => ({
   scoreItems: INITIAL_SCORE_ITEMS,
   rewardItems: INITIAL_REWARD_ITEMS,
   records: [] as ScoreRecord[],
-  messages: [] as SecretMessage[]
+  messages: [] as SecretMessage[],
+  goalRewards: [] as GoalReward[],
+  discountCards: [] as DiscountCard[],
 });
 
 /**
@@ -92,7 +134,7 @@ export const initializeDatabase = async (): Promise<void> => {
     if (userCount === 0) {
       console.log('🌱 資料庫初始化：寫入預設資料...');
       
-      await db.transaction('rw', [db.users, db.scoreItems, db.rewardItems], async () => {
+      await db.transaction('rw', [db.users, db.scoreItems, db.rewardItems, db.goalRewards, db.discountCards], async () => {
         await db.users.bulkAdd(INITIAL_USERS);
         await db.scoreItems.bulkAdd(INITIAL_SCORE_ITEMS);
         await db.rewardItems.bulkAdd(INITIAL_REWARD_ITEMS);
@@ -185,12 +227,14 @@ export const cleanupOldRecords = async (daysToKeep: number = 365): Promise<numbe
  * 匯出所有資料為 JSON（用於備份）
  */
 export const exportAllData = async (): Promise<string> => {
-  const [users, scoreItems, rewardItems, records, messages] = await Promise.all([
+  const [users, scoreItems, rewardItems, records, messages, goalRewards, discountCards] = await Promise.all([
     db.users.toArray(),
     db.scoreItems.toArray(),
     db.rewardItems.toArray(),
     db.records.toArray(),
-    db.messages.toArray()
+    db.messages.toArray(),
+    db.goalRewards.toArray(),
+    db.discountCards.toArray(),
   ]);
   
   return JSON.stringify({
@@ -199,8 +243,10 @@ export const exportAllData = async (): Promise<string> => {
     rewardItems,
     records,
     messages,
+    goalRewards,
+    discountCards,
     exportedAt: new Date().toISOString(),
-    version: '2.0' // IndexedDB 版本標記
+    version: '3.0' // IndexedDB 版本標記
   }, null, 2);
 };
 
@@ -210,17 +256,29 @@ export const exportAllData = async (): Promise<string> => {
 export const importAllData = async (jsonData: string): Promise<void> => {
   const data = JSON.parse(jsonData);
   
-  await db.transaction('rw', [db.users, db.scoreItems, db.rewardItems, db.records, db.messages], async () => {
+  await db.transaction('rw', [db.users, db.scoreItems, db.rewardItems, db.records, db.messages, db.goalRewards, db.discountCards], async () => {
     await db.users.clear();
     await db.scoreItems.clear();
     await db.rewardItems.clear();
     await db.records.clear();
     await db.messages.clear();
+    await db.goalRewards.clear();
+    await db.discountCards.clear();
     
     if (data.users?.length) await db.users.bulkAdd(data.users);
-    if (data.scoreItems?.length) await db.scoreItems.bulkAdd(data.scoreItems);
+    if (data.scoreItems?.length) await db.scoreItems.bulkAdd(data.scoreItems.map((item: ScoreItem) => normalizeScoreItem(item)));
     if (data.rewardItems?.length) await db.rewardItems.bulkAdd(data.rewardItems);
-    if (data.records?.length) await db.records.bulkAdd(data.records);
+    if (data.records?.length) {
+      const scoreItems: ScoreItem[] = (data.scoreItems?.length ? data.scoreItems : INITIAL_SCORE_ITEMS)
+        .map((item: ScoreItem) => normalizeScoreItem(item));
+      const scoreItemMap = new Map<string, ScoreItem>(scoreItems.map((item: ScoreItem) => [item.id, item]));
+      const rewardIds = new Set<string>((data.rewardItems ?? INITIAL_REWARD_ITEMS).map((item: RewardItem) => item.id));
+      await db.records.bulkAdd(
+        data.records.map((record: ScoreRecord) => normalizeScoreRecord(record, scoreItemMap, rewardIds)),
+      );
+    }
     if (data.messages?.length) await db.messages.bulkAdd(data.messages);
+    if (data.goalRewards?.length) await db.goalRewards.bulkAdd(data.goalRewards);
+    if (data.discountCards?.length) await db.discountCards.bulkAdd(data.discountCards);
   });
 };
