@@ -51,6 +51,23 @@ interface StorageInfo {
 
 type SettingsTabKey = 'goals' | 'scoreItems' | 'rewards' | 'data' | 'members';
 
+const getDefaultGoalDateRange = () => {
+  const now = new Date();
+  const day = now.getDay();
+  const monday = new Date(now);
+  const offsetToMonday = day === 0 ? -6 : 1 - day;
+  monday.setDate(now.getDate() + offsetToMonday);
+  monday.setHours(0, 0, 0, 0);
+
+  const friday = new Date(monday);
+  friday.setDate(monday.getDate() + 4);
+
+  return {
+    startDate: getTodayDateKey(monday),
+    endDate: getTodayDateKey(friday),
+  };
+};
+
 /**
  * 設定面板元件
  * 提供家長管理評分項目、獎勵項目、使用者資料及資料備份
@@ -83,11 +100,12 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
 
   const childUsers = appData.users.filter((user) => user.role === UserRole.CHILD);
   const childUserIdsKey = childUsers.map((user) => user.id).join('|');
+  const defaultGoalDateRange = getDefaultGoalDateRange();
 
   const [newGoal, setNewGoal] = useState({
     childId: childUsers[0]?.id ?? '',
-    startDate: getTodayDateKey(),
-    endDate: getTodayDateKey(),
+    startDate: defaultGoalDateRange.startDate,
+    endDate: defaultGoalDateRange.endDate,
     targetText: '',
   });
   const [activeTab, setActiveTab] = useState<SettingsTabKey>('goals');
@@ -219,8 +237,8 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
     onUpdateGoalRewards((items) => [...items, goal]);
     setNewGoal({
       childId: newGoal.childId,
-      startDate: getTodayDateKey(),
-      endDate: getTodayDateKey(),
+      startDate: getDefaultGoalDateRange().startDate,
+      endDate: getDefaultGoalDateRange().endDate,
       targetText: '',
     });
   };
@@ -412,8 +430,12 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
   const goalRewards = [...appData.goalRewards].sort((a, b) => b.createdAt - a.createdAt);
   const activeGoals = goalRewards.filter((goal) => getGoalDisplayGroup(goal, today) === 'active');
   const pendingGoals = goalRewards.filter((goal) => getGoalDisplayGroup(goal, today) === 'pending');
-  const achievedGoals = goalRewards.filter((goal) => getGoalDisplayGroup(goal, today) === 'achieved');
-  const notAchievedGoals = goalRewards.filter((goal) => getGoalDisplayGroup(goal, today) === 'notAchieved');
+  const achievedGoals = goalRewards
+    .filter((goal) => getGoalDisplayGroup(goal, today) === 'achieved')
+    .slice(0, 5);
+  const notAchievedGoals = goalRewards
+    .filter((goal) => getGoalDisplayGroup(goal, today) === 'notAchieved')
+    .slice(0, 5);
 
   return (
     <div className="space-y-8">
@@ -454,7 +476,8 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
 
       {activeTab === 'goals' && (
         <Card title="🎯 目標獎勵管理" className="bg-[#FFF7D7] border-nook-yellow/40">
-            <div className="grid grid-cols-1 lg:grid-cols-5 gap-6 items-end mb-8">
+            <div className="space-y-6 mb-8">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-end">
               <div>
                 <label className="block text-sm font-bold text-nook-brown mb-2 ml-1">孩子</label>
                 <select
@@ -485,18 +508,21 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
                   className="w-full p-4 border-2 border-nook-brown/10 rounded-2xl focus:ring-4 focus:ring-nook-yellow/30 focus:border-nook-orange outline-none bg-white text-nook-brown font-bold"
                 />
               </div>
-              <div className="lg:col-span-2">
+              </div>
+              <div className="space-y-4">
+                <div>
                 <label className="block text-sm font-bold text-nook-brown mb-2 ml-1">目標內容</label>
-                <div className="flex flex-col md:flex-row gap-4">
                   <input
                     type="text"
                     value={newGoal.targetText}
                     onChange={(e) => setNewGoal({ ...newGoal, targetText: e.target.value })}
-                    className="flex-1 p-4 border-2 border-nook-brown/10 rounded-2xl focus:ring-4 focus:ring-nook-yellow/30 focus:border-nook-orange outline-none bg-white text-nook-brown font-bold"
+                    className="w-full p-4 border-2 border-nook-brown/10 rounded-2xl focus:ring-4 focus:ring-nook-yellow/30 focus:border-nook-orange outline-none bg-white text-nook-brown font-bold"
                     placeholder="例如：這週每天主動整理書包"
                   />
-                  <Button onClick={handleAddGoalReward} className="bg-nook-orange text-white border-nook-orangeDark hover:bg-nook-orange/90" icon={<Icons.Plus size={20} />}>
-                    新增目標
+                </div>
+                <div className="flex justify-end">
+                  <Button onClick={handleAddGoalReward} className="bg-nook-orange text-white border-nook-orangeDark hover:bg-nook-orange/90 min-w-[11rem]" icon={<Icons.Plus size={20} />}>
+                      新增目標
                   </Button>
                 </div>
               </div>
@@ -544,14 +570,14 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
                 )}
               />
               <GoalSection
-                title="已達成"
+                title="已達成（最近 5 筆）"
                 goals={achievedGoals}
                 users={appData.users}
                 appData={appData}
                 emptyText="目前沒有已達成目標"
               />
               <GoalSection
-                title="未達成"
+                title="未達成（最近 5 筆）"
                 goals={notAchievedGoals}
                 users={appData.users}
                 appData={appData}
