@@ -49,6 +49,8 @@ interface StorageInfo {
   quotaFormatted: string;
 }
 
+type SettingsTabKey = 'goals' | 'scoreItems' | 'rewards' | 'data' | 'members';
+
 /**
  * 設定面板元件
  * 提供家長管理評分項目、獎勵項目、使用者資料及資料備份
@@ -88,6 +90,7 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
     endDate: getTodayDateKey(),
     targetText: '',
   });
+  const [activeTab, setActiveTab] = useState<SettingsTabKey>('goals');
 
   // --- 儲存空間資訊 ---
   const [storageInfo, setStorageInfo] = useState<StorageInfo | null>(null);
@@ -413,169 +416,153 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
   const notAchievedGoals = goalRewards.filter((goal) => getGoalDisplayGroup(goal, today) === 'notAchieved');
 
   return (
-    <div className="space-y-12">
-      
-      {/* 0. 重要提醒 */}
-      <Card title="⚠️ 重要提醒" className="bg-nook-yellow/20 border-nook-orange/30">
-          <div className="space-y-3">
-            <div className="flex items-start gap-3 p-3 bg-white/60 rounded-xl">
-              <span className="text-xl">☁️</span>
-              <div>
-                <p className="font-bold text-nook-brown">資料會同步到 Firebase 雲端</p>
-                <p className="text-sm text-nook-brown/60">只要不同裝置登入同一組 Firebase 帳號，就會看到同一份家庭資料。</p>
-              </div>
-            </div>
-            <div className="flex items-start gap-3 p-3 bg-white/60 rounded-xl">
-              <span className="text-xl">📱</span>
-              <div>
-                <p className="font-bold text-nook-brown">這裡顯示的是瀏覽器快取</p>
-                <p className="text-sm text-nook-brown/60">就算本機快取被清掉，只要雲端資料還在，重新登入後仍可同步回來。</p>
-              </div>
-            </div>
-            <div className="flex items-start gap-3 p-3 bg-white/60 rounded-xl">
-              <span className="text-xl">🗑️</span>
-              <div>
-                <p className="font-bold text-nook-brown">仍然建議定期備份</p>
-                <p className="text-sm text-nook-brown/60">雲端同步可以降低遺失風險，但重要資料仍建議偶爾下載 JSON 備份。</p>
-              </div>
-            </div>
-            <div className="flex items-start gap-3 p-3 bg-white/60 rounded-xl">
-              <span className="text-xl">🔒</span>
-              <div>
-                <p className="font-bold text-nook-brown">無痕/私密模式仍不建議</p>
-                <p className="text-sm text-nook-brown/60">雖然主資料在雲端，但無痕模式會讓登入狀態與本機快取更不穩定。</p>
-              </div>
-            </div>
-            <div className="flex items-start gap-3 p-3 bg-nook-green/20 rounded-xl border-2 border-nook-green/30">
-              <span className="text-xl">💡</span>
-              <div>
-                <p className="font-bold text-nook-greenDark">建議：定期備份！</p>
-                <p className="text-sm text-nook-brown/60">請養成定期下載備份檔案的習慣，避免意外遺失珍貴的積分紀錄。</p>
-              </div>
-            </div>
-          </div>
-      </Card>
+    <div className="space-y-8">
+      <div className="bg-white/70 border-2 border-white rounded-[2rem] p-3 md:p-4 shadow-sm">
+        <div className="flex gap-3 overflow-x-auto no-scrollbar">
+          <SettingsTabButton
+            active={activeTab === 'goals'}
+            icon={<Icons.Calendar size={18} />}
+            label="目標"
+            onClick={() => setActiveTab('goals')}
+          />
+          <SettingsTabButton
+            active={activeTab === 'scoreItems'}
+            icon={<Icons.ClipboardList size={18} />}
+            label="評分項目"
+            onClick={() => setActiveTab('scoreItems')}
+          />
+          <SettingsTabButton
+            active={activeTab === 'rewards'}
+            icon={<Icons.Gift size={18} />}
+            label="獎勵管理"
+            onClick={() => setActiveTab('rewards')}
+          />
+          <SettingsTabButton
+            active={activeTab === 'data'}
+            icon={<Icons.Download size={18} />}
+            label="資料管理及提醒"
+            onClick={() => setActiveTab('data')}
+          />
+          <SettingsTabButton
+            active={activeTab === 'members'}
+            icon={<Icons.User size={18} />}
+            label="成員設定"
+            onClick={() => setActiveTab('members')}
+          />
+        </div>
+      </div>
 
-      {/* 1. 資料管理 */}
-      <Card title="💾 資料管理" className="bg-white border-nook-blue/30">
-          {/* 儲存空間顯示 */}
-          {storageInfo && (
-            <div className="mb-6 p-4 bg-nook-beige/30 rounded-2xl border-2 border-nook-brown/10">
-              <div className="flex items-center justify-between mb-2">
-                <span className="font-bold text-nook-brown text-sm">瀏覽器快取使用量</span>
-                <span className="text-xs font-bold text-nook-brown/60">
-                  {storageInfo.usedFormatted} / {storageInfo.quotaFormatted}
-                </span>
+      {activeTab === 'goals' && (
+        <Card title="🎯 目標獎勵管理" className="bg-[#FFF7D7] border-nook-yellow/40">
+            <div className="grid grid-cols-1 lg:grid-cols-5 gap-6 items-end mb-8">
+              <div>
+                <label className="block text-sm font-bold text-nook-brown mb-2 ml-1">孩子</label>
+                <select
+                  value={newGoal.childId}
+                  onChange={(e) => setNewGoal({ ...newGoal, childId: e.target.value })}
+                  className="w-full p-4 border-2 border-nook-brown/10 rounded-2xl focus:ring-4 focus:ring-nook-yellow/30 focus:border-nook-orange outline-none bg-white text-nook-brown font-bold cursor-pointer"
+                >
+                  {childUsers.map((child) => (
+                    <option key={child.id} value={child.id}>{child.name}</option>
+                  ))}
+                </select>
               </div>
-              <div className="w-full h-3 bg-nook-brown/10 rounded-full overflow-hidden">
-                <div 
-                  className={`h-full rounded-full transition-all ${
-                    storageInfo.percentage > 80 
-                      ? 'bg-nook-red' 
-                      : storageInfo.percentage > 50 
-                        ? 'bg-nook-orange' 
-                        : 'bg-nook-green'
-                  }`}
-                  style={{ width: `${Math.min(storageInfo.percentage, 100)}%` }}
+              <div>
+                <label className="block text-sm font-bold text-nook-brown mb-2 ml-1">開始日期</label>
+                <input
+                  type="date"
+                  value={newGoal.startDate}
+                  onChange={(e) => setNewGoal({ ...newGoal, startDate: e.target.value })}
+                  className="w-full p-4 border-2 border-nook-brown/10 rounded-2xl focus:ring-4 focus:ring-nook-yellow/30 focus:border-nook-orange outline-none bg-white text-nook-brown font-bold"
                 />
               </div>
-              <div className="flex justify-between mt-2">
-                <span className="text-xs text-nook-brown/50">
-                  目前有 {appData.records.length} 筆紀錄
-                </span>
-                <span className="text-xs font-bold text-nook-brown/60">
-                  {storageInfo.percentage.toFixed(1)}%
-                </span>
-              </div>
-            </div>
-          )}
-
-          <div className="flex flex-col md:flex-row gap-6 items-center">
-              <div className="flex-1">
-                  <p className="text-nook-brown font-bold mb-2">主資料已同步到 Firebase，這裡仍可下載 JSON 備份</p>
-                  <p className="text-nook-brown/60 text-sm">如果你要換帳號、重設資料，或只是想留一份保險備份，建議偶爾下載一次。</p>
-              </div>
-              <div className="flex flex-wrap gap-4">
-                  <Button onClick={handleExport} variant="secondary" icon={<Icons.Download size={20} />}>
-                      備份資料
-                  </Button>
-                  <Button onClick={handleImportClick} variant="outline" icon={<Icons.Upload size={20} />}>
-                      還原資料
-                  </Button>
-                  <input type="file" ref={fileInputRef} onChange={handleFileChange} className="hidden" accept=".json" />
-              </div>
-          </div>
-
-          {/* 清理舊紀錄區塊 */}
-          <div className="mt-6 pt-6 border-t-2 border-nook-brown/10">
-            <div className="flex flex-col md:flex-row items-center justify-between gap-4">
               <div>
-                <p className="font-bold text-nook-brown">🧹 清理舊紀錄</p>
-                <p className="text-nook-brown/60 text-sm">刪除過舊的紀錄以釋放儲存空間</p>
+                <label className="block text-sm font-bold text-nook-brown mb-2 ml-1">結束日期</label>
+                <input
+                  type="date"
+                  value={newGoal.endDate}
+                  onChange={(e) => setNewGoal({ ...newGoal, endDate: e.target.value })}
+                  className="w-full p-4 border-2 border-nook-brown/10 rounded-2xl focus:ring-4 focus:ring-nook-yellow/30 focus:border-nook-orange outline-none bg-white text-nook-brown font-bold"
+                />
               </div>
-              <div className="flex gap-2">
-                <Button 
-                  variant="outline" 
-                  size="sm"
-                  onClick={() => handleCleanupOldRecords(365)}
-                  disabled={isCleaningUp}
-                >
-                  保留一年
-                </Button>
-                <Button 
-                  variant="outline" 
-                  size="sm"
-                  onClick={() => handleCleanupOldRecords(180)}
-                  disabled={isCleaningUp}
-                >
-                  保留半年
-                </Button>
-                <Button 
-                  variant="outline" 
-                  size="sm"
-                  onClick={() => handleCleanupOldRecords(90)}
-                  disabled={isCleaningUp}
-                >
-                  保留三個月
-                </Button>
+              <div className="lg:col-span-2">
+                <label className="block text-sm font-bold text-nook-brown mb-2 ml-1">目標內容</label>
+                <div className="flex flex-col md:flex-row gap-4">
+                  <input
+                    type="text"
+                    value={newGoal.targetText}
+                    onChange={(e) => setNewGoal({ ...newGoal, targetText: e.target.value })}
+                    className="flex-1 p-4 border-2 border-nook-brown/10 rounded-2xl focus:ring-4 focus:ring-nook-yellow/30 focus:border-nook-orange outline-none bg-white text-nook-brown font-bold"
+                    placeholder="例如：這週每天主動整理書包"
+                  />
+                  <Button onClick={handleAddGoalReward} className="bg-nook-orange text-white border-nook-orangeDark hover:bg-nook-orange/90" icon={<Icons.Plus size={20} />}>
+                    新增目標
+                  </Button>
+                </div>
               </div>
             </div>
-          </div>
-      </Card>
 
-      {/* 2. 成員設定 */}
-      <Card title="👥 成員設定" className="bg-white border-nook-orange/30">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              {appData.users.map(user => (
-                  <div key={user.id} className="p-4 rounded-2xl bg-nook-beige/30 border-2 border-nook-brown/10 flex flex-col items-center">
-                      <div className="text-4xl mb-2">{user.avatar}</div>
-                      <div className="w-full space-y-2">
-                          <div>
-                              <label className="text-xs font-bold text-nook-brown/50">顯示名稱</label>
-                              <input 
-                                type="text" 
-                                value={user.name} 
-                                onChange={(e) => handleUpdateUser(user.id, { name: e.target.value })}
-                                className="w-full bg-white border border-nook-brown/20 rounded-lg px-2 py-1 text-nook-brown font-bold text-center"
-                              />
-                          </div>
-                          <div>
-                              <label className="text-xs font-bold text-nook-brown/50">頭像 (Emoji)</label>
-                              <input 
-                                type="text" 
-                                value={user.avatar} 
-                                onChange={(e) => handleUpdateUser(user.id, { avatar: e.target.value })}
-                                className="w-full bg-white border border-nook-brown/20 rounded-lg px-2 py-1 text-nook-brown font-bold text-center"
-                              />
-                          </div>
-                      </div>
-                  </div>
-              ))}
-          </div>
-      </Card>
+            <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+              <GoalSection
+                title="進行中"
+                goals={activeGoals}
+                users={appData.users}
+                appData={appData}
+                emptyText="目前沒有進行中的目標"
+                actionRenderer={(goal) => (
+                  <>
+                    <Button size="sm" variant="primary" onClick={() => handleResolveGoalReward(goal, GoalRewardStatus.ACHIEVED)}>
+                      標記達成
+                    </Button>
+                    <Button size="sm" variant="danger" onClick={() => handleResolveGoalReward(goal, GoalRewardStatus.NOT_ACHIEVED)}>
+                      標記未達成
+                    </Button>
+                    <Button size="sm" variant="ghost" onClick={() => handleDeleteGoalReward(goal.id)}>
+                      刪除
+                    </Button>
+                  </>
+                )}
+              />
+              <GoalSection
+                title="已截止待判定"
+                goals={pendingGoals}
+                users={appData.users}
+                appData={appData}
+                emptyText="目前沒有待判定目標"
+                actionRenderer={(goal) => (
+                  <>
+                    <Button size="sm" variant="primary" onClick={() => handleResolveGoalReward(goal, GoalRewardStatus.ACHIEVED)}>
+                      標記達成
+                    </Button>
+                    <Button size="sm" variant="danger" onClick={() => handleResolveGoalReward(goal, GoalRewardStatus.NOT_ACHIEVED)}>
+                      標記未達成
+                    </Button>
+                    <Button size="sm" variant="ghost" onClick={() => handleDeleteGoalReward(goal.id)}>
+                      刪除
+                    </Button>
+                  </>
+                )}
+              />
+              <GoalSection
+                title="已達成"
+                goals={achievedGoals}
+                users={appData.users}
+                appData={appData}
+                emptyText="目前沒有已達成目標"
+              />
+              <GoalSection
+                title="未達成"
+                goals={notAchievedGoals}
+                users={appData.users}
+                appData={appData}
+                emptyText="目前沒有未達成目標"
+              />
+            </div>
+        </Card>
+      )}
 
-      {/* 3. 評分項目管理 */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+      {activeTab === 'scoreItems' && (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         {/* 新增評分項目表單 */}
         <Card title="🔧 新增評分項目" className="lg:col-span-2 bg-nook-cream border-ac-brown/10">
             <div className="grid grid-cols-1 md:grid-cols-5 gap-6 items-end">
@@ -706,118 +693,11 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
                 })}
             </div>
         </div>
-      </div>
+        </div>
+      )}
 
-      {/* 4. 目標獎勵管理 */}
-      <Card title="🎯 目標獎勵管理" className="bg-[#FFF7D7] border-nook-yellow/40">
-          <div className="grid grid-cols-1 lg:grid-cols-5 gap-6 items-end mb-8">
-            <div>
-              <label className="block text-sm font-bold text-nook-brown mb-2 ml-1">孩子</label>
-              <select
-                value={newGoal.childId}
-                onChange={(e) => setNewGoal({ ...newGoal, childId: e.target.value })}
-                className="w-full p-4 border-2 border-nook-brown/10 rounded-2xl focus:ring-4 focus:ring-nook-yellow/30 focus:border-nook-orange outline-none bg-white text-nook-brown font-bold cursor-pointer"
-              >
-                {childUsers.map((child) => (
-                  <option key={child.id} value={child.id}>{child.name}</option>
-                ))}
-              </select>
-            </div>
-            <div>
-              <label className="block text-sm font-bold text-nook-brown mb-2 ml-1">開始日期</label>
-              <input
-                type="date"
-                value={newGoal.startDate}
-                onChange={(e) => setNewGoal({ ...newGoal, startDate: e.target.value })}
-                className="w-full p-4 border-2 border-nook-brown/10 rounded-2xl focus:ring-4 focus:ring-nook-yellow/30 focus:border-nook-orange outline-none bg-white text-nook-brown font-bold"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-bold text-nook-brown mb-2 ml-1">結束日期</label>
-              <input
-                type="date"
-                value={newGoal.endDate}
-                onChange={(e) => setNewGoal({ ...newGoal, endDate: e.target.value })}
-                className="w-full p-4 border-2 border-nook-brown/10 rounded-2xl focus:ring-4 focus:ring-nook-yellow/30 focus:border-nook-orange outline-none bg-white text-nook-brown font-bold"
-              />
-            </div>
-            <div className="lg:col-span-2">
-              <label className="block text-sm font-bold text-nook-brown mb-2 ml-1">目標內容</label>
-              <div className="flex flex-col md:flex-row gap-4">
-                <input
-                  type="text"
-                  value={newGoal.targetText}
-                  onChange={(e) => setNewGoal({ ...newGoal, targetText: e.target.value })}
-                  className="flex-1 p-4 border-2 border-nook-brown/10 rounded-2xl focus:ring-4 focus:ring-nook-yellow/30 focus:border-nook-orange outline-none bg-white text-nook-brown font-bold"
-                  placeholder="例如：這週每天主動整理書包"
-                />
-                <Button onClick={handleAddGoalReward} className="bg-nook-orange text-white border-nook-orangeDark hover:bg-nook-orange/90" icon={<Icons.Plus size={20} />}>
-                  新增目標
-                </Button>
-              </div>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
-            <GoalSection
-              title="進行中"
-              goals={activeGoals}
-              users={appData.users}
-              appData={appData}
-              emptyText="目前沒有進行中的目標"
-              actionRenderer={(goal) => (
-                <>
-                  <Button size="sm" variant="primary" onClick={() => handleResolveGoalReward(goal, GoalRewardStatus.ACHIEVED)}>
-                    標記達成
-                  </Button>
-                  <Button size="sm" variant="danger" onClick={() => handleResolveGoalReward(goal, GoalRewardStatus.NOT_ACHIEVED)}>
-                    標記未達成
-                  </Button>
-                  <Button size="sm" variant="ghost" onClick={() => handleDeleteGoalReward(goal.id)}>
-                    刪除
-                  </Button>
-                </>
-              )}
-            />
-            <GoalSection
-              title="已截止待判定"
-              goals={pendingGoals}
-              users={appData.users}
-              appData={appData}
-              emptyText="目前沒有待判定目標"
-              actionRenderer={(goal) => (
-                <>
-                  <Button size="sm" variant="primary" onClick={() => handleResolveGoalReward(goal, GoalRewardStatus.ACHIEVED)}>
-                    標記達成
-                  </Button>
-                  <Button size="sm" variant="danger" onClick={() => handleResolveGoalReward(goal, GoalRewardStatus.NOT_ACHIEVED)}>
-                    標記未達成
-                  </Button>
-                  <Button size="sm" variant="ghost" onClick={() => handleDeleteGoalReward(goal.id)}>
-                    刪除
-                  </Button>
-                </>
-              )}
-            />
-            <GoalSection
-              title="已達成"
-              goals={achievedGoals}
-              users={appData.users}
-              appData={appData}
-              emptyText="目前沒有已達成目標"
-            />
-            <GoalSection
-              title="未達成"
-              goals={notAchievedGoals}
-              users={appData.users}
-              appData={appData}
-              emptyText="目前沒有未達成目標"
-            />
-          </div>
-      </Card>
-
-      {/* 5. 獎勵項目管理 (New) */}
-      <Card title="🎁 獎勵兌換項目管理" className="bg-[#F3E8FF] border-[#D8B4FE]">
+      {activeTab === 'rewards' && (
+        <Card title="🎁 獎勵兌換項目管理" className="bg-[#F3E8FF] border-[#D8B4FE]">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-6 items-end mb-8">
             <div className="col-span-1 md:col-span-2">
                 <label className="block text-sm font-bold text-nook-brown mb-2 ml-1">獎勵名稱</label>
@@ -891,7 +771,168 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
                  <div className="col-span-full text-center text-nook-brown/40 py-4 font-bold">沒有獎勵項目</div>
              )}
           </div>
-      </Card>
+        </Card>
+      )}
+
+      {activeTab === 'data' && (
+        <div className="space-y-8">
+          <Card title="💾 資料管理" className="bg-white border-nook-blue/30">
+              {storageInfo && (
+                <div className="mb-6 p-4 bg-nook-beige/30 rounded-2xl border-2 border-nook-brown/10">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="font-bold text-nook-brown text-sm">瀏覽器快取使用量</span>
+                    <span className="text-xs font-bold text-nook-brown/60">
+                      {storageInfo.usedFormatted} / {storageInfo.quotaFormatted}
+                    </span>
+                  </div>
+                  <div className="w-full h-3 bg-nook-brown/10 rounded-full overflow-hidden">
+                    <div 
+                      className={`h-full rounded-full transition-all ${
+                        storageInfo.percentage > 80 
+                          ? 'bg-nook-red' 
+                          : storageInfo.percentage > 50 
+                            ? 'bg-nook-orange' 
+                            : 'bg-nook-green'
+                      }`}
+                      style={{ width: `${Math.min(storageInfo.percentage, 100)}%` }}
+                    />
+                  </div>
+                  <div className="flex justify-between mt-2">
+                    <span className="text-xs text-nook-brown/50">
+                      目前有 {appData.records.length} 筆紀錄
+                    </span>
+                    <span className="text-xs font-bold text-nook-brown/60">
+                      {storageInfo.percentage.toFixed(1)}%
+                    </span>
+                  </div>
+                </div>
+              )}
+
+              <div className="flex flex-col md:flex-row gap-6 items-center">
+                  <div className="flex-1">
+                      <p className="text-nook-brown font-bold mb-2">主資料已同步到 Firebase，這裡仍可下載 JSON 備份</p>
+                      <p className="text-nook-brown/60 text-sm">如果你要換帳號、重設資料，或只是想留一份保險備份，建議偶爾下載一次。</p>
+                  </div>
+                  <div className="flex flex-wrap gap-4">
+                      <Button onClick={handleExport} variant="secondary" icon={<Icons.Download size={20} />}>
+                          備份資料
+                      </Button>
+                      <Button onClick={handleImportClick} variant="outline" icon={<Icons.Upload size={20} />}>
+                          還原資料
+                      </Button>
+                      <input type="file" ref={fileInputRef} onChange={handleFileChange} className="hidden" accept=".json" />
+                  </div>
+              </div>
+
+              <div className="mt-6 pt-6 border-t-2 border-nook-brown/10">
+                <div className="flex flex-col md:flex-row items-center justify-between gap-4">
+                  <div>
+                    <p className="font-bold text-nook-brown">🧹 清理舊紀錄</p>
+                    <p className="text-nook-brown/60 text-sm">刪除過舊的紀錄以釋放儲存空間</p>
+                  </div>
+                  <div className="flex gap-2">
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      onClick={() => handleCleanupOldRecords(365)}
+                      disabled={isCleaningUp}
+                    >
+                      保留一年
+                    </Button>
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      onClick={() => handleCleanupOldRecords(180)}
+                      disabled={isCleaningUp}
+                    >
+                      保留半年
+                    </Button>
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      onClick={() => handleCleanupOldRecords(90)}
+                      disabled={isCleaningUp}
+                    >
+                      保留三個月
+                    </Button>
+                  </div>
+                </div>
+              </div>
+          </Card>
+
+          <Card title="⚠️ 重要提醒" className="bg-nook-yellow/20 border-nook-orange/30">
+              <div className="space-y-3">
+                <div className="flex items-start gap-3 p-3 bg-white/60 rounded-xl">
+                  <span className="text-xl">☁️</span>
+                  <div>
+                    <p className="font-bold text-nook-brown">資料會同步到 Firebase 雲端</p>
+                    <p className="text-sm text-nook-brown/60">只要不同裝置登入同一組 Firebase 帳號，就會看到同一份家庭資料。</p>
+                  </div>
+                </div>
+                <div className="flex items-start gap-3 p-3 bg-white/60 rounded-xl">
+                  <span className="text-xl">📱</span>
+                  <div>
+                    <p className="font-bold text-nook-brown">這裡顯示的是瀏覽器快取</p>
+                    <p className="text-sm text-nook-brown/60">就算本機快取被清掉，只要雲端資料還在，重新登入後仍可同步回來。</p>
+                  </div>
+                </div>
+                <div className="flex items-start gap-3 p-3 bg-white/60 rounded-xl">
+                  <span className="text-xl">🗑️</span>
+                  <div>
+                    <p className="font-bold text-nook-brown">仍然建議定期備份</p>
+                    <p className="text-sm text-nook-brown/60">雲端同步可以降低遺失風險，但重要資料仍建議偶爾下載 JSON 備份。</p>
+                  </div>
+                </div>
+                <div className="flex items-start gap-3 p-3 bg-white/60 rounded-xl">
+                  <span className="text-xl">🔒</span>
+                  <div>
+                    <p className="font-bold text-nook-brown">無痕/私密模式仍不建議</p>
+                    <p className="text-sm text-nook-brown/60">雖然主資料在雲端，但無痕模式會讓登入狀態與本機快取更不穩定。</p>
+                  </div>
+                </div>
+                <div className="flex items-start gap-3 p-3 bg-nook-green/20 rounded-xl border-2 border-nook-green/30">
+                  <span className="text-xl">💡</span>
+                  <div>
+                    <p className="font-bold text-nook-greenDark">建議：定期備份！</p>
+                    <p className="text-sm text-nook-brown/60">請養成定期下載備份檔案的習慣，避免意外遺失珍貴的積分紀錄。</p>
+                  </div>
+                </div>
+              </div>
+          </Card>
+        </div>
+      )}
+
+      {activeTab === 'members' && (
+        <Card title="👥 成員設定" className="bg-white border-nook-orange/30">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                {appData.users.map(user => (
+                    <div key={user.id} className="p-4 rounded-2xl bg-nook-beige/30 border-2 border-nook-brown/10 flex flex-col items-center">
+                        <div className="text-4xl mb-2">{user.avatar}</div>
+                        <div className="w-full space-y-2">
+                            <div>
+                                <label className="text-xs font-bold text-nook-brown/50">顯示名稱</label>
+                                <input 
+                                  type="text" 
+                                  value={user.name} 
+                                  onChange={(e) => handleUpdateUser(user.id, { name: e.target.value })}
+                                  className="w-full bg-white border border-nook-brown/20 rounded-lg px-2 py-1 text-nook-brown font-bold text-center"
+                                />
+                            </div>
+                            <div>
+                                <label className="text-xs font-bold text-nook-brown/50">頭像 (Emoji)</label>
+                                <input 
+                                  type="text" 
+                                  value={user.avatar} 
+                                  onChange={(e) => handleUpdateUser(user.id, { avatar: e.target.value })}
+                                  className="w-full bg-white border border-nook-brown/20 rounded-lg px-2 py-1 text-nook-brown font-bold text-center"
+                                />
+                            </div>
+                        </div>
+                    </div>
+                ))}
+            </div>
+        </Card>
+      )}
 
       {/* 共用確認視窗 */}
       <ConfirmationModal
@@ -949,6 +990,31 @@ const ItemRow: React.FC<ItemRowProps> = ({ label, points, icon, type, category, 
       <Icons.Trash2 size={20} />
     </button>
   </div>
+);
+
+const SettingsTabButton = ({
+  active,
+  icon,
+  label,
+  onClick,
+}: {
+  active: boolean;
+  icon: React.ReactNode;
+  label: string;
+  onClick: () => void;
+}) => (
+  <button
+    type="button"
+    onClick={onClick}
+    className={`inline-flex items-center gap-2 px-4 py-3 rounded-[1.25rem] font-black whitespace-nowrap transition-all ${
+      active
+        ? 'bg-nook-green text-white shadow-[0_4px_0_0_#5EBA9A]'
+        : 'bg-white text-nook-brown/60 hover:text-nook-brown hover:bg-nook-beige'
+    }`}
+  >
+    {icon}
+    <span>{label}</span>
+  </button>
 );
 
 interface GoalSectionProps {

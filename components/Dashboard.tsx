@@ -16,7 +16,6 @@ import { Button } from './ui/Button';
 import { Icons } from './Icons';
 import { calculateScore } from '../services/storageService';
 import { Card } from './ui/Card';
-import { RechartsWrapper } from './RechartsWrapper';
 
 // Sub-components
 import { HistoryLog } from './HistoryLog';
@@ -155,17 +154,13 @@ export const Dashboard: React.FC<DashboardProps> = ({
               ))}
             </div>
 
-             {/* 圖表區塊 (僅家長可見) */}
+             {/* 家長專屬最近紀錄 */}
              {isParent && (
-                <Card className="mt-4 md:mt-6 border-4 border-white bg-white/60">
-                    <div className="flex items-center mb-4 gap-2">
-                        <div className="p-2 bg-nook-green rounded-lg text-white"><Icons.BarChart2 size={20} /></div>
-                        <h3 className="text-lg md:text-xl font-bold text-nook-brown">近期積分趨勢</h3>
-                    </div>
-                    <div className="h-48 md:h-64">
-                       <RechartsWrapper data={data.records} users={data.users} />
-                    </div>
-                </Card>
+               <ParentRecentRecordsGrid
+                 childScores={childScores}
+                 records={data.records}
+                 colorThemes={colorThemes}
+               />
              )}
 
              {/* 小孩專屬區塊 */}
@@ -663,6 +658,82 @@ const ParentGoalReminderSection = ({
     </Card>
   );
 };
+
+const ParentRecentRecordsGrid = ({
+  childScores,
+  records,
+  colorThemes,
+}: {
+  childScores: Array<{ user: User; score: number }>;
+  records: ScoreRecord[];
+  colorThemes: Array<'blue' | 'green'>;
+}) => (
+  <div className={`grid gap-6 md:gap-8 ${childScores.length === 1 ? 'grid-cols-1 max-w-lg mx-auto' : 'grid-cols-1 md:grid-cols-2'}`}>
+    {childScores.map((childScore, idx) => {
+      const recentRecords = records
+        .filter((record) => record.childId === childScore.user.id)
+        .sort((a, b) => b.timestamp - a.timestamp)
+        .slice(0, 5);
+      const isBlue = colorThemes[idx % colorThemes.length] === 'blue';
+
+      return (
+        <Card
+          key={childScore.user.id}
+          className={`border-4 bg-white/60 ${isBlue ? 'border-nook-blue/30' : 'border-nook-green/30'}`}
+        >
+          <div className="flex items-center justify-between gap-3 mb-4">
+            <div className="flex items-center gap-3">
+              <div className="w-12 h-12 rounded-full bg-white border-2 border-nook-brown/10 flex items-center justify-center text-2xl">
+                {childScore.user.avatar}
+              </div>
+              <div>
+                <h3 className="font-black text-xl text-nook-brown">{childScore.user.name}</h3>
+                <p className="text-sm font-bold text-nook-brown/50">最近 5 筆紀錄</p>
+              </div>
+            </div>
+            <div className={`px-3 py-1 rounded-full text-white text-xs font-black ${isBlue ? 'bg-nook-blue' : 'bg-nook-green'}`}>
+              目前 {childScore.score} 分
+            </div>
+          </div>
+
+          {recentRecords.length === 0 ? (
+            <div className="rounded-[1.5rem] border-2 border-dashed border-nook-brown/10 bg-white/70 px-4 py-8 text-center text-nook-brown/40 font-bold">
+              還沒有任何紀錄
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {recentRecords.map((record) => (
+                <div key={record.id} className="rounded-[1.5rem] bg-white px-4 py-3 border-2 border-nook-brown/5">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <p className="font-bold text-nook-brown truncate">{record.itemName}</p>
+                      <div className="flex flex-wrap items-center gap-2 mt-1">
+                        <span className="text-xs font-bold text-nook-brown/40">
+                          {new Date(record.timestamp).toLocaleString('zh-TW', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                        </span>
+                        {record.scoreCategory && (
+                          <span className={`text-xs font-black px-2 py-0.5 rounded-full border ${getScoreCategoryChipClassName(record.scoreCategory)}`}>
+                            {getScoreCategoryLabel(record.scoreCategory)}
+                          </span>
+                        )}
+                      </div>
+                      {record.note && (
+                        <p className="text-xs font-bold text-nook-brown/55 mt-2 break-words">{record.note}</p>
+                      )}
+                    </div>
+                    <div className={`text-lg font-black flex-shrink-0 ${record.pointsChange > 0 ? 'text-nook-greenDark' : 'text-nook-red'}`}>
+                      {record.pointsChange > 0 ? '+' : ''}{record.pointsChange}
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </Card>
+      );
+    })}
+  </div>
+);
 
 const ChildOverviewSection = ({ currentUser, records, score, rewardItems, scoreItems, goalRewards, availableDiscountCardCount }: {
   currentUser: User;
