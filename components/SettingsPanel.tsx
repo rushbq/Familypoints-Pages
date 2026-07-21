@@ -84,11 +84,7 @@ const SETTINGS_GROUPS: {
       { key: 'rewards', label: '獎勵管理', Icon: Icons.Gift },
     ],
   },
-  {
-    key: 'data',
-    label: '資料',
-    tabs: [{ key: 'data', label: '資料管理及提醒', Icon: Icons.Download }],
-  },
+  // 「資料」頁籤已移除：Firebase 自動同步，手動備份少用（程式碼保留，暫不開放）
 ];
 
 const getDefaultGoalDateRange = () => {
@@ -678,7 +674,7 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
     <div className="space-y-8">
       <div className="bg-white/70 border-2 border-white rounded-[2rem] p-3 md:p-4 shadow-sm space-y-3">
         {/* 第一層：群組 */}
-        <div className="grid grid-cols-3 gap-2">
+        <div className="grid grid-cols-2 gap-2">
           {SETTINGS_GROUPS.map((group) => (
             <button
               key={group.key}
