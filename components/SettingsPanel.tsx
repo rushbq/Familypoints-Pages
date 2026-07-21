@@ -4,10 +4,14 @@ import {
   DiscountCard,
   GoalReward,
   GoalRewardStatus,
+  RewardCard,
+  RewardCardStatus,
   RewardItem,
   ScoreCategory,
   ScoreItem,
   ScoreType,
+  StampCard,
+  StampCardStatus,
   User,
   UserRole,
 } from '../types';
@@ -24,6 +28,7 @@ import {
   getScoreCategoryLabel,
   getTodayDateKey,
   groupScoreItemsByCategory,
+  isStampCardComplete,
   SCORE_CATEGORY_OPTIONS,
 } from '../services/familyUtils';
 
@@ -35,6 +40,8 @@ interface SettingsPanelProps {
   onUpdateRewardItems: (items: RewardItem[]) => void; // 新增：更新獎勵函式
   onUpdateGoalRewards: (updater: (items: GoalReward[]) => GoalReward[]) => void;
   onUpdateDiscountCards: (updater: (items: DiscountCard[]) => DiscountCard[]) => void;
+  onUpdateRewardCards: (updater: (items: RewardCard[]) => RewardCard[]) => void;
+  onUpdateStampCards: (updater: (items: StampCard[]) => StampCard[]) => void;
   resolver: User;
 }
 
@@ -49,7 +56,7 @@ interface StorageInfo {
   quotaFormatted: string;
 }
 
-type SettingsTabKey = 'goals' | 'scoreItems' | 'rewards' | 'data' | 'members';
+type SettingsTabKey = 'goals' | 'scoreItems' | 'rewards' | 'rewardCards' | 'stampCards' | 'data' | 'members';
 
 const getDefaultGoalDateRange = () => {
   const now = new Date();
@@ -80,6 +87,8 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
   onUpdateRewardItems,
   onUpdateGoalRewards,
   onUpdateDiscountCards,
+  onUpdateRewardCards,
+  onUpdateStampCards,
   resolver,
 }) => {
   // --- 新增評分項目的暫存狀態 ---
@@ -108,6 +117,39 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
     endDate: defaultGoalDateRange.endDate,
     targetText: '',
   });
+
+  // --- 新增獎勵卡的暫存狀態 ---
+  const [newRewardCard, setNewRewardCard] = useState<{
+    childId: string;
+    title: string;
+    rewardType: 'ITEM' | 'CUSTOM';
+    rewardItemId: string;
+    customLabel: string;
+    customIcon: string;
+  }>({
+    childId: childUsers[0]?.id ?? '',
+    title: '',
+    rewardType: 'ITEM',
+    rewardItemId: appData.rewardItems[0]?.id ?? '',
+    customLabel: '',
+    customIcon: '🎁',
+  });
+
+  // --- 新增集點卡的暫存狀態 ---
+  const [newStampCard, setNewStampCard] = useState<{
+    childId: string;
+    title: string;
+    targetStamps: number;
+    rewardLabel: string;
+    rewardIcon: string;
+  }>({
+    childId: childUsers[0]?.id ?? '',
+    title: '',
+    targetStamps: 5,
+    rewardLabel: '',
+    rewardIcon: '🎁',
+  });
+
   const [activeTab, setActiveTab] = useState<SettingsTabKey>('goals');
 
   // --- 儲存空間資訊 ---
@@ -144,8 +186,19 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
   useEffect(() => {
     if (!childUsers.length) return;
 
+    const resolveChildId = (id: string) =>
+      childUsers.some((user) => user.id === id) ? id : childUsers[0].id;
+
     setNewGoal((prev) => {
-      const nextChildId = childUsers.some((user) => user.id === prev.childId) ? prev.childId : childUsers[0].id;
+      const nextChildId = resolveChildId(prev.childId);
+      return nextChildId === prev.childId ? prev : { ...prev, childId: nextChildId };
+    });
+    setNewRewardCard((prev) => {
+      const nextChildId = resolveChildId(prev.childId);
+      return nextChildId === prev.childId ? prev : { ...prev, childId: nextChildId };
+    });
+    setNewStampCard((prev) => {
+      const nextChildId = resolveChildId(prev.childId);
       return nextChildId === prev.childId ? prev : { ...prev, childId: nextChildId };
     });
   }, [childUserIdsKey]);
@@ -307,6 +360,134 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
     });
   };
 
+  // === 獎勵卡邏輯 ===
+
+  const handleIssueRewardCard = () => {
+    if (!newRewardCard.childId || !newRewardCard.title.trim()) return;
+
+    let rewardLabel = '';
+    let rewardIcon: string | undefined;
+    let rewardItemId: string | null = null;
+
+    if (newRewardCard.rewardType === 'ITEM') {
+      const reward = appData.rewardItems.find((item) => item.id === newRewardCard.rewardItemId);
+      if (!reward) {
+        setModalConfig({
+          isOpen: true,
+          title: '請先選擇獎勵',
+          message: '找不到選定的獎勵項目，請重新選擇或改用自訂內容。',
+          isAlert: true,
+          variant: 'danger',
+        });
+        return;
+      }
+      rewardLabel = reward.label;
+      rewardIcon = reward.icon;
+      rewardItemId = reward.id;
+    } else {
+      if (!newRewardCard.customLabel.trim()) return;
+      rewardLabel = newRewardCard.customLabel.trim();
+      rewardIcon = newRewardCard.customIcon;
+    }
+
+    const card: RewardCard = {
+      id: Date.now().toString(),
+      childId: newRewardCard.childId,
+      title: newRewardCard.title.trim(),
+      rewardType: newRewardCard.rewardType,
+      rewardItemId,
+      rewardLabel,
+      rewardIcon,
+      status: RewardCardStatus.ACTIVE,
+      issuedAt: Date.now(),
+      issuedById: resolver.id,
+      issuedByName: resolver.name,
+    };
+
+    onUpdateRewardCards((items) => [...items, card]);
+    setNewRewardCard((prev) => ({ ...prev, title: '', customLabel: '', customIcon: '🎁' }));
+  };
+
+  const handleDeleteRewardCard = (cardId: string) => {
+    setModalConfig({
+      isOpen: true,
+      title: '刪除獎勵卡',
+      message: '確定要刪除這張獎勵卡嗎？刪除後無法復原。',
+      variant: 'danger',
+      onConfirm: () => {
+        onUpdateRewardCards((items) => items.filter((item) => item.id !== cardId));
+      },
+    });
+  };
+
+  // === 集點卡邏輯 ===
+
+  const handleAddStampCard = () => {
+    if (!newStampCard.childId || !newStampCard.title.trim() || !newStampCard.rewardLabel.trim()) return;
+    if (!newStampCard.targetStamps || newStampCard.targetStamps < 1) return;
+
+    const card: StampCard = {
+      id: Date.now().toString(),
+      childId: newStampCard.childId,
+      title: newStampCard.title.trim(),
+      targetStamps: Number(newStampCard.targetStamps),
+      stamps: 0,
+      rewardLabel: newStampCard.rewardLabel.trim(),
+      rewardIcon: newStampCard.rewardIcon,
+      status: StampCardStatus.ACTIVE,
+      createdAt: Date.now(),
+    };
+
+    onUpdateStampCards((items) => [...items, card]);
+    setNewStampCard((prev) => ({ ...prev, title: '', rewardLabel: '', rewardIcon: '🎁' }));
+  };
+
+  const handleAdjustStamp = (card: StampCard, delta: number) => {
+    onUpdateStampCards((items) =>
+      items.map((item) =>
+        item.id === card.id
+          ? { ...item, stamps: Math.max(0, Math.min(item.targetStamps, item.stamps + delta)) }
+          : item,
+      ),
+    );
+  };
+
+  const handleRedeemStampCard = (card: StampCard) => {
+    setModalConfig({
+      isOpen: true,
+      title: '兌換集點卡',
+      message: `確定要兌換「${card.title}」的禮物「${card.rewardLabel}」嗎？兌換後卡片會標記為已兌換並保留紀錄。`,
+      variant: 'primary',
+      onConfirm: () => {
+        onUpdateStampCards((items) =>
+          items.map((item) =>
+            item.id === card.id
+              ? {
+                  ...item,
+                  status: StampCardStatus.REDEEMED,
+                  redeemedAt: Date.now(),
+                  redeemedById: resolver.id,
+                  redeemedByName: resolver.name,
+                }
+              : item,
+          ),
+        );
+      },
+    });
+  };
+
+  const handleDeleteStampCard = (cardId: string) => {
+    setModalConfig({
+      isOpen: true,
+      title: '刪除集點卡',
+      message: '確定要刪除這張集點卡嗎？刪除後無法復原。',
+      variant: 'danger',
+      onConfirm: () => {
+        onUpdateStampCards((items) => items.filter((item) => item.id !== cardId));
+      },
+    });
+  };
+
   // === 使用者編輯邏輯 ===
   const handleUpdateUser = (id: string, updates: Partial<User>) => {
     const updatedUsers = appData.users.map(u => u.id === id ? { ...u, ...updates } : u);
@@ -437,6 +618,20 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
     .filter((goal) => getGoalDisplayGroup(goal, today) === 'notAchieved')
     .slice(0, 5);
 
+  const childNameById = (id: string) => appData.users.find((user) => user.id === id)?.name ?? '未指定孩子';
+
+  const sortedRewardCards = [...appData.rewardCards].sort((a, b) => b.issuedAt - a.issuedAt);
+  const activeRewardCards = sortedRewardCards.filter((card) => card.status === RewardCardStatus.ACTIVE);
+  const redeemedRewardCards = sortedRewardCards
+    .filter((card) => card.status === RewardCardStatus.REDEEMED)
+    .slice(0, 8);
+
+  const sortedStampCards = [...appData.stampCards].sort((a, b) => b.createdAt - a.createdAt);
+  const activeStampCards = sortedStampCards.filter((card) => card.status === StampCardStatus.ACTIVE);
+  const redeemedStampCards = sortedStampCards
+    .filter((card) => card.status === StampCardStatus.REDEEMED)
+    .slice(0, 8);
+
   return (
     <div className="space-y-8">
       <div className="bg-white/70 border-2 border-white rounded-[2rem] p-3 md:p-4 shadow-sm">
@@ -458,6 +653,18 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
             icon={<Icons.Gift size={18} />}
             label="獎勵管理"
             onClick={() => setActiveTab('rewards')}
+          />
+          <SettingsTabButton
+            active={activeTab === 'rewardCards'}
+            icon={<Icons.Award size={18} />}
+            label="獎勵卡"
+            onClick={() => setActiveTab('rewardCards')}
+          />
+          <SettingsTabButton
+            active={activeTab === 'stampCards'}
+            icon={<Icons.Stamp size={18} />}
+            label="集點卡"
+            onClick={() => setActiveTab('stampCards')}
           />
           <SettingsTabButton
             active={activeTab === 'data'}
@@ -800,6 +1007,308 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
         </Card>
       )}
 
+      {activeTab === 'rewardCards' && (
+        <Card title="🎫 獎勵卡管理" className="bg-[#FDF2F8] border-[#FBCFE8]">
+          <p className="text-sm font-bold text-nook-brown/60 mb-6">
+            孩子有特殊表現（例如比賽獲獎）時頒發。頒發時就綁定兌換內容，兌換時<span className="text-[#DB2777]">不扣分</span>。
+          </p>
+
+          <div className="space-y-5 mb-8">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <label className="block text-sm font-bold text-nook-brown mb-2 ml-1">孩子</label>
+                <select
+                  value={newRewardCard.childId}
+                  onChange={(e) => setNewRewardCard({ ...newRewardCard, childId: e.target.value })}
+                  className="w-full p-4 border-2 border-nook-brown/10 rounded-2xl focus:ring-4 focus:ring-[#EC4899]/20 focus:border-[#EC4899] outline-none bg-white text-nook-brown font-bold cursor-pointer"
+                >
+                  {childUsers.map((child) => (
+                    <option key={child.id} value={child.id}>{child.name}</option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-bold text-nook-brown mb-2 ml-1">頒發原因</label>
+                <input
+                  type="text"
+                  value={newRewardCard.title}
+                  onChange={(e) => setNewRewardCard({ ...newRewardCard, title: e.target.value })}
+                  className="w-full p-4 border-2 border-nook-brown/10 rounded-2xl focus:ring-4 focus:ring-[#EC4899]/20 focus:border-[#EC4899] outline-none bg-white text-nook-brown font-bold"
+                  placeholder="例如：美術比賽獲獎"
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-sm font-bold text-nook-brown mb-2 ml-1">兌換內容</label>
+              <div className="flex gap-2 mb-3">
+                <button
+                  type="button"
+                  onClick={() => setNewRewardCard({ ...newRewardCard, rewardType: 'ITEM' })}
+                  className={`px-4 py-2 rounded-full font-black border-2 transition-all ${newRewardCard.rewardType === 'ITEM' ? 'bg-[#EC4899] text-white border-[#DB2777]' : 'bg-white text-nook-brown/60 border-nook-brown/10 hover:border-nook-brown/30'}`}
+                >
+                  現有獎勵（免扣分）
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setNewRewardCard({ ...newRewardCard, rewardType: 'CUSTOM' })}
+                  className={`px-4 py-2 rounded-full font-black border-2 transition-all ${newRewardCard.rewardType === 'CUSTOM' ? 'bg-[#EC4899] text-white border-[#DB2777]' : 'bg-white text-nook-brown/60 border-nook-brown/10 hover:border-nook-brown/30'}`}
+                >
+                  自訂內容
+                </button>
+              </div>
+
+              {newRewardCard.rewardType === 'ITEM' ? (
+                appData.rewardItems.length > 0 ? (
+                  <select
+                    value={newRewardCard.rewardItemId}
+                    onChange={(e) => setNewRewardCard({ ...newRewardCard, rewardItemId: e.target.value })}
+                    className="w-full p-4 border-2 border-nook-brown/10 rounded-2xl focus:ring-4 focus:ring-[#EC4899]/20 focus:border-[#EC4899] outline-none bg-white text-nook-brown font-bold cursor-pointer"
+                  >
+                    {appData.rewardItems.map((item) => (
+                      <option key={item.id} value={item.id}>{item.icon || '🎁'} {item.label}</option>
+                    ))}
+                  </select>
+                ) : (
+                  <p className="text-sm font-bold text-nook-red bg-white rounded-2xl p-4 border-2 border-nook-red/20">
+                    目前沒有獎勵項目，請先到「獎勵管理」新增，或改用自訂內容。
+                  </p>
+                )
+              ) : (
+                <div className="space-y-3">
+                  <input
+                    type="text"
+                    value={newRewardCard.customLabel}
+                    onChange={(e) => setNewRewardCard({ ...newRewardCard, customLabel: e.target.value })}
+                    className="w-full p-4 border-2 border-nook-brown/10 rounded-2xl focus:ring-4 focus:ring-[#EC4899]/20 focus:border-[#EC4899] outline-none bg-white text-nook-brown font-bold"
+                    placeholder="例如：週末去看電影"
+                  />
+                  <div className="flex gap-2 flex-wrap">
+                    {['🎁','🍦','🍕','🎬','🛍️','🏖️','🎢','🧁','🎡','🎈','🍿','🎂','🐾','⚽'].map((icon) => (
+                      <button
+                        type="button"
+                        key={icon}
+                        onClick={() => setNewRewardCard({ ...newRewardCard, customIcon: icon })}
+                        className={`w-11 h-11 rounded-2xl text-xl flex items-center justify-center border-2 transition-all ${newRewardCard.customIcon === icon ? 'border-[#EC4899] bg-[#EC4899] text-white scale-110 shadow-md' : 'border-nook-brown/10 hover:bg-white hover:border-nook-brown/30 bg-white/50'}`}
+                      >
+                        {icon}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <div className="flex justify-end">
+              <Button onClick={handleIssueRewardCard} className="bg-[#EC4899] text-white border-[#DB2777] hover:brightness-105 min-w-[11rem]" icon={<Icons.Award size={20} />}>
+                頒發獎勵卡
+              </Button>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+            <CardListColumn title="待兌換" count={activeRewardCards.length} emptyText="目前沒有待兌換的獎勵卡">
+              {activeRewardCards.map((card) => (
+                <div key={card.id} className="p-4 bg-white rounded-[1.75rem] border-2 border-[#FBCFE8] shadow-sm">
+                  <div className="flex items-center gap-3">
+                    <div className="w-12 h-12 rounded-2xl bg-[#FDF2F8] flex items-center justify-center text-2xl flex-shrink-0">
+                      {card.rewardIcon || '🎁'}
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <span className="text-sm font-black px-3 py-0.5 rounded-full bg-nook-blue/10 text-nook-blueDark">{childNameById(card.childId)}</span>
+                      <p className="font-black text-nook-brown mt-1 truncate">{card.rewardLabel}</p>
+                      <p className="text-xs font-bold text-nook-brown/50 truncate">🏅 {card.title}</p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => handleDeleteRewardCard(card.id)}
+                      className="text-nook-brown/30 hover:text-nook-red hover:bg-nook-red/10 p-2.5 rounded-xl transition-colors flex-shrink-0"
+                    >
+                      <Icons.Trash2 size={18} />
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </CardListColumn>
+            <CardListColumn title="已兌換（最近 8 筆）" count={redeemedRewardCards.length} emptyText="目前沒有已兌換的獎勵卡">
+              {redeemedRewardCards.map((card) => (
+                <div key={card.id} className="p-4 bg-white/60 rounded-[1.75rem] border-2 border-nook-brown/5">
+                  <div className="flex items-center gap-3">
+                    <div className="w-11 h-11 rounded-2xl bg-nook-beige/50 flex items-center justify-center text-xl flex-shrink-0 grayscale">
+                      {card.rewardIcon || '🎁'}
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <p className="font-bold text-nook-brown/70 truncate">{childNameById(card.childId)}｜{card.rewardLabel}</p>
+                      <p className="text-xs font-bold text-nook-brown/40 truncate">🏅 {card.title}</p>
+                    </div>
+                    <span className="text-xs font-black px-3 py-1 rounded-full bg-nook-green/20 text-nook-greenDark flex-shrink-0">已兌換</span>
+                  </div>
+                </div>
+              ))}
+            </CardListColumn>
+          </div>
+        </Card>
+      )}
+
+      {activeTab === 'stampCards' && (
+        <Card title="🏅 集點卡管理" className="bg-[#FFF7D7] border-nook-yellow/40">
+          <p className="text-sm font-bold text-nook-brown/60 mb-6">
+            由家長手動蓋章的集點卡，<span className="text-nook-orangeDark">獨立於積分</span>（不加分、不扣分）。集滿即可兌換家長指定的實體禮物。
+          </p>
+
+          <div className="space-y-5 mb-8">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <label className="block text-sm font-bold text-nook-brown mb-2 ml-1">孩子</label>
+                <select
+                  value={newStampCard.childId}
+                  onChange={(e) => setNewStampCard({ ...newStampCard, childId: e.target.value })}
+                  className="w-full p-4 border-2 border-nook-brown/10 rounded-2xl focus:ring-4 focus:ring-nook-yellow/30 focus:border-nook-orange outline-none bg-white text-nook-brown font-bold cursor-pointer"
+                >
+                  {childUsers.map((child) => (
+                    <option key={child.id} value={child.id}>{child.name}</option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-bold text-nook-brown mb-2 ml-1">集點卡名稱</label>
+                <input
+                  type="text"
+                  value={newStampCard.title}
+                  onChange={(e) => setNewStampCard({ ...newStampCard, title: e.target.value })}
+                  className="w-full p-4 border-2 border-nook-brown/10 rounded-2xl focus:ring-4 focus:ring-nook-yellow/30 focus:border-nook-orange outline-none bg-white text-nook-brown font-bold"
+                  placeholder="例如：暑假閱讀集點"
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <label className="block text-sm font-bold text-nook-brown mb-2 ml-1">目標章數</label>
+                <div className="flex gap-2 items-center">
+                  {[5, 10].map((n) => (
+                    <button
+                      type="button"
+                      key={n}
+                      onClick={() => setNewStampCard({ ...newStampCard, targetStamps: n })}
+                      className={`px-5 py-3 rounded-2xl font-black border-2 transition-all ${newStampCard.targetStamps === n ? 'bg-nook-orange text-white border-nook-orangeDark' : 'bg-white text-nook-brown/60 border-nook-brown/10 hover:border-nook-brown/30'}`}
+                    >
+                      {n} 點
+                    </button>
+                  ))}
+                  <input
+                    type="number"
+                    min={1}
+                    value={newStampCard.targetStamps}
+                    onChange={(e) => setNewStampCard({ ...newStampCard, targetStamps: Number(e.target.value) })}
+                    className="w-24 p-3 border-2 border-nook-brown/10 rounded-2xl focus:ring-4 focus:ring-nook-yellow/30 focus:border-nook-orange outline-none bg-white text-nook-brown font-bold text-center"
+                  />
+                </div>
+              </div>
+              <div>
+                <label className="block text-sm font-bold text-nook-brown mb-2 ml-1">集滿禮物</label>
+                <input
+                  type="text"
+                  value={newStampCard.rewardLabel}
+                  onChange={(e) => setNewStampCard({ ...newStampCard, rewardLabel: e.target.value })}
+                  className="w-full p-4 border-2 border-nook-brown/10 rounded-2xl focus:ring-4 focus:ring-nook-yellow/30 focus:border-nook-orange outline-none bg-white text-nook-brown font-bold"
+                  placeholder="例如：一本新的故事書"
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-sm font-bold text-nook-brown mb-2 ml-1">禮物圖示</label>
+              <div className="flex gap-2 flex-wrap">
+                {['🎁','📚','🧸','🚲','🎨','🍰','🎮','⚽','🎧','👟','🪀','🧩','🐾','🎫'].map((icon) => (
+                  <button
+                    type="button"
+                    key={icon}
+                    onClick={() => setNewStampCard({ ...newStampCard, rewardIcon: icon })}
+                    className={`w-11 h-11 rounded-2xl text-xl flex items-center justify-center border-2 transition-all ${newStampCard.rewardIcon === icon ? 'border-nook-orange bg-nook-orange text-white scale-110 shadow-md' : 'border-nook-brown/10 hover:bg-white hover:border-nook-brown/30 bg-white/50'}`}
+                  >
+                    {icon}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="flex justify-end">
+              <Button onClick={handleAddStampCard} className="bg-nook-orange text-white border-nook-orangeDark hover:brightness-105 min-w-[11rem]" icon={<Icons.Plus size={20} />}>
+                建立集點卡
+              </Button>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+            <CardListColumn title="集點中" count={activeStampCards.length} emptyText="目前沒有集點中的卡片">
+              {activeStampCards.map((card) => {
+                const complete = isStampCardComplete(card);
+                const filled = Math.min(card.stamps, card.targetStamps);
+                return (
+                  <div key={card.id} className={`p-4 rounded-[1.75rem] border-2 shadow-sm ${complete ? 'bg-nook-yellow/20 border-nook-orange/40' : 'bg-white border-nook-brown/5'}`}>
+                    <div className="flex items-center justify-between gap-2 mb-2">
+                      <span className="text-sm font-black px-3 py-0.5 rounded-full bg-nook-blue/10 text-nook-blueDark">{childNameById(card.childId)}</span>
+                      <button
+                        type="button"
+                        onClick={() => handleDeleteStampCard(card.id)}
+                        className="text-nook-brown/30 hover:text-nook-red hover:bg-nook-red/10 p-2 rounded-xl transition-colors"
+                      >
+                        <Icons.Trash2 size={16} />
+                      </button>
+                    </div>
+                    <p className="font-black text-nook-brown leading-tight">{card.title}</p>
+                    <p className="text-xs font-bold text-nook-brown/50 mb-3">禮物：{card.rewardIcon || '🎁'} {card.rewardLabel}</p>
+
+                    <div className="flex flex-wrap gap-1.5 mb-3">
+                      {Array.from({ length: card.targetStamps }).map((_, idx) => (
+                        <span
+                          key={idx}
+                          className={`w-7 h-7 rounded-full flex items-center justify-center text-sm border-2 ${idx < filled ? 'bg-nook-orange text-white border-nook-orangeDark' : 'bg-white text-nook-brown/20 border-nook-brown/10'}`}
+                        >
+                          {idx < filled ? '★' : '☆'}
+                        </span>
+                      ))}
+                    </div>
+
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span className="text-xs font-black px-3 py-1.5 rounded-full bg-nook-beige text-nook-brown/60">{filled}/{card.targetStamps}</span>
+                      <Button size="sm" variant="outline" onClick={() => handleAdjustStamp(card, -1)} disabled={card.stamps <= 0}>
+                        −1
+                      </Button>
+                      <Button size="sm" variant="secondary" onClick={() => handleAdjustStamp(card, 1)} disabled={card.stamps >= card.targetStamps}>
+                        蓋章 +1
+                      </Button>
+                      {complete && (
+                        <Button size="sm" className="bg-nook-orange text-white border-nook-orangeDark hover:brightness-105" onClick={() => handleRedeemStampCard(card)} icon={<Icons.Gift size={16} />}>
+                          兌換禮物
+                        </Button>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </CardListColumn>
+            <CardListColumn title="已兌換（最近 8 筆）" count={redeemedStampCards.length} emptyText="目前沒有已兌換的集點卡">
+              {redeemedStampCards.map((card) => (
+                <div key={card.id} className="p-4 bg-white/60 rounded-[1.75rem] border-2 border-nook-brown/5">
+                  <div className="flex items-center gap-3">
+                    <div className="w-11 h-11 rounded-2xl bg-nook-beige/50 flex items-center justify-center text-xl flex-shrink-0 grayscale">
+                      {card.rewardIcon || '🎁'}
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <p className="font-bold text-nook-brown/70 truncate">{childNameById(card.childId)}｜{card.title}</p>
+                      <p className="text-xs font-bold text-nook-brown/40 truncate">禮物：{card.rewardLabel}</p>
+                    </div>
+                    <span className="text-xs font-black px-3 py-1 rounded-full bg-nook-green/20 text-nook-greenDark flex-shrink-0">已兌換</span>
+                  </div>
+                </div>
+              ))}
+            </CardListColumn>
+          </div>
+        </Card>
+      )}
+
       {activeTab === 'data' && (
         <div className="space-y-8">
           <Card title="💾 資料管理" className="bg-white border-nook-blue/30">
@@ -1041,6 +1550,32 @@ const SettingsTabButton = ({
     {icon}
     <span>{label}</span>
   </button>
+);
+
+const CardListColumn: React.FC<{
+  title: string;
+  count: number;
+  emptyText: string;
+  children?: React.ReactNode;
+}> = ({ title, count, emptyText, children }) => (
+  <div className="space-y-4">
+    <div className="bg-white/70 p-4 rounded-[2rem] border-2 border-white shadow-sm">
+      <div className="flex items-center justify-between gap-3">
+        <h3 className="font-black text-nook-brown text-xl">{title}</h3>
+        <span className="text-xs font-black text-nook-brown/50 bg-nook-beige px-3 py-1 rounded-full">{count} 筆</span>
+      </div>
+    </div>
+
+    <div className="space-y-3 max-h-[28rem] overflow-y-auto pr-2 custom-scrollbar">
+      {count === 0 ? (
+        <div className="text-center py-10 rounded-[2rem] border-2 border-dashed border-nook-brown/10 bg-white/50 text-nook-brown/40 font-bold">
+          {emptyText}
+        </div>
+      ) : (
+        children
+      )}
+    </div>
+  </div>
 );
 
 interface GoalSectionProps {

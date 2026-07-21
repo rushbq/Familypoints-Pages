@@ -40,7 +40,8 @@ import {
   Gift,
   Hash,
   TrendingUp,
-  Calendar
+  Calendar,
+  Award
 } from 'lucide-react';
 
 export const Icons = {
@@ -85,5 +86,6 @@ export const Icons = {
   Gift,
   Hash,
   TrendingUp,
-  Calendar
+  Calendar,
+  Award
 };

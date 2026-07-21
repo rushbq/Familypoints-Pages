@@ -123,6 +123,69 @@ export interface DiscountCard {
 }
 
 /**
+ * 獎勵卡狀態
+ * ACTIVE: 已頒發、尚未兌換
+ * REDEEMED: 已兌換
+ */
+export enum RewardCardStatus {
+  ACTIVE = 'ACTIVE',
+  REDEEMED = 'REDEEMED',
+}
+
+/**
+ * 獎勵卡介面
+ * 家長因特殊事蹟（如比賽獲獎）頒發，頒發時即綁定兌換內容。
+ * 兌換時「不扣分」，可綁定現有獎勵項目或由家長自訂。
+ */
+export interface RewardCard {
+  id: string;
+  childId: string;
+  title: string;                 // 頒發原因，例如「美術比賽獎狀」
+  rewardType: 'ITEM' | 'CUSTOM'; // ITEM: 綁定現有獎勵；CUSTOM: 家長自訂
+  rewardItemId?: string | null;  // rewardType === 'ITEM' 時對應的 RewardItem id
+  rewardLabel: string;           // 兌換內容顯示文字（現有獎勵的快照或自訂文字）
+  rewardIcon?: string;
+  status: RewardCardStatus;
+  issuedAt: number;
+  issuedById: string;
+  issuedByName: string;
+  redeemedAt?: number | null;
+  redeemedById?: string | null;
+  redeemedByName?: string | null;
+  redeemedRecordId?: string | null; // 兌換時產生的紀錄 id
+}
+
+/**
+ * 集點卡狀態
+ * ACTIVE: 集點中
+ * REDEEMED: 已集滿並兌換
+ */
+export enum StampCardStatus {
+  ACTIVE = 'ACTIVE',
+  REDEEMED = 'REDEEMED',
+}
+
+/**
+ * 集點卡介面
+ * 家長手動蓋章的獨立集點系統，與積分完全分離（不加分、不扣分）。
+ * 集滿目標章數後可兌換家長指定的實體禮物。
+ */
+export interface StampCard {
+  id: string;
+  childId: string;
+  title: string;        // 集點卡名稱，例如「暑假閱讀集點」
+  targetStamps: number; // 集滿所需章數（例如 5 或 10）
+  stamps: number;       // 目前已蓋章數
+  rewardLabel: string;  // 集滿可兌換的實體禮物（家長手填）
+  rewardIcon?: string;
+  status: StampCardStatus;
+  createdAt: number;
+  redeemedAt?: number | null;
+  redeemedById?: string | null;
+  redeemedByName?: string | null;
+}
+
+/**
  * 應用程式全域狀態介面
  * 儲存所有資料結構
  */
@@ -134,4 +197,6 @@ export interface AppState {
   messages: SecretMessage[];// 信件紀錄
   goalRewards: GoalReward[];// 目標獎勵
   discountCards: DiscountCard[];// 打折卡
+  rewardCards: RewardCard[];// 獎勵卡
+  stampCards: StampCard[];  // 集點卡
 }

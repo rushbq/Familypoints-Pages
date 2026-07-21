@@ -36,6 +36,8 @@ export const normalizeAppState = (state?: Partial<AppState>): AppState => {
     messages: state?.messages ?? defaults.messages,
     goalRewards: state?.goalRewards ?? defaults.goalRewards,
     discountCards: state?.discountCards ?? defaults.discountCards,
+    rewardCards: state?.rewardCards ?? defaults.rewardCards,
+    stampCards: state?.stampCards ?? defaults.stampCards,
   };
 };
 
@@ -54,7 +56,7 @@ const loadLocalIndexedDbState = async (): Promise<AppState> => {
   try {
     await initializeDatabase();
 
-    const [users, scoreItems, rewardItems, records, messages, goalRewards, discountCards] = await Promise.all([
+    const [users, scoreItems, rewardItems, records, messages, goalRewards, discountCards, rewardCards, stampCards] = await Promise.all([
       localDb.users.toArray(),
       localDb.scoreItems.toArray(),
       localDb.rewardItems.toArray(),
@@ -62,6 +64,8 @@ const loadLocalIndexedDbState = async (): Promise<AppState> => {
       localDb.messages.toArray(),
       localDb.goalRewards.toArray(),
       localDb.discountCards.toArray(),
+      localDb.rewardCards.toArray(),
+      localDb.stampCards.toArray(),
     ]);
 
     return normalizeAppState({
@@ -72,6 +76,8 @@ const loadLocalIndexedDbState = async (): Promise<AppState> => {
       messages,
       goalRewards,
       discountCards,
+      rewardCards,
+      stampCards,
     });
   } catch (err) {
     console.warn('⚠️ 無法讀取舊版 IndexedDB，改用預設資料:', err);

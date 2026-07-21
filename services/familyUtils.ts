@@ -2,11 +2,15 @@ import {
   DiscountCard,
   GoalReward,
   GoalRewardStatus,
+  RewardCard,
+  RewardCardStatus,
   RewardItem,
   ScoreCategory,
   ScoreItem,
   ScoreRecord,
   ScoreType,
+  StampCard,
+  StampCardStatus,
 } from '../types';
 
 export const SCORE_CATEGORY_OPTIONS = [
@@ -176,6 +180,29 @@ export const getUnusedDiscountCards = (
 
 export const getRewardCost = (reward: RewardItem, useDiscountCard: boolean): number => {
   return useDiscountCard ? getDiscountedRewardCost(reward.points) : reward.points;
+};
+
+// === 獎勵卡 ===
+
+/** 取得某位孩子尚未兌換的獎勵卡（依頒發時間排序，最新在前） */
+export const getActiveRewardCards = (cards: RewardCard[], childId: string): RewardCard[] => {
+  return cards
+    .filter((card) => card.childId === childId && card.status === RewardCardStatus.ACTIVE)
+    .sort((a, b) => b.issuedAt - a.issuedAt);
+};
+
+// === 集點卡 ===
+
+/** 取得某位孩子集點中的卡片（依建立時間排序，最新在前） */
+export const getActiveStampCards = (cards: StampCard[], childId: string): StampCard[] => {
+  return cards
+    .filter((card) => card.childId === childId && card.status === StampCardStatus.ACTIVE)
+    .sort((a, b) => b.createdAt - a.createdAt);
+};
+
+/** 集點卡是否已集滿（達到目標章數） */
+export const isStampCardComplete = (card: StampCard): boolean => {
+  return card.stamps >= card.targetStamps;
 };
 
 export const groupScoreItemsByCategory = (items: ScoreItem[], type: ScoreType): Map<ScoreCategory, ScoreItem[]> => {

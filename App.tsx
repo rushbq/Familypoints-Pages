@@ -5,10 +5,12 @@ import {
   AppState,
   DiscountCard,
   GoalReward,
+  RewardCard,
   RewardItem,
   ScoreItem,
   ScoreRecord,
   SecretMessage,
+  StampCard,
   User,
 } from './types';
 import { RoleSelector } from './components/RoleSelector';
@@ -158,6 +160,14 @@ const App: React.FC = () => {
     setData((prev) => (prev ? { ...prev, discountCards: updater(prev.discountCards) } : prev));
   };
 
+  const handleUpdateRewardCards = (updater: (items: RewardCard[]) => RewardCard[]) => {
+    setData((prev) => (prev ? { ...prev, rewardCards: updater(prev.rewardCards) } : prev));
+  };
+
+  const handleUpdateStampCards = (updater: (items: StampCard[]) => StampCard[]) => {
+    setData((prev) => (prev ? { ...prev, stampCards: updater(prev.stampCards) } : prev));
+  };
+
   const handleImportData = (newData: AppState) => {
     setData(normalizeAppState(newData));
   };
@@ -269,6 +279,8 @@ const App: React.FC = () => {
         onUpdateRewardItems={handleUpdateRewardItems}
         onUpdateGoalRewards={handleUpdateGoalRewards}
         onUpdateDiscountCards={handleUpdateDiscountCards}
+        onUpdateRewardCards={handleUpdateRewardCards}
+        onUpdateStampCards={handleUpdateStampCards}
         cloudEmail={cloudUser.email || '已登入雲端帳號'}
         onCloudLogout={handleCloudLogout}
       />

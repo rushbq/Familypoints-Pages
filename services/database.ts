@@ -2,12 +2,14 @@ import Dexie, { Table } from 'dexie';
 import {
   DiscountCard,
   GoalReward,
+  RewardCard,
   RewardItem,
   ScoreCategory,
   ScoreItem,
   ScoreRecord,
   ScoreType,
   SecretMessage,
+  StampCard,
   User,
   UserRole,
 } from '../types';
@@ -30,6 +32,8 @@ export class FamilyPointsDB extends Dexie {
   messages!: Table<SecretMessage, string>;
   goalRewards!: Table<GoalReward, string>;
   discountCards!: Table<DiscountCard, string>;
+  rewardCards!: Table<RewardCard, string>;
+  stampCards!: Table<StampCard, string>;
 
   constructor() {
     super('FamilyPointsDB');
@@ -68,6 +72,19 @@ export class FamilyPointsDB extends Dexie {
       await recordsTable.toCollection().modify((record) => {
         record.scoreCategory = normalizeScoreRecord(record, scoreItemMap, rewardIds).scoreCategory;
       });
+    });
+
+    // 版本 3：新增獎勵卡與集點卡
+    this.version(3).stores({
+      users: 'id, role',
+      scoreItems: 'id, type, category',
+      rewardItems: 'id',
+      records: 'id, childId, timestamp, scoreCategory',
+      messages: 'id, fromChildId, isRead, timestamp',
+      goalRewards: 'id, childId, status, startDate, endDate, createdAt',
+      discountCards: 'id, childId, goalId, issuedAt, usedAt',
+      rewardCards: 'id, childId, status, issuedAt',
+      stampCards: 'id, childId, status, createdAt',
     });
   }
 }
@@ -121,6 +138,8 @@ export const getDefaultState = () => ({
   messages: [] as SecretMessage[],
   goalRewards: [] as GoalReward[],
   discountCards: [] as DiscountCard[],
+  rewardCards: [] as RewardCard[],
+  stampCards: [] as StampCard[],
 });
 
 /**
@@ -227,7 +246,7 @@ export const cleanupOldRecords = async (daysToKeep: number = 365): Promise<numbe
  * 匯出所有資料為 JSON（用於備份）
  */
 export const exportAllData = async (): Promise<string> => {
-  const [users, scoreItems, rewardItems, records, messages, goalRewards, discountCards] = await Promise.all([
+  const [users, scoreItems, rewardItems, records, messages, goalRewards, discountCards, rewardCards, stampCards] = await Promise.all([
     db.users.toArray(),
     db.scoreItems.toArray(),
     db.rewardItems.toArray(),
@@ -235,8 +254,10 @@ export const exportAllData = async (): Promise<string> => {
     db.messages.toArray(),
     db.goalRewards.toArray(),
     db.discountCards.toArray(),
+    db.rewardCards.toArray(),
+    db.stampCards.toArray(),
   ]);
-  
+
   return JSON.stringify({
     users,
     scoreItems,
@@ -245,6 +266,8 @@ export const exportAllData = async (): Promise<string> => {
     messages,
     goalRewards,
     discountCards,
+    rewardCards,
+    stampCards,
     exportedAt: new Date().toISOString(),
     version: '3.0' // IndexedDB 版本標記
   }, null, 2);
@@ -256,7 +279,7 @@ export const exportAllData = async (): Promise<string> => {
 export const importAllData = async (jsonData: string): Promise<void> => {
   const data = JSON.parse(jsonData);
   
-  await db.transaction('rw', [db.users, db.scoreItems, db.rewardItems, db.records, db.messages, db.goalRewards, db.discountCards], async () => {
+  await db.transaction('rw', [db.users, db.scoreItems, db.rewardItems, db.records, db.messages, db.goalRewards, db.discountCards, db.rewardCards, db.stampCards], async () => {
     await db.users.clear();
     await db.scoreItems.clear();
     await db.rewardItems.clear();
@@ -264,7 +287,9 @@ export const importAllData = async (jsonData: string): Promise<void> => {
     await db.messages.clear();
     await db.goalRewards.clear();
     await db.discountCards.clear();
-    
+    await db.rewardCards.clear();
+    await db.stampCards.clear();
+
     if (data.users?.length) await db.users.bulkAdd(data.users);
     if (data.scoreItems?.length) await db.scoreItems.bulkAdd(data.scoreItems.map((item: ScoreItem) => normalizeScoreItem(item)));
     if (data.rewardItems?.length) await db.rewardItems.bulkAdd(data.rewardItems);
@@ -280,5 +305,7 @@ export const importAllData = async (jsonData: string): Promise<void> => {
     if (data.messages?.length) await db.messages.bulkAdd(data.messages);
     if (data.goalRewards?.length) await db.goalRewards.bulkAdd(data.goalRewards);
     if (data.discountCards?.length) await db.discountCards.bulkAdd(data.discountCards);
+    if (data.rewardCards?.length) await db.rewardCards.bulkAdd(data.rewardCards);
+    if (data.stampCards?.length) await db.stampCards.bulkAdd(data.stampCards);
   });
 };

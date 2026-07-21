@@ -1,40 +1,65 @@
-# CLAUDE.md - FamilyPoints 專案指南
+# CLAUDE.md
 
-## 專案概述
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-動物森友會風格的家庭積分管理 PWA，部署於 GitHub Pages。
-
-## 開發指令
+## Commands
 
 ```bash
-npm run dev       # 開發伺服器 (port 3000)
-npm run build     # 生產建置
-npm run preview   # 預覽建置結果
-npm run deploy    # 部署到 GitHub Pages
+npm run dev        # Dev server at http://localhost:3000 (host 0.0.0.0)
+npm run build      # Production build to dist/
+npm run preview    # Preview the production build locally
+npm run deploy     # Build + publish dist/ to GitHub Pages (predeploy runs the build)
 ```
 
-## 架構重點
+There is **no test runner and no linter** configured. UI text, JSDoc comments, and `console.log` messages are in **Traditional Chinese (zh-TW)**.
 
-- **進入點**: `index.html` → `index.tsx` → `App.tsx`
-- **狀態管理**: App.tsx 內以 `useState<AppState>` 管理全域狀態，透過 props 傳遞
-- **資料持久化**: Firebase Firestore (`userStates/{uid}`)，透過 `services/storageService.ts` 的 `subscribeState` 即時監聽
-- **PWA**: `vite-plugin-pwa` 搭配 `registerType: 'prompt'`，更新時由 `components/PWAUpdatePrompt.tsx` 提示使用者
-- **部署路徑**: `base: '/Familypoints-Pages/'` — 所有路由和資源路徑都基於此
+## Architecture
 
-## 型別定義
+A **React 19 + TypeScript + Vite** single-page app deployed as a static site to GitHub Pages. No backend server, no routing library, and **no global state manager** — `App.tsx` owns everything.
 
-所有資料型別定義在 `types.ts`，主要結構為 `AppState` 介面：
-- `users`, `scoreItems`, `rewardItems`, `records`, `messages`, `goalRewards`, `discountCards`
+### State & data flow
+- `App.tsx` is the single source of truth: it holds `useState<AppState | null>` and orchestrates Firebase auth, the Firestore subscription, loading/error UI, and persistence.
+- All state mutations go through handler functions in `App.tsx` (`handleAddRecord`, `handleUpdateItems`, `handleUpdateUsers`, `handleUpdateRewardItems`, `handleUpdateGoalRewards`, `handleUpdateDiscountCards`, `handleSendMessage`, …) passed down via **prop drilling** — there is no abstraction layer. Prefer minimal, local changes.
+- When a Firebase user signs in, `App.tsx` subscribes via `subscribeState()`. When `data` changes, it calls `persistData()` → `saveState()` to write the **whole normalized `AppState`** snapshot back. `lastSyncedStateRef` prevents re-writing identical state after a snapshot echoes back.
 
-## 樣式
+### Storage layer (`services/`) — cloud-first
+- `firebase.ts` — initializes Firebase App, `auth`, and Firestore with `persistentLocalCache()`. Requires the `VITE_FIREBASE_*` env vars (see below); missing vars set `firebaseConfigError`, which blocks the app with a setup screen.
+- `storageService.ts` — the persistence facade. Firestore doc path is **`userStates/{uid}`** (one doc per Firebase account). `loadState()` reads, `subscribeState()` listens in real time, `saveState()` writes the full state with `setDoc()`. If no cloud doc exists, it bootstraps from local IndexedDB and uploads that snapshot (first-device migration path).
+- `database.ts` — legacy Dexie/IndexedDB (`FamilyPointsDB`, schema, default seed data). Now used only for old-data migration, browser cache, and storage-info helpers — **not** the source of truth. Bump `this.version(N)` (and add `.upgrade()` if transforming data) when changing the schema.
 
-- Tailwind CSS 透過 CDN 載入 (非 PostCSS)，自訂色系定義在 `index.html` 的 `tailwind.config`
-- 自訂色系前綴: `nook-` (cream, beige, brown, green, blue, orange, yellow, red, paper)
-- 字體: Zen Maru Gothic + Varela Round
+### App gates & shell
+1. `components/CloudLogin.tsx` — Firebase Email/Password sign-in. Nothing shows until authenticated.
+2. `components/RoleSelector.tsx` — local role pick. Children log in directly; parents must enter PIN **`080987`** (hardcoded `CORRECT_PIN`).
+3. `components/Dashboard.tsx` — main shell with tab navigation; renders modal overlays like `ActionLogger` and `RewardRedeemer`.
+4. `components/SettingsPanel.tsx` — parent-only admin: backup/restore, cleanup, member/score-item/reward-item/goal editing.
+- `components/ui/` — shared primitives (`Button`, `Card`, `ConfirmationModal`). `components/Icons.tsx` re-exports from `lucide-react`.
 
-## 注意事項
+### Domain model (`types.ts`)
+- Two roles: `UserRole.PARENT` and `UserRole.CHILD`. Seed data has one parent (`parent_1`) and two children (`child_1`, `child_2`). `Dashboard.tsx` and `RoleSelector.tsx` **hardcode `child_1` / `child_2`** by ID — if you change the number of children or move to dynamic rendering, update these and the seed data **together**.
+- `ScoreRecord.pointsChange` is always the **signed integer** applied to a child's score. When creating a record from a `ScoreItem`, apply the sign: `item.type === 'POSITIVE' ? item.points : -item.points`. Reward redemptions also produce a `ScoreRecord` with negative `pointsChange`.
+- `AppState` aggregates: `users`, `scoreItems`, `rewardItems`, `records`, `messages`, `goalRewards`, `discountCards`, `rewardCards`, `stampCards`. `GoalReward` (categorized targets, `YYYY-MM-DD` dates, status) can issue a `DiscountCard` ("五折卡") on achievement.
+- **Card systems** (all managed by parents in `SettingsPanel`, displayed on the overview):
+  - `DiscountCard` ("五折卡") — issued by achieving a `GoalReward`; consumed in `RewardRedeemer` to halve a redemption cost.
+  - `RewardCard` ("獎勵卡") — issued ad-hoc for special achievements; the reward is **bound at issue time** (either an existing `RewardItem` snapshot or a custom label/icon). Redeemed **for free** (writes a `pointsChange: 0` record), then marked `REDEEMED`.
+  - `StampCard` ("集點卡") — a parent-stamped punch card **fully independent of points** (never touches score). Parent adjusts `stamps` up to `targetStamps`; when full, redeems for a physical gift and marks `REDEEMED`.
+  - All three follow the same `onUpdate<X>Cards((items) => items)` updater-prop pattern threaded `App.tsx` → `Dashboard` → `SettingsPanel`.
 
-- `.env.local` 包含 Firebase 金鑰，不可提交至版控
-- `metadata.json` 儲存應用版本資訊
-- 修改資料結構時必須同步更新 `types.ts` 和 `services/storageService.ts` 中的 `normalizeAppState`
-- 新增頁面/功能時，在 `Dashboard.tsx` 的 tab 系統中加入
+## Conventions
+
+- **Tailwind is loaded via CDN in `index.html`, not npm.** The custom theme (the Animal-Crossing `nook-*` palette, `Zen Maru Gothic` font, `animate-pop`, stripes/leaf-pattern/tape-effect styles) is configured in a `<script>`/`<style>` block in `index.html` — there is **no `tailwind.config.js`**; do not add one. Match the `nook-*` colors and rounded, playful shapes.
+- `Button` variants use an "AC squishy" style: `border-b-4` + `active:border-b-0 active:translate-y-[4px]`. Match this for custom buttons.
+- Path alias `@` resolves to the **project root** (not `src/`), set in `vite.config.ts`.
+- All entity IDs are `Date.now().toString()`; timestamps are Unix ms (`Date.now()`).
+
+## Firebase env vars (`.env.local`)
+
+Exact names expected by `firebase.ts` — keep them if touching onboarding/setup/auth:
+`VITE_FIREBASE_API_KEY`, `VITE_FIREBASE_AUTH_DOMAIN`, `VITE_FIREBASE_PROJECT_ID`, `VITE_FIREBASE_STORAGE_BUCKET`, `VITE_FIREBASE_MESSAGING_SENDER_ID`, `VITE_FIREBASE_APP_ID`.
+
+Firestore security rule restricts each user to their own doc: `match /userStates/{uid} { allow read, write: if request.auth != null && request.auth.uid == uid; }`.
+
+## Deployment (GitHub Pages)
+
+`vite.config.ts` uses `base: '/Familypoints-Pages/'` and `package.json` has `homepage: 'https://rushbq.github.io/Familypoints-Pages'`. Don't change these unless the repo/deploy target changes. Deploy with `npm run deploy` (publishes the `gh-pages` branch). See `github_pages_sop.md` for the full SOP.
+</content>
+</invoke>

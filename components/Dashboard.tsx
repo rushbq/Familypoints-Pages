@@ -3,12 +3,15 @@ import {
   AppState,
   DiscountCard,
   GoalReward,
+  RewardCard,
+  RewardCardStatus,
   RewardItem,
   ScoreCategory,
   ScoreItem,
   ScoreRecord,
   ScoreType,
   SecretMessage,
+  StampCard,
   User,
   UserRole,
 } from '../types';
@@ -24,6 +27,8 @@ import { SettingsPanel } from './SettingsPanel';
 import { RewardRedeemer } from './RewardRedeemer';
 import {
   formatGoalDateRange,
+  getActiveRewardCards,
+  getActiveStampCards,
   getDiscountedRewardCost,
   getScoreCategoryChipClassName,
   getScoreCategoryLabel,
@@ -32,6 +37,7 @@ import {
   groupScoreItemsByCategory,
   isGoalPendingDecision,
   isGoalWithinActiveWindow,
+  isStampCardComplete,
   SCORE_CATEGORY_OPTIONS,
 } from '../services/familyUtils';
 
@@ -48,6 +54,8 @@ interface DashboardProps {
   onUpdateRewardItems: (items: RewardItem[]) => void;
   onUpdateGoalRewards: (updater: (items: GoalReward[]) => GoalReward[]) => void;
   onUpdateDiscountCards: (updater: (items: DiscountCard[]) => DiscountCard[]) => void;
+  onUpdateRewardCards: (updater: (items: RewardCard[]) => RewardCard[]) => void;
+  onUpdateStampCards: (updater: (items: StampCard[]) => StampCard[]) => void;
   cloudEmail: string;
   onCloudLogout: () => void;
 }
@@ -67,6 +75,8 @@ export const Dashboard: React.FC<DashboardProps> = ({
   onUpdateRewardItems,
   onUpdateGoalRewards,
   onUpdateDiscountCards,
+  onUpdateRewardCards,
+  onUpdateStampCards,
   cloudEmail,
   onCloudLogout,
 }) => {
@@ -154,6 +164,22 @@ export const Dashboard: React.FC<DashboardProps> = ({
               ))}
             </div>
 
+             {/* 家長專屬：獎勵卡與集點卡 */}
+             {isParent && (
+               <div className={`grid gap-6 md:gap-8 ${visibleChildren.length === 1 ? 'grid-cols-1 max-w-lg mx-auto' : 'grid-cols-1 md:grid-cols-2'}`}>
+                 {childScores.map((cs) => (
+                   <FamilyCardsSection
+                     key={cs.user.id}
+                     childId={cs.user.id}
+                     rewardCards={data.rewardCards}
+                     stampCards={data.stampCards}
+                     isParent={isParent}
+                     onRedeemRewardCard={handleRedeemRewardCard}
+                   />
+                 ))}
+               </div>
+             )}
+
              {/* 家長專屬最近紀錄 */}
              {isParent && (
                <ParentRecentRecordsGrid
@@ -173,6 +199,8 @@ export const Dashboard: React.FC<DashboardProps> = ({
                   scoreItems={data.scoreItems}
                   goalRewards={activeGoalReminders.filter((goal) => goal.childId === currentUser.id)}
                   availableDiscountCardCount={getUnusedDiscountCards(data.discountCards, currentUser.id).length}
+                  rewardCards={data.rewardCards}
+                  stampCards={data.stampCards}
                 />
              )}
           </div>
@@ -227,6 +255,8 @@ export const Dashboard: React.FC<DashboardProps> = ({
             onUpdateRewardItems={onUpdateRewardItems}
             onUpdateGoalRewards={onUpdateGoalRewards}
             onUpdateDiscountCards={onUpdateDiscountCards}
+            onUpdateRewardCards={onUpdateRewardCards}
+            onUpdateStampCards={onUpdateStampCards}
             resolver={currentUser}
           />
         ) : <div className="p-12 md:p-20 text-center font-bold text-nook-brown/50 text-lg md:text-xl">🚧 施工中，閒人勿進！ 🚧</div>;
@@ -317,6 +347,40 @@ export const Dashboard: React.FC<DashboardProps> = ({
       );
     }
     setIsRedeemingReward(null);
+  };
+
+  /**
+   * 兌換獎勵卡（不扣分）：寫入一筆 0 分紀錄方便日誌追蹤，並標記卡片為已兌換
+   */
+  const handleRedeemRewardCard = (card: RewardCard) => {
+    if (card.status !== RewardCardStatus.ACTIVE) return;
+
+    const record = onAddRecord({
+      childId: card.childId,
+      childName: data.users.find((u) => u.id === card.childId)?.name || 'Unknown',
+      itemId: `rewardcard_${card.id}`,
+      itemName: `獎勵卡：${card.rewardLabel}`,
+      pointsChange: 0,
+      scoreCategory: null,
+      note: `獎勵卡兌換｜${card.title}｜免扣分`,
+      createdById: currentUser.id,
+      createdByName: currentUser.name,
+    });
+
+    onUpdateRewardCards((items) =>
+      items.map((item) =>
+        item.id === card.id
+          ? {
+              ...item,
+              status: RewardCardStatus.REDEEMED,
+              redeemedAt: Date.now(),
+              redeemedById: currentUser.id,
+              redeemedByName: currentUser.name,
+              redeemedRecordId: record?.id ?? null,
+            }
+          : item,
+      ),
+    );
   };
 
   // 計算兌換時的目前分數
@@ -735,7 +799,7 @@ const ParentRecentRecordsGrid = ({
   </div>
 );
 
-const ChildOverviewSection = ({ currentUser, records, score, rewardItems, scoreItems, goalRewards, availableDiscountCardCount }: {
+const ChildOverviewSection = ({ currentUser, records, score, rewardItems, scoreItems, goalRewards, availableDiscountCardCount, rewardCards, stampCards }: {
   currentUser: User;
   records: ScoreRecord[];
   score: number;
@@ -743,6 +807,8 @@ const ChildOverviewSection = ({ currentUser, records, score, rewardItems, scoreI
   scoreItems: ScoreItem[];
   goalRewards: GoalReward[];
   availableDiscountCardCount: number;
+  rewardCards: RewardCard[];
+  stampCards: StampCard[];
 }) => {
   const myRecords = records.filter(r => r.childId === currentUser.id);
   const recentRecords = [...myRecords].sort((a, b) => b.timestamp - a.timestamp).slice(0, 5);
@@ -808,6 +874,14 @@ const ChildOverviewSection = ({ currentUser, records, score, rewardItems, scoreI
         </div>
       </Card>
 
+      {/* 獎勵卡與集點卡 */}
+      <FamilyCardsSection
+        childId={currentUser.id}
+        rewardCards={rewardCards}
+        stampCards={stampCards}
+        isParent={false}
+      />
+
       <Card className="border-4 border-white bg-white/60">
         <div className="flex items-center mb-4 gap-2">
           <div className="p-2 bg-nook-green rounded-lg text-white"><Icons.BookOpen size={20} /></div>
@@ -870,6 +944,120 @@ const ChildOverviewSection = ({ currentUser, records, score, rewardItems, scoreI
           </div>
         )}
       </Card>
+    </div>
+  );
+};
+
+// --- 獎勵卡與集點卡展示區 ---
+const FamilyCardsSection = ({
+  childId,
+  rewardCards,
+  stampCards,
+  isParent,
+  onRedeemRewardCard,
+}: {
+  childId: string;
+  rewardCards: RewardCard[];
+  stampCards: StampCard[];
+  isParent: boolean;
+  onRedeemRewardCard?: (card: RewardCard) => void;
+}) => {
+  const activeRewardCards = getActiveRewardCards(rewardCards, childId);
+  const activeStampCards = getActiveStampCards(stampCards, childId);
+
+  if (activeRewardCards.length === 0 && activeStampCards.length === 0) {
+    return null;
+  }
+
+  return (
+    <Card className="border-4 border-[#FBCFE8] bg-[#FDF2F8]">
+      <div className="flex items-center mb-4 gap-2">
+        <div className="p-2 bg-[#EC4899] rounded-lg text-white"><Icons.Gift size={20} /></div>
+        <h3 className="text-lg md:text-xl font-bold text-nook-brown">我的卡片收藏</h3>
+      </div>
+
+      {activeRewardCards.length > 0 && (
+        <div className="mb-5">
+          <p className="font-black text-[#DB2777] text-sm mb-3">🎫 獎勵卡（免費兌換）</p>
+          <div className="space-y-3">
+            {activeRewardCards.map((card) => (
+              <div key={card.id} className="bg-white rounded-[1.5rem] p-4 border-2 border-[#FBCFE8] shadow-sm">
+                <div className="flex items-center gap-3">
+                  <div className="w-12 h-12 rounded-2xl bg-[#FDF2F8] flex items-center justify-center text-2xl flex-shrink-0">
+                    {card.rewardIcon || '🎁'}
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-xs font-bold text-nook-brown/50 truncate">🏅 {card.title}</p>
+                    <p className="font-black text-nook-brown leading-tight truncate">{card.rewardLabel}</p>
+                  </div>
+                  {isParent ? (
+                    <Button
+                      size="sm"
+                      className="bg-[#EC4899] text-white border-[#DB2777] hover:brightness-105 flex-shrink-0"
+                      onClick={() => onRedeemRewardCard?.(card)}
+                      icon={<Icons.Gift size={16} />}
+                    >
+                      兌換
+                    </Button>
+                  ) : (
+                    <span className="text-xs font-black px-3 py-1.5 rounded-full bg-[#FCE7F3] text-[#DB2777] flex-shrink-0">
+                      找爸媽兌換
+                    </span>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {activeStampCards.length > 0 && (
+        <div>
+          <p className="font-black text-nook-orangeDark text-sm mb-3">🏅 集點卡</p>
+          <div className="space-y-3">
+            {activeStampCards.map((card) => (
+              <StampCardRow key={card.id} card={card} />
+            ))}
+          </div>
+        </div>
+      )}
+    </Card>
+  );
+};
+
+// --- 集點卡進度列 (展示用) ---
+const StampCardRow = ({ card }: { card: StampCard }) => {
+  const complete = isStampCardComplete(card);
+  const filled = Math.min(card.stamps, card.targetStamps);
+
+  return (
+    <div className={`rounded-[1.5rem] p-4 border-2 shadow-sm ${complete ? 'bg-nook-yellow/20 border-nook-orange/40' : 'bg-white border-nook-brown/5'}`}>
+      <div className="flex items-center justify-between gap-3 mb-3">
+        <div className="min-w-0">
+          <p className="font-black text-nook-brown leading-tight truncate">{card.title}</p>
+          <p className="text-xs font-bold text-nook-brown/50 truncate">禮物：{card.rewardIcon || '🎁'} {card.rewardLabel}</p>
+        </div>
+        <span className={`text-xs font-black px-3 py-1 rounded-full flex-shrink-0 ${complete ? 'bg-nook-orange text-white' : 'bg-nook-beige text-nook-brown/60'}`}>
+          {filled}/{card.targetStamps}
+        </span>
+      </div>
+      <div className="flex flex-wrap gap-1.5">
+        {Array.from({ length: card.targetStamps }).map((_, idx) => (
+          <span
+            key={idx}
+            className={`w-7 h-7 rounded-full flex items-center justify-center text-sm border-2 ${
+              idx < filled
+                ? 'bg-nook-orange text-white border-nook-orangeDark'
+                : 'bg-white text-nook-brown/20 border-nook-brown/10'
+            }`}
+          >
+            {idx < filled ? '★' : '☆'}
+          </span>
+        ))}
+      </div>
+      {complete && (
+        <p className="text-sm font-black text-nook-orangeDark mt-3">🎉 集滿囉！可以找爸媽兌換禮物！</p>
+      )}
     </div>
   );
 };
