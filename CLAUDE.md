@@ -13,6 +13,8 @@ npm run deploy     # Build + publish dist/ to GitHub Pages (predeploy runs the b
 
 There is **no test runner and no linter** configured. UI text, JSDoc comments, and `console.log` messages are in **Traditional Chinese (zh-TW)**.
 
+**Always reply to the user in Traditional Chinese (zh-TW).**
+
 ## Architecture
 
 A **React 19 + TypeScript + Vite** single-page app deployed as a static site to GitHub Pages. No backend server, no routing library, and **no global state manager** — `App.tsx` owns everything.

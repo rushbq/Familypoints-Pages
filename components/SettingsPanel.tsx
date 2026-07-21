@@ -57,6 +57,39 @@ interface StorageInfo {
 }
 
 type SettingsTabKey = 'goals' | 'scoreItems' | 'rewards' | 'rewardCards' | 'stampCards' | 'data' | 'members';
+type SettingsGroupKey = 'cards' | 'scoring' | 'data';
+
+/**
+ * 設定頁分組：把原本散落的頁籤收斂成三大群組，群組內再用次頁籤切換。
+ */
+const SETTINGS_GROUPS: {
+  key: SettingsGroupKey;
+  label: string;
+  tabs: { key: SettingsTabKey; label: string; Icon: React.FC<{ size?: number }> }[];
+}[] = [
+  {
+    key: 'cards',
+    label: '目標與卡片',
+    tabs: [
+      { key: 'goals', label: '目標', Icon: Icons.Calendar },
+      { key: 'rewardCards', label: '獎勵卡', Icon: Icons.Award },
+      { key: 'stampCards', label: '集點卡', Icon: Icons.Stamp },
+    ],
+  },
+  {
+    key: 'scoring',
+    label: '積分與獎勵',
+    tabs: [
+      { key: 'scoreItems', label: '評分項目', Icon: Icons.ClipboardList },
+      { key: 'rewards', label: '獎勵管理', Icon: Icons.Gift },
+    ],
+  },
+  {
+    key: 'data',
+    label: '資料',
+    tabs: [{ key: 'data', label: '資料管理及提醒', Icon: Icons.Download }],
+  },
+];
 
 const getDefaultGoalDateRange = () => {
   const now = new Date();
@@ -151,6 +184,15 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
   });
 
   const [activeTab, setActiveTab] = useState<SettingsTabKey>('goals');
+  const [activeGroup, setActiveGroup] = useState<SettingsGroupKey>('cards');
+  const currentGroup = SETTINGS_GROUPS.find((g) => g.key === activeGroup) ?? SETTINGS_GROUPS[0];
+
+  const switchGroup = (key: SettingsGroupKey) => {
+    const group = SETTINGS_GROUPS.find((g) => g.key === key);
+    if (!group) return;
+    setActiveGroup(key);
+    setActiveTab(group.tabs[0].key);
+  };
 
   // --- 儲存空間資訊 ---
   const [storageInfo, setStorageInfo] = useState<StorageInfo | null>(null);
@@ -634,51 +676,48 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
 
   return (
     <div className="space-y-8">
-      <div className="bg-white/70 border-2 border-white rounded-[2rem] p-3 md:p-4 shadow-sm">
-        <div className="flex gap-3 overflow-x-auto no-scrollbar">
-          <SettingsTabButton
-            active={activeTab === 'goals'}
-            icon={<Icons.Calendar size={18} />}
-            label="目標"
-            onClick={() => setActiveTab('goals')}
-          />
-          <SettingsTabButton
-            active={activeTab === 'scoreItems'}
-            icon={<Icons.ClipboardList size={18} />}
-            label="評分項目"
-            onClick={() => setActiveTab('scoreItems')}
-          />
-          <SettingsTabButton
-            active={activeTab === 'rewards'}
-            icon={<Icons.Gift size={18} />}
-            label="獎勵管理"
-            onClick={() => setActiveTab('rewards')}
-          />
-          <SettingsTabButton
-            active={activeTab === 'rewardCards'}
-            icon={<Icons.Award size={18} />}
-            label="獎勵卡"
-            onClick={() => setActiveTab('rewardCards')}
-          />
-          <SettingsTabButton
-            active={activeTab === 'stampCards'}
-            icon={<Icons.Stamp size={18} />}
-            label="集點卡"
-            onClick={() => setActiveTab('stampCards')}
-          />
-          <SettingsTabButton
-            active={activeTab === 'data'}
-            icon={<Icons.Download size={18} />}
-            label="資料管理及提醒"
-            onClick={() => setActiveTab('data')}
-          />
-          <SettingsTabButton
-            active={activeTab === 'members'}
-            icon={<Icons.User size={18} />}
-            label="成員設定"
-            onClick={() => setActiveTab('members')}
-          />
+      <div className="bg-white/70 border-2 border-white rounded-[2rem] p-3 md:p-4 shadow-sm space-y-3">
+        {/* 第一層：群組 */}
+        <div className="grid grid-cols-3 gap-2">
+          {SETTINGS_GROUPS.map((group) => (
+            <button
+              key={group.key}
+              type="button"
+              onClick={() => switchGroup(group.key)}
+              className={`px-2 py-3 rounded-[1.25rem] font-black text-sm md:text-base whitespace-nowrap transition-all ${
+                activeGroup === group.key
+                  ? 'bg-nook-green text-white shadow-[0_3px_0_0_#2E9E6E]'
+                  : 'bg-white text-nook-brown/60 hover:text-nook-brown hover:bg-nook-beige'
+              }`}
+            >
+              {group.label}
+            </button>
+          ))}
         </div>
+
+        {/* 第二層：群組內次頁籤（只有一個時不顯示） */}
+        {currentGroup.tabs.length > 1 && (
+          <div className="flex gap-2 flex-wrap pt-1 border-t-2 border-nook-brown/5">
+            {currentGroup.tabs.map((tab) => {
+              const TabIcon = tab.Icon;
+              return (
+                <button
+                  key={tab.key}
+                  type="button"
+                  onClick={() => setActiveTab(tab.key)}
+                  className={`inline-flex items-center gap-1.5 px-3 py-2 rounded-full font-bold text-sm whitespace-nowrap transition-all ${
+                    activeTab === tab.key
+                      ? 'bg-nook-greenDark/10 text-nook-greenDark'
+                      : 'text-nook-brown/50 hover:text-nook-brown hover:bg-nook-beige'
+                  }`}
+                >
+                  <TabIcon size={16} />
+                  <span>{tab.label}</span>
+                </button>
+              );
+            })}
+          </div>
+        )}
       </div>
 
       {activeTab === 'goals' && (
@@ -1543,7 +1582,7 @@ const SettingsTabButton = ({
     onClick={onClick}
     className={`inline-flex items-center gap-2 px-4 py-3 rounded-[1.25rem] font-black whitespace-nowrap transition-all ${
       active
-        ? 'bg-nook-green text-white shadow-[0_4px_0_0_#5EBA9A]'
+        ? 'bg-nook-green text-white shadow-[0_4px_0_0_#2E9E6E]'
         : 'bg-white text-nook-brown/60 hover:text-nook-brown hover:bg-nook-beige'
     }`}
   >

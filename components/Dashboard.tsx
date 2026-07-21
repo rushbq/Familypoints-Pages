@@ -25,6 +25,7 @@ import { HistoryLog } from './HistoryLog';
 import { ActionLogger } from './ActionLogger';
 import { SettingsPanel } from './SettingsPanel';
 import { RewardRedeemer } from './RewardRedeemer';
+import { ConfirmationModal } from './ui/ConfirmationModal';
 import {
   formatGoalDateRange,
   getActiveRewardCards,
@@ -115,6 +116,9 @@ export const Dashboard: React.FC<DashboardProps> = ({
 
   // --- 狀態：手機版雲端帳號展開 ---
   const [showCloudInfo, setShowCloudInfo] = useState(false);
+
+  // --- 狀態：獎勵卡兌換確認 ---
+  const [rewardCardToRedeem, setRewardCardToRedeem] = useState<RewardCard | null>(null);
 
   /**
    * 渲染主要內容區域
@@ -352,7 +356,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
   /**
    * 兌換獎勵卡（不扣分）：寫入一筆 0 分紀錄方便日誌追蹤，並標記卡片為已兌換
    */
-  const handleRedeemRewardCard = (card: RewardCard) => {
+  const executeRedeemRewardCard = (card: RewardCard) => {
     if (card.status !== RewardCardStatus.ACTIVE) return;
 
     const record = onAddRecord({
@@ -383,15 +387,21 @@ export const Dashboard: React.FC<DashboardProps> = ({
     );
   };
 
+  // 開啟獎勵卡兌換確認視窗
+  const handleRedeemRewardCard = (card: RewardCard) => {
+    if (card.status !== RewardCardStatus.ACTIVE) return;
+    setRewardCardToRedeem(card);
+  };
+
   // 計算兌換時的目前分數
   const getRedeemScore = (childId: string) => {
     return calculateScore(childId, data.records);
   };
 
   return (
-    <div className="flex flex-col md:flex-row h-screen overflow-hidden bg-[#CDF5E2]">
-      {/* ===== 桌面版側邊導覽列 (md 以上) ===== */}
-      <aside className="hidden md:flex w-24 lg:w-80 bg-nook-cream border-r-8 border-white flex-col flex-shrink-0 z-20 shadow-xl relative">
+    <div className="flex flex-col lg:flex-row h-screen overflow-hidden bg-[#E3F6ED]">
+      {/* ===== 桌面版側邊導覽列 (lg 以上；手機與 iPad 直式改用底部導覽) ===== */}
+      <aside className="hidden lg:flex w-80 bg-nook-cream border-r-8 border-white flex-col flex-shrink-0 z-20 shadow-xl relative">
         <div className="h-6 w-24 bg-nook-beige absolute top-2 left-1/2 -translate-x-1/2 rounded-full hidden lg:block"></div>
 
         <button
@@ -399,7 +409,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
           onClick={() => setActiveTab('overview')}
           className="p-4 lg:p-8 mt-4 flex items-center justify-center lg:justify-start text-left hover:scale-[1.01] transition-transform"
         >
-           <div className="w-12 h-12 lg:w-14 lg:h-14 bg-nook-green text-white rounded-[1.5rem] flex items-center justify-center shadow-[0_4px_0_0_#5EBA9A] border-2 border-white transform -rotate-6">
+           <div className="w-12 h-12 lg:w-14 lg:h-14 bg-nook-green text-white rounded-[1.5rem] flex items-center justify-center shadow-[0_4px_0_0_#2E9E6E] border-2 border-white transform -rotate-6">
              <Icons.Leaf size={32} />
            </div>
            <div className="hidden lg:block ml-4">
@@ -470,7 +480,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
       {/* ===== 主要內容區域 ===== */}
       <main className="flex-1 overflow-y-auto relative no-scrollbar">
         {/* 手機版頂部導覽 */}
-        <header className="sticky top-0 bg-nook-cream/95 backdrop-blur-md z-30 px-4 py-3 flex justify-between items-center md:hidden border-b-4 border-white shadow-sm">
+        <header className="sticky top-0 bg-nook-cream/95 backdrop-blur-md z-30 px-4 py-3 flex justify-between items-center lg:hidden border-b-4 border-white shadow-sm">
             <div className="flex items-center gap-2">
               <Icons.Leaf className="text-nook-green" size={20} />
               <h1 className="text-lg font-black text-nook-brown">Family Points</h1>
@@ -491,28 +501,38 @@ export const Dashboard: React.FC<DashboardProps> = ({
 
         {/* 手機版雲端帳號下拉面板 */}
         {showCloudInfo && (
-          <div className="md:hidden bg-white border-b-4 border-nook-brown/5 px-4 py-3 flex items-center justify-between gap-3 animate-pop z-20 relative">
-            <div className="min-w-0 flex-1">
-              <p className="text-[10px] font-black text-nook-brown/40 tracking-wider">☁️ 雲端帳號</p>
-              <p className="text-sm font-bold text-nook-brown truncate">{cloudEmail}</p>
+          <div className="lg:hidden bg-white border-b-4 border-nook-brown/5 px-4 py-3 animate-pop z-20 relative">
+            <div className="flex items-center justify-between gap-3">
+              <div className="min-w-0 flex-1">
+                <p className="text-[10px] font-black text-nook-brown/40 tracking-wider">☁️ 雲端帳號</p>
+                <p className="text-sm font-bold text-nook-brown truncate">{cloudEmail}</p>
+              </div>
+              <button
+                type="button"
+                onClick={onCloudLogout}
+                className="px-3 py-1.5 rounded-xl bg-nook-brown/10 text-nook-brown text-xs font-bold hover:bg-nook-brown/20 transition-colors flex-shrink-0"
+              >
+                切換帳號
+              </button>
             </div>
             <button
               type="button"
-              onClick={onCloudLogout}
-              className="px-3 py-1.5 rounded-xl bg-nook-brown/10 text-nook-brown text-xs font-bold hover:bg-nook-brown/20 transition-colors flex-shrink-0"
+              onClick={onLogout}
+              className="mt-3 w-full flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl bg-nook-red/10 text-nook-red text-sm font-black hover:bg-nook-red/20 transition-colors"
             >
-              切換帳號
+              <Icons.LogOut size={16} />
+              登出（回角色選擇）
             </button>
           </div>
         )}
 
-        <div className="p-4 md:p-8 lg:p-12 max-w-6xl mx-auto pb-28 md:pb-12">
+        <div className="p-4 md:p-8 lg:p-12 max-w-6xl mx-auto pb-28 lg:pb-12">
           {renderContent()}
         </div>
       </main>
 
       {/* ===== 手機版底部導覽列 ===== */}
-      <nav className="md:hidden fixed bottom-0 left-0 right-0 z-30 bg-nook-cream/95 backdrop-blur-md border-t-4 border-white shadow-[0_-4px_20px_rgba(0,0,0,0.08)]">
+      <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-30 bg-nook-cream/95 backdrop-blur-md border-t-4 border-white shadow-[0_-4px_20px_rgba(0,0,0,0.08)]">
         <div className="flex items-stretch justify-around px-2 py-1 safe-bottom">
           <MobileNavItem
             active={activeTab === 'overview'}
@@ -534,13 +554,6 @@ export const Dashboard: React.FC<DashboardProps> = ({
               label="設定"
             />
           )}
-          <MobileNavItem
-            active={false}
-            onClick={onLogout}
-            icon={<Icons.LogOut size={22} />}
-            label="登出"
-            isDanger
-          />
         </div>
       </nav>
 
@@ -568,6 +581,22 @@ export const Dashboard: React.FC<DashboardProps> = ({
             availableDiscountCards={getUnusedDiscountCards(data.discountCards, redeemingReward.childId)}
           />
       )}
+
+      {/* 獎勵卡兌換確認 */}
+      <ConfirmationModal
+        isOpen={rewardCardToRedeem !== null}
+        onClose={() => setRewardCardToRedeem(null)}
+        onConfirm={() => {
+          if (rewardCardToRedeem) executeRedeemRewardCard(rewardCardToRedeem);
+          setRewardCardToRedeem(null);
+        }}
+        title="兌換獎勵卡"
+        message={rewardCardToRedeem
+          ? `確定要兌換「${rewardCardToRedeem.rewardLabel}」嗎？\n這張獎勵卡免扣分，兌換後即標記為已使用。`
+          : ''}
+        confirmText="沒問題！"
+        cancelText="再想想"
+      />
     </div>
   );
 };
@@ -810,6 +839,7 @@ const ChildOverviewSection = ({ currentUser, records, score, rewardItems, scoreI
   rewardCards: RewardCard[];
   stampCards: StampCard[];
 }) => {
+  const [showGuide, setShowGuide] = useState(false);
   const myRecords = records.filter(r => r.childId === currentUser.id);
   const recentRecords = [...myRecords].sort((a, b) => b.timestamp - a.timestamp).slice(0, 5);
 
@@ -883,14 +913,25 @@ const ChildOverviewSection = ({ currentUser, records, score, rewardItems, scoreI
       />
 
       <Card className="border-4 border-white bg-white/60">
-        <div className="flex items-center mb-4 gap-2">
+        <button
+          type="button"
+          onClick={() => setShowGuide((v) => !v)}
+          className="w-full flex items-center gap-2"
+          aria-expanded={showGuide}
+        >
           <div className="p-2 bg-nook-green rounded-lg text-white"><Icons.BookOpen size={20} /></div>
           <h3 className="text-lg md:text-xl font-bold text-nook-brown">積分項目指南</h3>
-        </div>
-        <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
-          <ScoreGuidePanel title="可以怎麼加分" itemsByCategory={positiveItemsByCategory} type={ScoreType.POSITIVE} />
-          <ScoreGuidePanel title="哪些行為會扣分" itemsByCategory={negativeItemsByCategory} type={ScoreType.NEGATIVE} />
-        </div>
+          <span className="ml-auto flex items-center gap-1 text-sm font-bold text-nook-brown/50">
+            {showGuide ? '收合' : '展開'}
+            <Icons.ChevronRight size={18} className={`transition-transform ${showGuide ? 'rotate-90' : ''}`} />
+          </span>
+        </button>
+        {showGuide && (
+          <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 mt-4 animate-pop">
+            <ScoreGuidePanel title="可以怎麼加分" itemsByCategory={positiveItemsByCategory} type={ScoreType.POSITIVE} />
+            <ScoreGuidePanel title="哪些行為會扣分" itemsByCategory={negativeItemsByCategory} type={ScoreType.NEGATIVE} />
+          </div>
+        )}
       </Card>
 
       {/* 本週表現統計 */}

@@ -25,7 +25,7 @@ export const CloudLogin: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-[#CDF5E2] p-6 relative overflow-hidden leaf-pattern">
+    <div className="min-h-screen flex items-center justify-center bg-[#E3F6ED] p-6 relative overflow-hidden leaf-pattern">
       <div className="absolute -top-20 -right-20 w-96 h-96 bg-nook-yellow/40 rounded-full blur-3xl pointer-events-none animate-pulse"></div>
       <div className="absolute -bottom-20 -left-20 w-96 h-96 bg-nook-blue/30 rounded-full blur-3xl pointer-events-none"></div>
 

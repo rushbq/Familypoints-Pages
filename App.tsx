@@ -16,6 +16,7 @@ import {
 import { RoleSelector } from './components/RoleSelector';
 import { Dashboard } from './components/Dashboard';
 import { CloudLogin } from './components/CloudLogin';
+import { PreviewHarness } from './components/PreviewHarness';
 import { auth, firebaseConfigError } from './services/firebase';
 
 /**
@@ -197,9 +198,18 @@ const App: React.FC = () => {
 
   // --- 渲染邏輯 ---
 
+  // 開發預覽模式：?preview=child / ?preview=parent，跳過 Firebase 登入用假資料預覽。
+  // 僅在開發環境生效，正式 build 會被移除。
+  if (import.meta.env.DEV) {
+    const previewRole = new URLSearchParams(window.location.search).get('preview');
+    if (previewRole) {
+      return <PreviewHarness role={previewRole} />;
+    }
+  }
+
   if (firebaseConfigError) {
     return (
-      <div className="h-screen flex flex-col items-center justify-center bg-[#CDF5E2] text-nook-brown p-6 text-center">
+      <div className="h-screen flex flex-col items-center justify-center bg-[#E3F6ED] text-nook-brown p-6 text-center">
         <div className="text-6xl mb-4">🛠️</div>
         <p className="text-2xl font-black mb-3">Firebase 尚未設定完成</p>
         <p className="max-w-2xl font-bold text-nook-brown/70 leading-relaxed">
@@ -213,7 +223,7 @@ const App: React.FC = () => {
 
   if (isAuthLoading) {
     return (
-      <div className="h-screen flex flex-col items-center justify-center bg-[#CDF5E2] text-nook-brown">
+      <div className="h-screen flex flex-col items-center justify-center bg-[#E3F6ED] text-nook-brown">
         <div className="text-6xl mb-4 animate-bounce">☁️</div>
         <p className="text-xl font-bold">確認雲端登入狀態中...</p>
       </div>
@@ -226,7 +236,7 @@ const App: React.FC = () => {
 
   if (isLoading) {
     return (
-      <div className="h-screen flex flex-col items-center justify-center bg-[#CDF5E2] text-nook-brown">
+      <div className="h-screen flex flex-col items-center justify-center bg-[#E3F6ED] text-nook-brown">
         <div className="text-6xl mb-4 animate-bounce">🍃</div>
         <p className="text-xl font-bold">載入中...</p>
       </div>
@@ -235,7 +245,7 @@ const App: React.FC = () => {
 
   if (error || !data) {
     return (
-      <div className="h-screen flex flex-col items-center justify-center bg-[#CDF5E2] text-nook-brown">
+      <div className="h-screen flex flex-col items-center justify-center bg-[#E3F6ED] text-nook-brown">
         <div className="text-6xl mb-4">😢</div>
         <p className="text-xl font-bold text-red-500">{error || '發生未知錯誤'}</p>
         <button 
