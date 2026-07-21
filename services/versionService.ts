@@ -4,15 +4,40 @@ const VERSION_CHECK_INTERVAL_MS = 5 * 60 * 1000;
 const RELOAD_RETRY_DELAY_MS = 30 * 1000;
 const RELOAD_GUARD_KEY = 'family-points-version-reload';
 const SERVICE_WORKER_PATH = `${import.meta.env.BASE_URL}sw.js`;
+const REMOTE_VERSION_MANIFEST_URL = 'https://raw.githubusercontent.com/rushbq/Familypoints-Pages/gh-pages/version.json';
 
 interface VersionManifest {
   version: string;
 }
 
-const getVersionUrl = () => {
-  const versionUrl = new URL(`${import.meta.env.BASE_URL}version.json`, window.location.origin);
+const withCacheBuster = (source: string) => {
+  const versionUrl = new URL(source, window.location.origin);
   versionUrl.searchParams.set('t', Date.now().toString());
   return versionUrl.toString();
+};
+
+const fetchVersionManifest = async () => {
+  const sources = [
+    REMOTE_VERSION_MANIFEST_URL,
+    `${import.meta.env.BASE_URL}version.json`,
+  ];
+
+  for (const source of sources) {
+    try {
+      const response = await fetch(withCacheBuster(source), {
+        cache: 'no-store',
+        headers: { 'Cache-Control': 'no-cache' },
+      });
+      if (!response.ok) continue;
+
+      const manifest = await response.json() as VersionManifest;
+      if (manifest.version) return manifest;
+    } catch {
+      // GitHub raw 暫時無法連線時，繼續嘗試同網域的備援版本檔。
+    }
+  }
+
+  return null;
 };
 
 const removeAppVersionParameter = () => {
@@ -77,14 +102,8 @@ const checkForNewVersion = async () => {
   if (document.visibilityState === 'hidden') return;
 
   try {
-    const response = await fetch(getVersionUrl(), {
-      cache: 'no-store',
-      headers: { 'Cache-Control': 'no-cache' },
-    });
-    if (!response.ok) return;
-
-    const manifest = await response.json() as VersionManifest;
-    if (!manifest.version) return;
+    const manifest = await fetchVersionManifest();
+    if (!manifest) return;
 
     if (manifest.version !== __APP_VERSION__) {
       await reloadForVersion(manifest.version);
