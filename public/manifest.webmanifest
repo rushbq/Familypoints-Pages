@@ -1,0 +1,28 @@
+{
+  "name": "Sweet Home 家庭積分",
+  "short_name": "Sweet Home",
+  "description": "以家庭花園方式管理孩子的積分、目標與獎勵。",
+  "theme_color": "#EDF5E8",
+  "background_color": "#EDF5E8",
+  "display": "standalone",
+  "scope": "/Familypoints-Pages/",
+  "start_url": "/Familypoints-Pages/",
+  "icons": [
+    {
+      "src": "pwa-192x192.svg",
+      "sizes": "192x192",
+      "type": "image/svg+xml"
+    },
+    {
+      "src": "pwa-512x512.svg",
+      "sizes": "512x512",
+      "type": "image/svg+xml"
+    },
+    {
+      "src": "pwa-maskable-512x512.svg",
+      "sizes": "512x512",
+      "type": "image/svg+xml",
+      "purpose": "maskable"
+    }
+  ]
+}
