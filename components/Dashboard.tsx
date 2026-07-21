@@ -1094,7 +1094,7 @@ const ScoreGuidePanel = ({
                       {item.icon || (type === ScoreType.POSITIVE ? '⭐' : '⚠️')}
                     </div>
                     <div className="min-w-0">
-                      <p className="font-bold text-nook-brown truncate">{item.label}</p>
+                      <p className="font-bold text-nook-brown break-words">{item.label}</p>
                       <p className="text-xs font-bold text-nook-brown/40">{getScoreCategoryLabel(item.category)}</p>
                     </div>
                   </div>

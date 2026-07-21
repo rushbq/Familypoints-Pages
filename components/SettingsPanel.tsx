@@ -1151,8 +1151,8 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
                     </div>
                     <div className="min-w-0 flex-1">
                       <span className="text-sm font-black px-3 py-0.5 rounded-full bg-nook-blue/10 text-nook-blueDark">{childNameById(card.childId)}</span>
-                      <p className="font-black text-nook-brown mt-1 truncate">{card.rewardLabel}</p>
-                      <p className="text-xs font-bold text-nook-brown/50 truncate">🏅 {card.title}</p>
+                      <p className="font-black text-nook-brown mt-1 break-words">{card.rewardLabel}</p>
+                      <p className="text-xs font-bold text-nook-brown/50 break-words">🏅 {card.title}</p>
                     </div>
                     <button
                       type="button"
@@ -1173,8 +1173,8 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
                       {card.rewardIcon || '🎁'}
                     </div>
                     <div className="min-w-0 flex-1">
-                      <p className="font-bold text-nook-brown/70 truncate">{childNameById(card.childId)}｜{card.rewardLabel}</p>
-                      <p className="text-xs font-bold text-nook-brown/40 truncate">🏅 {card.title}</p>
+                      <p className="font-bold text-nook-brown/70 break-words">{childNameById(card.childId)}｜{card.rewardLabel}</p>
+                      <p className="text-xs font-bold text-nook-brown/40 break-words">🏅 {card.title}</p>
                     </div>
                     <span className="text-xs font-black px-3 py-1 rounded-full bg-nook-green/20 text-nook-greenDark flex-shrink-0">已兌換</span>
                   </div>
@@ -1332,8 +1332,8 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
                       {card.rewardIcon || '🎁'}
                     </div>
                     <div className="min-w-0 flex-1">
-                      <p className="font-bold text-nook-brown/70 truncate">{childNameById(card.childId)}｜{card.title}</p>
-                      <p className="text-xs font-bold text-nook-brown/40 truncate">禮物：{card.rewardLabel}</p>
+                      <p className="font-bold text-nook-brown/70 break-words">{childNameById(card.childId)}｜{card.title}</p>
+                      <p className="text-xs font-bold text-nook-brown/40 break-words">禮物：{card.rewardLabel}</p>
                     </div>
                     <span className="text-xs font-black px-3 py-1 rounded-full bg-nook-green/20 text-nook-greenDark flex-shrink-0">已兌換</span>
                   </div>

@@ -80,7 +80,7 @@ export const RewardRedeemer: React.FC<RewardRedeemerProps> = ({
     <>
       <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-nook-brown/80 backdrop-blur-sm animate-pop">
         {/* 視窗容器 - 使用紫色調代表商店/兌換 */}
-        <div className="bg-nook-cream rounded-[3rem] w-full max-w-4xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh] border-[12px] border-white relative">
+        <div className="bg-white rounded-[3rem] w-full max-w-4xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh] border-[12px] border-white relative">
           
           {/* 標題區塊 */}
           <div className="px-8 py-6 flex justify-between items-center bg-[#A88BFA] text-white">
@@ -106,7 +106,7 @@ export const RewardRedeemer: React.FC<RewardRedeemerProps> = ({
           </div>
 
           {/* 獎勵列表內容區 */}
-          <div className="p-8 overflow-y-auto flex-1 bg-nook-beige/30">
+          <div className="p-8 overflow-y-auto flex-1 bg-nook-green/5">
             <div className="mb-6 p-5 rounded-[2rem] border-2 border-white bg-white/70">
               <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
                 <div>
@@ -142,7 +142,7 @@ export const RewardRedeemer: React.FC<RewardRedeemerProps> = ({
                     key={item.id}
                     onClick={() => canAfford && setSelectedItemId(item.id)}
                     disabled={!canAfford}
-                    className={`relative group flex flex-col items-center justify-between p-4 rounded-[2rem] border-b-8 transition-all duration-150 h-56
+                    className={`relative group flex flex-col items-center justify-between p-4 rounded-[2rem] border-b-8 transition-all duration-150 min-h-[13rem]
                       ${!canAfford ? 'opacity-50 cursor-not-allowed bg-gray-100 border-gray-300 grayscale' : ''}
                       ${
                         selectedItemId === item.id
@@ -162,7 +162,7 @@ export const RewardRedeemer: React.FC<RewardRedeemerProps> = ({
                     
                     {/* 名稱 */}
                     <div className="w-full mt-2">
-                      <span className="font-bold text-nook-brown text-center leading-tight w-full line-clamp-2 text-lg block">
+                      <span className="font-bold text-nook-brown text-center leading-tight w-full break-words text-lg block">
                           {item.label}
                       </span>
                       {useDiscountCard && hasDiscountCards && (
@@ -191,7 +191,7 @@ export const RewardRedeemer: React.FC<RewardRedeemerProps> = ({
           </div>
 
           {/* 底部按鈕區 */}
-          <div className="p-6 border-t-4 border-nook-brown/5 flex gap-4 bg-nook-cream relative z-10">
+          <div className="p-6 border-t-4 border-nook-brown/5 flex gap-4 bg-white relative z-10">
             <Button variant="ghost" className="flex-1 text-xl" onClick={onClose} size="lg">算了，再存一點</Button>
             <Button 
               type="button" // 明確指定 type 防止 form submit 行為
