@@ -14,29 +14,29 @@ export const Button: React.FC<ButtonProps> = ({
   icon,
   ...props 
 }) => {
-  // AC Style: "Squishy" buttons with bottom border for depth
-  const baseStyles = "inline-flex items-center justify-center rounded-full font-bold transition-all transform active:scale-95 active:translate-y-[4px] active:shadow-none focus:outline-none disabled:opacity-50 disabled:pointer-events-none shadow-[0_4px_0_0_rgba(0,0,0,0.15)]";
+  // Pikmin Bloom 風格：緊湊、圓潤，保留輕微按壓深度。
+  const baseStyles = "inline-flex min-h-10 items-center justify-center rounded-xl font-bold transition-[transform,filter,background-color,border-color] duration-200 active:translate-y-[3px] focus:outline-none focus-visible:ring-2 focus-visible:ring-nook-greenDark focus-visible:ring-offset-2 disabled:opacity-45 disabled:pointer-events-none";
   
   const variants = {
     // Mint Green (Confirmation)
-    primary: "bg-nook-green text-white border-b-4 border-nook-greenDark hover:brightness-105 active:border-b-0",
+    primary: "bg-nook-green text-white border-b-[3px] border-nook-greenDark hover:brightness-105 active:border-b-0",
     // Sky Blue (Navigation/Info)
-    secondary: "bg-nook-blue text-white border-b-4 border-nook-blueDark hover:brightness-105 active:border-b-0",
+    secondary: "bg-nook-blue text-white border-b-[3px] border-nook-blueDark hover:brightness-105 active:border-b-0",
     // Leaf Green (Positive)
-    success: "bg-[#7FD959] text-white border-b-4 border-[#5DA83D] hover:brightness-105 active:border-b-0",
+    success: "bg-nook-green text-white border-b-[3px] border-nook-greenDark hover:brightness-105 active:border-b-0",
     // Red (Danger/Cancel)
-    danger: "bg-nook-red text-white border-b-4 border-[#D96057] hover:brightness-105 active:border-b-0",
+    danger: "bg-nook-red text-white border-b-[3px] border-[#B84F49] hover:brightness-105 active:border-b-0",
     // Brown Outline
-    outline: "bg-transparent border-2 border-nook-brown text-nook-brown hover:bg-nook-brown/10 shadow-none active:translate-y-0",
+    outline: "bg-white border border-nook-brown/20 text-nook-brown hover:bg-nook-beige active:translate-y-0",
     // Ghost
-    ghost: "text-nook-brown hover:bg-nook-brown/10 shadow-none active:translate-y-0 active:scale-95",
+    ghost: "text-nook-brown/70 hover:text-nook-brown hover:bg-nook-brown/5 active:translate-y-0",
   };
 
   const sizes = {
-    sm: "px-4 py-1.5 text-sm",
-    md: "px-6 py-3 text-base",
-    lg: "px-8 py-4 text-xl tracking-wide",
-    xl: "px-10 py-5 text-2xl tracking-wide",
+    sm: "min-h-8 px-3 py-1 text-xs",
+    md: "px-4 py-2 text-sm",
+    lg: "px-5 py-2.5 text-base",
+    xl: "px-6 py-3 text-lg",
   };
 
   return (

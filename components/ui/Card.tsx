@@ -11,9 +11,9 @@ interface CardProps {
 
 export const Card: React.FC<CardProps> = ({ children, className = '', onClick, title, action, variant = 'default' }) => {
   const variantStyles = {
-    default: "bg-white border border-black/5 soft-card rounded-[2rem]",
-    paper: "bg-white border border-black/5 soft-card rounded-[2rem]",
-    phone: "bg-white/90 backdrop-blur-md border-[6px] border-white shadow-xl rounded-[3rem]" // NookPhone App container
+    default: "bg-white soft-card rounded-2xl",
+    paper: "bg-white soft-card rounded-2xl",
+    phone: "bg-white border-4 border-white soft-card rounded-2xl"
   };
 
   return (
@@ -22,12 +22,12 @@ export const Card: React.FC<CardProps> = ({ children, className = '', onClick, t
       className={`${variantStyles[variant]} overflow-hidden ${onClick ? 'cursor-pointer hover:scale-[1.01] transition-transform duration-200' : ''} ${className}`}
     >
       {(title || action) && (
-        <div className="px-6 md:px-8 py-4 md:py-5 flex justify-between items-center bg-nook-green/10 border-b border-black/5">
-          {title && <h3 className="font-black text-nook-brown text-lg md:text-xl tracking-wide flex items-center gap-2">{title}</h3>}
+        <div className="px-4 md:px-5 py-3 flex justify-between items-center bg-nook-green/10 border-b border-nook-greenDark/10">
+          {title && <h3 className="font-black text-nook-brown text-base md:text-lg flex items-center gap-2">{title}</h3>}
           {action && <div>{action}</div>}
         </div>
       )}
-      <div className="p-5 md:p-8">
+      <div className="p-4 md:p-5">
         {children}
       </div>
     </div>

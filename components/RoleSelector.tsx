@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { User, UserRole } from '../types';
 import { Button } from './ui/Button';
 import { Icons } from './Icons';
+import { PikminFlower } from './PikminFlower';
 
 interface RoleSelectorProps {
   users: User[];
@@ -66,66 +67,47 @@ export const RoleSelector: React.FC<RoleSelectorProps> = ({ users, onSelectUser,
   };
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center p-4 md:p-6 relative overflow-hidden leaf-pattern">
-      {/* 裝飾背景 */}
-      <div className="absolute -top-20 -right-20 w-72 md:w-96 h-72 md:h-96 bg-nook-yellow/40 rounded-full blur-3xl pointer-events-none animate-pulse"></div>
-      <div className="absolute -bottom-20 -left-20 w-72 md:w-96 h-72 md:h-96 bg-nook-blue/30 rounded-full blur-3xl pointer-events-none"></div>
-
-      {/* 標題 */}
-      <div className="text-center mb-8 md:mb-12 z-10 animate-pop">
-        <div className="inline-block bg-nook-yellow px-6 md:px-8 py-2 md:py-3 rounded-full border-4 border-white mb-4 md:mb-6 shadow-md transform -rotate-2">
-          <h1 className="text-2xl md:text-4xl font-black text-nook-brown tracking-widest">Family Points</h1>
+    <div className="min-h-screen flex flex-col items-center justify-center p-4 relative overflow-hidden leaf-pattern">
+      <div className="text-center mb-5 z-10 animate-pop">
+        <div className="flex items-center justify-center gap-2 mb-1">
+          <PikminFlower size={30} />
+          <h1 className="text-xl md:text-2xl font-black text-nook-brown tracking-wide">Sweet Home</h1>
         </div>
-        <div className="bg-white/90 backdrop-blur-sm px-5 md:px-8 py-2 md:py-3 rounded-[2rem] inline-block shadow-sm border-2 border-white">
-            <p className="text-nook-brown font-bold text-sm md:text-lg flex items-center gap-2">
-               <span className="text-xl md:text-2xl">🏝️</span> 歡迎回到溫暖的家！請選擇成員
-            </p>
-        </div>
+        <p className="text-nook-greenDark font-black text-sm">今天是誰要進入家庭花園？</p>
       </div>
 
       {/* 角色卡片列表 */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 md:gap-8 max-w-5xl w-full z-10">
+      <div className="grid grid-cols-3 gap-2.5 md:gap-4 max-w-2xl w-full z-10">
         {users.map((user, idx) => (
-          <div key={user.id} className="transform hover:-translate-y-2 md:hover:-translate-y-3 transition-transform duration-300" style={{ animationDelay: `${idx * 150}ms` }}>
-            <div 
+          <div key={user.id} className="transition-transform duration-200" style={{ animationDelay: `${idx * 80}ms` }}>
+            <button
+              type="button"
               onClick={() => handleUserClick(user)}
-              className="cursor-pointer bg-nook-cream rounded-[2rem] md:rounded-[2.5rem] overflow-hidden border-4 md:border-8 border-white shadow-xl hover:shadow-2xl h-full flex flex-col relative group"
+              className="w-full bg-white rounded-2xl soft-card p-3 md:p-4 h-full flex flex-col items-center text-center group hover:-translate-y-1 transition-transform focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-nook-greenDark"
             >
-              {/* 卡片上半部色塊 */}
-              <div className={`h-20 md:h-28 ${user.role === UserRole.PARENT ? 'bg-nook-orange' : 'bg-nook-green'} flex items-end justify-center pb-0 relative overflow-visible`}>
-                 <div className="absolute -bottom-10 md:-bottom-12 w-24 h-24 md:w-32 md:h-32 rounded-full bg-white p-2 shadow-md group-hover:scale-110 transition-transform duration-300">
-                    <div className="w-full h-full rounded-full bg-nook-beige flex items-center justify-center text-4xl md:text-6xl border-2 border-nook-brown/10">
-                        {user.avatar}
-                    </div>
-                 </div>
+              <div className={`w-14 h-14 md:w-16 md:h-16 rounded-full flex items-center justify-center text-3xl md:text-4xl mb-2 ring-4 ring-white ${user.role === UserRole.PARENT ? 'bg-nook-orange/20' : 'bg-nook-green/15'}`}>
+                {user.avatar}
               </div>
-              
-              {/* 卡片下半部 */}
-              <div className="pt-12 md:pt-16 pb-6 md:pb-10 px-4 md:px-6 text-center flex-1 flex flex-col items-center justify-end">
-                 <h2 className="text-2xl md:text-3xl font-black text-nook-brown mb-2 md:mb-3">{user.name}</h2>
-                 
-                 <div className="mt-1 md:mt-2">
-                    <span className={`px-4 md:px-5 py-1.5 md:py-2 rounded-full text-white text-sm md:text-base font-bold shadow-sm tracking-wide ${user.role === UserRole.PARENT ? 'bg-nook-orangeDark' : 'bg-nook-greenDark'}`}>
-                        {getRoleLabel(user)}
-                    </span>
-                 </div>
-              </div>
-            </div>
+              <h2 className="text-sm md:text-base font-black text-nook-brown leading-tight line-clamp-2">{user.name}</h2>
+              <span className={`mt-1.5 px-2 py-0.5 rounded-full text-white text-[10px] font-bold ${user.role === UserRole.PARENT ? 'bg-nook-orangeDark' : 'bg-nook-greenDark'}`}>
+                {getRoleLabel(user)}
+              </span>
+            </button>
           </div>
         ))}
       </div>
 
       {/* 雲端帳號資訊 (整合在頁面底部) */}
-      <div className="z-10 mt-8 md:mt-10 w-full max-w-md">
-        <div className="bg-white/80 backdrop-blur-sm border-2 border-white shadow-sm rounded-2xl px-4 py-3 flex items-center justify-between gap-3">
+      <div className="z-10 mt-4 w-full max-w-sm">
+        <div className="bg-white/80 rounded-xl px-3 py-2 flex items-center justify-between gap-3">
           <div className="min-w-0 flex-1">
             <p className="text-[10px] font-black text-nook-brown/40 tracking-wider">☁️ 雲端帳號</p>
-            <p className="text-sm font-bold text-nook-brown truncate">{cloudEmail}</p>
+            <p className="text-xs font-bold text-nook-brown truncate">{cloudEmail}</p>
           </div>
           <button
             type="button"
             onClick={onCloudLogout}
-            className="px-3 py-2 rounded-xl bg-nook-brown/10 text-nook-brown text-xs font-bold hover:bg-nook-brown/20 transition-colors flex-shrink-0"
+            className="px-3 py-1.5 rounded-lg bg-nook-brown/5 text-nook-brown/60 text-xs font-bold hover:bg-nook-brown/10 transition-colors flex-shrink-0"
           >
             切換帳號
           </button>
@@ -134,48 +116,48 @@ export const RoleSelector: React.FC<RoleSelectorProps> = ({ users, onSelectUser,
       
       {/* --- 家長密碼輸入視窗 (Modal) --- */}
       {showPinModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-nook-brown/60 backdrop-blur-md">
-          <div className="bg-nook-cream rounded-[2rem] md:rounded-[3rem] p-6 md:p-8 w-full max-w-sm shadow-2xl border-4 md:border-8 border-white transform scale-100 animate-pop">
-            <div className="text-center mb-6">
-              <h3 className="text-lg md:text-xl font-black text-nook-brown mb-2">請輸入家長密碼</h3>
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-nook-brown/60">
+          <div className="bg-nook-cream rounded-2xl p-5 w-full max-w-xs soft-card animate-pop">
+            <div className="text-center mb-4">
+              <h3 className="text-lg font-black text-nook-brown mb-2">家長密碼</h3>
               
               {/* PIN 碼顯示點 */}
-              <div className="flex justify-center gap-3 h-12 md:h-14 items-center bg-white rounded-2xl py-4 md:py-6 px-4 mb-2 border-2 border-nook-brown/10 shadow-inner">
+              <div className="flex justify-center gap-2.5 h-11 items-center bg-white rounded-xl px-4 mb-2 border border-nook-brown/10">
                  {[0, 1, 2, 3, 4, 5].map((i) => (
-                    <div key={i} className={`w-3.5 h-3.5 md:w-4 md:h-4 rounded-full transition-all duration-200 ${i < pin.length ? 'bg-nook-brown scale-125' : 'bg-nook-brown/20'}`}></div>
+                    <div key={i} className={`w-3 h-3 rounded-full transition-all duration-200 ${i < pin.length ? 'bg-nook-greenDark' : 'bg-nook-brown/15'}`}></div>
                  ))}
               </div>
               {error && <p className="text-nook-red font-bold text-sm animate-pulse mt-2">密碼錯誤，請再試一次</p>}
             </div>
 
             {/* 數字鍵盤 */}
-            <div className="grid grid-cols-3 gap-2 md:gap-3 mb-4 md:mb-6">
+            <div className="grid grid-cols-3 gap-2 mb-4">
                {[1, 2, 3, 4, 5, 6, 7, 8, 9].map(num => (
                    <button 
                      key={num}
                      onClick={() => handlePinInput(num)}
-                     className="h-14 md:h-16 rounded-2xl bg-white shadow-sm border-b-4 border-nook-brown/10 active:border-b-0 active:translate-y-[4px] font-bold text-xl md:text-2xl text-nook-brown hover:bg-nook-yellow/10 transition-colors"
+                     className="h-11 rounded-xl bg-white border-b-[3px] border-nook-brown/10 active:border-b-0 active:translate-y-[3px] font-bold text-lg text-nook-brown hover:bg-nook-yellow/10 transition-colors"
                    >
                      {num}
                    </button>
                ))}
-               <button onClick={() => setShowPinModal(false)} className="h-14 md:h-16 rounded-2xl bg-nook-red/10 text-nook-red font-bold flex items-center justify-center hover:bg-nook-red/20 active:translate-y-[2px]">
+               <button onClick={() => setShowPinModal(false)} className="h-11 rounded-xl bg-nook-red/10 text-nook-red font-bold flex items-center justify-center hover:bg-nook-red/20">
                   <Icons.X />
                </button>
                <button 
                  onClick={() => handlePinInput(0)}
-                 className="h-14 md:h-16 rounded-2xl bg-white shadow-sm border-b-4 border-nook-brown/10 active:border-b-0 active:translate-y-[4px] font-bold text-xl md:text-2xl text-nook-brown hover:bg-nook-yellow/10"
+                 className="h-11 rounded-xl bg-white border-b-[3px] border-nook-brown/10 active:border-b-0 active:translate-y-[3px] font-bold text-lg text-nook-brown hover:bg-nook-yellow/10"
                >
                  0
                </button>
-               <button onClick={handleBackspace} className="h-14 md:h-16 rounded-2xl bg-nook-brown/10 text-nook-brown font-bold flex items-center justify-center hover:bg-nook-brown/20 active:translate-y-[2px]">
+               <button onClick={handleBackspace} className="h-11 rounded-xl bg-nook-brown/5 text-nook-brown font-bold flex items-center justify-center hover:bg-nook-brown/10">
                   <Icons.ArrowLeft />
                </button>
             </div>
 
             <Button 
                 variant="primary" 
-                className="w-full text-base md:text-lg py-3 md:py-4 rounded-2xl" 
+                className="w-full"
                 onClick={handlePinSubmit}
                 disabled={pin.length !== 6}
             >
@@ -185,7 +167,7 @@ export const RoleSelector: React.FC<RoleSelectorProps> = ({ users, onSelectUser,
         </div>
       )}
       
-      <div className="fixed bottom-4 text-nook-brown/40 text-xs font-bold bg-white/50 px-3 py-1 rounded-full">
+      <div className="fixed bottom-2 text-nook-brown/35 text-[10px] font-bold">
         Designed by Clyde v1.3
       </div>
     </div>

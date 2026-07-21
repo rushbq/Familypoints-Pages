@@ -9,7 +9,7 @@ export const PikminFlower: React.FC<{
   petal?: string;
   center?: string;
   className?: string;
-}> = ({ size = 24, petal = '#FFFFFF', center = '#F6C544', className }) => (
+}> = ({ size = 24, petal = '#F08FA3', center = '#F6D96B', className }) => (
   <svg
     width={size}
     height={size}
@@ -20,9 +20,9 @@ export const PikminFlower: React.FC<{
     aria-hidden="true"
   >
     {[0, 72, 144, 216, 288].map((deg) => (
-      <ellipse key={deg} cx="20" cy="9" rx="6.2" ry="8.4" fill={petal} transform={`rotate(${deg} 20 20)`} />
+      <ellipse key={deg} cx="20" cy="9" rx="6.2" ry="8.4" fill={petal} stroke="#FFFFFF" strokeWidth="1.4" transform={`rotate(${deg} 20 20)`} />
     ))}
-    <circle cx="20" cy="20" r="5.4" fill={center} />
+    <circle cx="20" cy="20" r="5.4" fill={center} stroke="#394438" strokeOpacity="0.14" strokeWidth="1.2" />
   </svg>
 );
 
@@ -42,7 +42,7 @@ export const FloatingFlowers: React.FC<{ className?: string }> = ({ className })
     {DECOR_FLOWERS.map((f, i) => (
       <div
         key={i}
-        className="absolute opacity-40 animate-sway"
+        className="absolute opacity-20 animate-sway"
         style={{ top: f.top, left: f.left, right: f.right, animationDelay: f.delay }}
       >
         <PikminFlower size={f.size} petal={f.petal} center={f.center} />

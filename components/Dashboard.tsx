@@ -26,7 +26,7 @@ import { ActionLogger } from './ActionLogger';
 import { SettingsPanel } from './SettingsPanel';
 import { RewardRedeemer } from './RewardRedeemer';
 import { ConfirmationModal } from './ui/ConfirmationModal';
-import { PikminFlower, FloatingFlowers } from './PikminFlower';
+import { PikminFlower } from './PikminFlower';
 import {
   formatGoalDateRange,
   getActiveRewardCards,
@@ -128,18 +128,18 @@ export const Dashboard: React.FC<DashboardProps> = ({
     switch (activeTab) {
       case 'overview':
         return (
-          <div className="space-y-6 md:space-y-8 animate-pop">
+          <div className="space-y-4 md:space-y-5 animate-pop">
             {/* 歡迎標題區塊 */}
-            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+            <div className="flex items-start justify-between gap-3">
                 <div>
-                    <h2 className="text-2xl md:text-3xl font-black text-nook-brown">
+                    <h2 className="text-xl md:text-2xl font-black text-nook-brown leading-tight">
                         {new Date().getHours() < 12 ? '早安！' : '你好！'} 
                         <span className="text-nook-greenDark ml-1">{currentUser.name}</span>
                     </h2>
-                    <p className="text-nook-brown/60 font-bold mt-1 text-sm md:text-base">今天也要為了家庭和睦努力喔！</p>
+                    <p className="text-nook-brown/55 font-bold mt-1 text-xs md:text-sm">把今天的小進步種進家庭花園</p>
                 </div>
-                <div className="bg-nook-yellow/40 px-4 py-1.5 md:px-6 md:py-2 rounded-full border-2 border-white shadow-sm flex-shrink-0">
-                    <span className="font-bold text-nook-orangeDark text-sm md:text-lg">📅 {new Date().toLocaleDateString('zh-TW')}</span>
+                <div className="bg-white px-2.5 py-1.5 rounded-xl flex-shrink-0 soft-card">
+                    <span className="font-bold text-nook-brown/60 text-xs">{new Date().toLocaleDateString('zh-TW', { month: 'numeric', day: 'numeric', weekday: 'short' })}</span>
                 </div>
             </div>
 
@@ -153,7 +153,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
             )}
 
             {/* 成員積分卡片區塊 - 動態渲染 */}
-            <div className={`grid gap-6 md:gap-8 ${visibleChildren.length === 1 ? 'grid-cols-1 max-w-lg mx-auto' : 'grid-cols-1 md:grid-cols-2'}`}>
+            <div className={`grid gap-3 md:gap-4 ${visibleChildren.length === 1 ? 'grid-cols-1 max-w-xl mx-auto' : 'grid-cols-2'}`}>
               {childScores.map((cs, idx) => (
                 <ScoreCard 
                   key={cs.user.id}
@@ -171,11 +171,12 @@ export const Dashboard: React.FC<DashboardProps> = ({
 
              {/* 家長專屬：獎勵卡與集點卡 */}
              {isParent && (
-               <div className={`grid gap-6 md:gap-8 ${visibleChildren.length === 1 ? 'grid-cols-1 max-w-lg mx-auto' : 'grid-cols-1 md:grid-cols-2'}`}>
+               <div className={`grid gap-3 md:gap-4 ${visibleChildren.length === 1 ? 'grid-cols-1 max-w-xl mx-auto' : 'grid-cols-2'}`}>
                  {childScores.map((cs) => (
                    <FamilyCardsSection
                      key={cs.user.id}
                      childId={cs.user.id}
+                     childName={cs.user.name}
                      rewardCards={data.rewardCards}
                      stampCards={data.stampCards}
                      isParent={isParent}
@@ -214,32 +215,33 @@ export const Dashboard: React.FC<DashboardProps> = ({
         }
 
         return (
-           <Card variant="paper" className="min-h-[400px] md:min-h-[600px] bg-white">
-             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-4 md:mb-6 border-b-2 border-nook-brown/10 pb-4 gap-3">
-                <div className="flex items-center gap-3">
-                  <Icons.BookOpen className="text-nook-brown" size={28} />
-                  <h2 className="text-xl md:text-2xl font-black text-nook-brown">活動日誌</h2>
+           <Card variant="paper" className="min-h-[320px] bg-white">
+             <div className="mb-2.5 flex items-center justify-between gap-2 border-b border-nook-brown/10 pb-2.5">
+                <div className="flex items-center gap-2">
+                  <Icons.BookOpen className="text-nook-greenDark" size={18} />
+                  <div>
+                    <h2 className="text-base font-black text-nook-brown md:text-lg">積分日誌</h2>
+                    <p className="text-[10px] font-bold text-nook-brown/45">每筆加扣分依時間排列</p>
+                  </div>
                 </div>
                 
                 {/* 顯示範圍選擇器 */}
-                <div className="flex items-center gap-2 bg-nook-beige p-1.5 md:p-2 rounded-2xl">
-                   <span className="text-xs md:text-sm font-bold text-nook-brown pl-2">顯示：</span>
+                <div className="relative rounded-xl bg-nook-beige/70 p-1">
                    <select 
                      value={daysFilter} 
                      onChange={(e) => setDaysFilter(Number(e.target.value))}
-                     className="bg-white border-2 border-nook-brown/10 text-nook-brown font-bold text-xs md:text-sm rounded-xl py-1.5 md:py-2 px-2 md:px-3 outline-none focus:border-nook-green"
+                     className="appearance-none rounded-lg border border-nook-brown/10 bg-white py-1.5 pl-2.5 pr-8 text-xs font-bold text-nook-brown outline-none focus:border-nook-green"
                    >
                      <option value={7}>最近 7 天</option>
                      <option value={14}>最近 14 天</option>
                      <option value={30}>最近 30 天</option>
                      <option value={9999}>全部紀錄</option>
                    </select>
+                   <Icons.ChevronDown size={14} className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-nook-brown/40" />
                 </div>
              </div>
-             
-             <div className="overflow-y-auto max-h-[50vh] md:max-h-[60vh] pr-2 md:pr-4 custom-scrollbar">
-                <HistoryLog records={filteredRecords} showAll={true} />
-             </div>
+
+             <HistoryLog records={filteredRecords} showAll={true} />
            </Card>
         );
       }
@@ -395,24 +397,23 @@ export const Dashboard: React.FC<DashboardProps> = ({
   return (
     <div className="flex flex-col lg:flex-row h-screen overflow-hidden app-bg">
       {/* ===== 桌面版側邊導覽列 (lg 以上；手機與 iPad 直式改用底部導覽) ===== */}
-      <aside className="hidden lg:flex w-80 bg-nook-cream border-r-8 border-white flex-col flex-shrink-0 z-20 shadow-xl relative">
-        <div className="h-6 w-24 bg-nook-beige absolute top-2 left-1/2 -translate-x-1/2 rounded-full hidden lg:block"></div>
+      <aside className="hidden lg:flex w-64 bg-nook-cream border-r border-nook-greenDark/10 flex-col flex-shrink-0 z-20 relative">
 
         <button
           type="button"
           onClick={() => setActiveTab('overview')}
-          className="p-4 lg:p-8 mt-4 flex items-center justify-center lg:justify-start text-left hover:scale-[1.01] transition-transform"
+          className="p-5 flex items-center justify-start text-left"
         >
-           <div className="w-12 h-12 lg:w-14 lg:h-14 bg-nook-green text-white rounded-[1.5rem] flex items-center justify-center shadow-[0_4px_0_0_#2E9E6E] border-2 border-white transform -rotate-6">
-             <Icons.Leaf size={32} />
+           <div className="w-10 h-10 bg-nook-green/15 rounded-full flex items-center justify-center">
+             <PikminFlower size={27} />
            </div>
-           <div className="hidden lg:block ml-4">
-             <h1 className="font-black text-2xl text-nook-brown leading-none">Sweet Home</h1>
-             <span className="text-nook-brown/60 font-bold text-sm tracking-widest">DASHBOARD</span>
+           <div className="ml-3">
+             <h1 className="font-black text-lg text-nook-brown leading-none">Sweet Home</h1>
+             <span className="text-nook-greenDark font-bold text-[10px] tracking-[0.14em]">FAMILY GARDEN</span>
            </div>
         </button>
         
-        <nav className="flex-1 px-2 lg:px-4 py-2 space-y-4 overflow-y-auto no-scrollbar">
+        <nav className="flex-1 px-3 py-2 space-y-2 overflow-y-auto no-scrollbar">
           <NavItem 
             active={activeTab === 'log'} 
             onClick={() => setActiveTab('log')} 
@@ -431,14 +432,14 @@ export const Dashboard: React.FC<DashboardProps> = ({
           )}
         </nav>
 
-        <div className="p-3 lg:p-4 mt-auto space-y-3">
+        <div className="p-3 mt-auto space-y-2">
            {/* 使用者簡介卡片 */}
-           <div className="bg-nook-yellow/20 p-3 lg:p-4 rounded-2xl lg:rounded-[2rem] border-2 border-white shadow-sm">
+           <div className="bg-nook-yellow/15 p-3 rounded-xl">
                <div className="flex items-center">
-                 <div className="w-10 h-10 lg:w-12 lg:h-12 rounded-full bg-white flex items-center justify-center text-xl lg:text-2xl border-2 border-nook-brown/10 flex-shrink-0">
+                 <div className="w-9 h-9 rounded-full bg-white flex items-center justify-center text-lg border border-nook-brown/10 flex-shrink-0">
                    {currentUser.avatar}
                  </div>
-                 <div className="overflow-hidden ml-3 hidden lg:block">
+                 <div className="overflow-hidden ml-2">
                    <p className="text-sm font-black text-nook-brown truncate">{currentUser.name}</p>
                    <p className="text-xs text-nook-brown/60 font-bold">{isParent ? '管理員' : '成員'}</p>
                  </div>
@@ -446,7 +447,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
            </div>
 
            {/* 雲端帳號資訊 (整合進側欄) */}
-           <div className="bg-white/80 p-3 rounded-2xl border-2 border-nook-brown/5">
+           <div className="bg-white/80 p-3 rounded-xl">
                <div className="hidden lg:flex items-center gap-2 mb-2">
                  <span className="text-[10px] font-black text-nook-brown/40 tracking-wider">☁️ 雲端帳號</span>
                </div>
@@ -463,10 +464,10 @@ export const Dashboard: React.FC<DashboardProps> = ({
 
           <button 
             onClick={onLogout}
-            className="w-full group flex items-center justify-center lg:justify-start p-3 rounded-2xl text-nook-brown/40 hover:text-nook-red hover:bg-nook-red/10 transition-colors font-bold"
+            className="w-full group flex items-center justify-center lg:justify-start p-3 rounded-2xl text-nook-brown/50 hover:text-nook-greenDark hover:bg-nook-green/10 transition-colors font-bold"
           >
-            <Icons.LogOut size={22} className="lg:mr-2" />
-            <span className="hidden lg:inline">離開 (登出)</span>
+            <Icons.User size={22} className="lg:mr-2" />
+            <span className="hidden lg:inline">切換角色</span>
           </button>
         </div>
       </aside>
@@ -474,28 +475,31 @@ export const Dashboard: React.FC<DashboardProps> = ({
       {/* ===== 主要內容區域 ===== */}
       <main className="flex-1 overflow-y-auto relative no-scrollbar">
         {/* 手機版頂部導覽 */}
-        <header className="sticky top-0 bg-white/85 backdrop-blur-md z-30 px-4 py-3 flex justify-between items-center lg:hidden border-b border-nook-greenDark/10 shadow-sm">
+        <header className="sticky top-0 bg-white/95 z-30 px-4 py-2 flex justify-between items-center lg:hidden border-b border-nook-greenDark/10">
             <div className="flex items-center gap-2">
-              <PikminFlower size={26} center="#6FD3A0" className="animate-sway" />
-              <h1 className="text-lg font-black text-nook-greenDark tracking-tight">家庭花園</h1>
+              <PikminFlower size={24} className="animate-sway" />
+              <div>
+                <h1 className="text-base font-black text-nook-brown leading-none">Sweet Home</h1>
+                <span className="text-[9px] font-black tracking-[0.12em] text-nook-greenDark">FAMILY GARDEN</span>
+              </div>
             </div>
             <div className="flex items-center gap-2">
               {/* 雲端帳號按鈕 */}
               <button
                 type="button"
                 onClick={() => setShowCloudInfo(!showCloudInfo)}
-                className="w-8 h-8 bg-nook-blue/20 rounded-full flex items-center justify-center text-sm"
+                className="w-8 h-8 bg-nook-blue/15 rounded-full flex items-center justify-center text-sm"
                 title="雲端帳號"
               >
                 ☁️
               </button>
-              <div className="w-9 h-9 bg-white rounded-full flex items-center justify-center border-2 border-nook-brown/10 text-lg">{currentUser.avatar}</div>
+              <div className="w-8 h-8 bg-nook-beige rounded-full flex items-center justify-center border border-nook-brown/10 text-base">{currentUser.avatar}</div>
             </div>
         </header>
 
         {/* 手機版雲端帳號下拉面板 */}
         {showCloudInfo && (
-          <div className="lg:hidden bg-white border-b-4 border-nook-brown/5 px-4 py-3 animate-pop z-20 relative">
+          <div className="lg:hidden bg-white border-b border-nook-brown/5 px-4 py-2.5 animate-pop z-20 relative">
             <p className="text-[10px] font-black text-nook-brown/40 tracking-wider">☁️ 雲端帳號</p>
             <p className="text-sm font-bold text-nook-brown break-all mb-3">{cloudEmail}</p>
             <button
@@ -509,14 +513,13 @@ export const Dashboard: React.FC<DashboardProps> = ({
           </div>
         )}
 
-        <div className="relative p-4 md:p-8 lg:p-12 max-w-6xl mx-auto pb-28 lg:pb-12">
-          <FloatingFlowers />
+        <div className="relative p-3.5 md:p-6 lg:p-8 max-w-6xl mx-auto pb-24 lg:pb-8">
           <div className="relative z-10">{renderContent()}</div>
         </div>
       </main>
 
       {/* ===== 手機版底部導覽列 ===== */}
-      <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-30 bg-nook-cream/95 backdrop-blur-md border-t-4 border-white shadow-[0_-4px_20px_rgba(0,0,0,0.08)]">
+      <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-30 bg-white/95 border-t border-nook-greenDark/10 shadow-[0_-2px_8px_rgba(44,122,75,0.08)]">
         <div className="flex items-stretch justify-around px-2 py-1 safe-bottom">
           <MobileNavItem
             active={activeTab === 'overview'}
@@ -595,19 +598,19 @@ export const Dashboard: React.FC<DashboardProps> = ({
 const NavItem = ({ active, onClick, icon, label, bgColor, badge = 0 }: { active: boolean, onClick: () => void, icon: React.ReactNode, label: string, bgColor: string, badge?: number }) => (
   <button
     onClick={onClick}
-    className={`w-full flex items-center p-3 rounded-[2rem] transition-all duration-200 group relative ${
+    className={`w-full flex items-center p-2.5 rounded-xl transition-colors duration-200 group relative ${
       active 
-        ? 'bg-white shadow-md transform scale-105' 
-        : 'hover:bg-white/50 hover:scale-105'
+        ? 'bg-white text-nook-brown'
+        : 'text-nook-brown/60 hover:bg-white/60'
     }`}
   >
-    <div className={`w-11 h-11 lg:w-12 lg:h-12 rounded-[1.2rem] flex items-center justify-center text-white shadow-sm transition-transform group-hover:rotate-6 ${bgColor}`}>
+    <div className={`w-9 h-9 rounded-lg flex items-center justify-center text-white ${bgColor}`}>
       {icon}
     </div>
-    <span className={`ml-4 font-black text-lg hidden lg:block ${active ? 'text-nook-brown' : 'text-nook-brown/60'}`}>{label}</span>
+    <span className="ml-3 font-black text-sm">{label}</span>
     
     {badge > 0 && (
-        <div className="absolute top-0 right-0 lg:top-4 lg:right-4 w-6 h-6 bg-nook-red border-2 border-white rounded-full text-white text-xs font-bold flex items-center justify-center animate-bounce">
+        <div className="absolute top-1 right-2 w-5 h-5 bg-nook-red border-2 border-white rounded-full text-white text-[10px] font-bold flex items-center justify-center">
             {badge}
         </div>
     )}
@@ -618,7 +621,7 @@ const NavItem = ({ active, onClick, icon, label, bgColor, badge = 0 }: { active:
 const MobileNavItem = ({ active, onClick, icon, label, isDanger = false }: { active: boolean, onClick: () => void, icon: React.ReactNode, label: string, isDanger?: boolean }) => (
   <button
     onClick={onClick}
-    className={`flex flex-col items-center justify-center py-2 px-3 rounded-2xl transition-all min-w-[60px] ${
+    className={`flex min-h-12 flex-col items-center justify-center py-1.5 px-3 rounded-xl transition-colors min-w-[60px] ${
       active 
         ? 'text-nook-greenDark bg-nook-green/10' 
         : isDanger 
@@ -693,47 +696,49 @@ const ParentGoalReminderSection = ({
     return (
       <div
         key={goal.id}
-        className={`p-4 rounded-[1.75rem] border-2 ${
+        className={`px-3 py-2.5 rounded-xl ${
           tone === 'pending'
-            ? 'bg-nook-red/10 border-nook-red/20'
-            : 'bg-white border-white'
+            ? 'bg-nook-red/10'
+            : 'bg-nook-beige/45'
         }`}
       >
-        <div className="flex flex-wrap items-center gap-2 mb-2">
-          <span className="text-sm font-black px-3 py-1 rounded-full bg-nook-blue/10 text-nook-blueDark">
+        <div className="flex flex-wrap items-center gap-1.5 mb-1.5">
+          <span className="text-[11px] font-black px-2 py-0.5 rounded-full bg-nook-blue/10 text-nook-blueDark">
             {child?.name ?? '未指定孩子'}
           </span>
-          <span className="text-xs font-black px-3 py-1 rounded-full bg-nook-yellow/20 text-nook-orangeDark">
-            {tone === 'pending' ? '已截止待判定' : '進行中提醒'}
+          <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-nook-yellow/25 text-nook-orangeDark">
+            {tone === 'pending' ? '待判定' : '進行中'}
           </span>
           {hasIssuedCard && (
-            <span className="text-xs font-black px-3 py-1 rounded-full bg-[#F3E8FF] text-[#7C3AED]">
-              已發 5 折卡
+            <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-[#F3E8FF] text-[#6D46C2]">
+              已發卡
             </span>
           )}
         </div>
-        <p className="font-bold text-nook-brown leading-relaxed">{goal.targetText}</p>
-        <p className="text-xs font-bold text-nook-brown/50 mt-2">{formatGoalDateRange(goal)}</p>
+        <p className="font-bold text-sm text-nook-brown leading-snug">{goal.targetText}</p>
+        <p className="text-[10px] font-bold text-nook-brown/45 mt-1">{formatGoalDateRange(goal)}</p>
       </div>
     );
   };
 
   return (
-    <Card className="border-4 border-white bg-white/70">
-      <div className="flex items-center mb-4 gap-2">
-        <div className="p-2 bg-nook-orange rounded-lg text-white"><Icons.Calendar size={20} /></div>
-        <h3 className="text-lg md:text-xl font-bold text-nook-brown">目標提醒</h3>
+    <Card className="bg-white">
+      <div className="flex items-center mb-3 gap-2">
+        <div className="w-8 h-8 bg-nook-orange/15 rounded-lg text-nook-orangeDark flex items-center justify-center"><Icons.Calendar size={17} /></div>
+        <h3 className="text-base font-black text-nook-brown">目標提醒</h3>
+        <div className="ml-auto flex gap-1.5 text-[10px] font-black">
+          {pendingGoals.length > 0 && <span className="px-2 py-1 rounded-full bg-nook-red/10 text-nook-red">待判定 {pendingGoals.length}</span>}
+          {goals.length > 0 && <span className="px-2 py-1 rounded-full bg-nook-green/10 text-nook-greenDark">進行中 {goals.length}</span>}
+        </div>
       </div>
-      <div className="space-y-4">
+      <div className="space-y-2">
         {pendingGoals.length > 0 && (
-          <div className="space-y-3">
-            <p className="font-black text-nook-red">以下目標已超過截止日期，請家長判定是否達成。</p>
+          <div className="space-y-2">
             {pendingGoals.map((goal) => renderGoalCard(goal, 'pending'))}
           </div>
         )}
         {goals.length > 0 && (
-          <div className="space-y-3">
-            <p className="font-black text-nook-brown/70">目前仍在進行中的目標：</p>
+          <div className="space-y-2">
             {goals.map((goal) => renderGoalCard(goal, 'active'))}
           </div>
         )}
@@ -849,19 +854,21 @@ const ChildOverviewSection = ({ currentUser, records, score, rewardItems, scoreI
   const negativeItemsByCategory = groupScoreItemsByCategory(scoreItems, ScoreType.NEGATIVE);
 
   return (
-    <div className="space-y-4 md:space-y-6">
+    <div className="space-y-3 md:space-y-4">
       {goalRewards.length > 0 && (
-        <Card className="border-4 border-nook-orange/30 bg-nook-orange/10">
-          <div className="flex items-center mb-4 gap-2">
-            <div className="p-2 bg-nook-orange rounded-lg text-white"><Icons.Calendar size={20} /></div>
-            <h3 className="text-lg md:text-xl font-bold text-nook-brown">這段時間的努力目標</h3>
+        <Card className="bg-nook-orange/10">
+          <div className="flex items-center mb-2.5 gap-2">
+            <div className="w-7 h-7 bg-nook-orange/20 rounded-lg text-nook-orangeDark flex items-center justify-center"><Icons.Calendar size={15} /></div>
+            <h3 className="text-sm md:text-base font-black text-nook-brown">這段時間的努力目標</h3>
           </div>
-          <div className="space-y-3">
+          <div className="space-y-2">
             {goalRewards.map((goal) => (
-              <div key={goal.id} className="bg-white/80 rounded-[1.5rem] p-4 border-2 border-white">
-                <p className="font-black text-nook-brown leading-relaxed">{goal.targetText}</p>
-                <p className="text-sm font-bold text-nook-brown/50 mt-2">{formatGoalDateRange(goal)}</p>
-                <p className="text-sm font-bold text-nook-orangeDark mt-2">加油，持續努力就有機會拿到 5 折卡！</p>
+              <div key={goal.id} className="bg-white/85 rounded-xl p-3">
+                <p className="text-sm font-black text-nook-brown leading-snug">{goal.targetText}</p>
+                <div className="flex flex-wrap items-center justify-between gap-1 mt-1.5">
+                  <p className="text-[10px] font-bold text-nook-brown/45">{formatGoalDateRange(goal)}</p>
+                  <p className="text-[10px] font-bold text-nook-orangeDark">達成可獲得 5 折卡</p>
+                </div>
               </div>
             ))}
           </div>
@@ -869,25 +876,25 @@ const ChildOverviewSection = ({ currentUser, records, score, rewardItems, scoreI
       )}
 
       {/* 鼓勵語句 */}
-      <Card className="border-4 border-nook-yellow/40 bg-nook-yellow/10">
-        <div className="flex items-center gap-3">
-          <div className="text-3xl md:text-4xl flex-shrink-0">
+      <Card className="bg-nook-yellow/10">
+        <div className="flex items-start gap-3">
+          <div className="text-2xl flex-shrink-0">
             {score >= 100 ? '👑' : score >= 50 ? '🌟' : score >= 20 ? '🌱' : '💪'}
           </div>
-          <div>
-            <p className="text-lg md:text-xl font-black text-nook-brown">{getEncouragement(score)}</p>
+          <div className="min-w-0 flex-1">
+            <p className="text-sm md:text-base font-black text-nook-brown">{getEncouragement(score)}</p>
             {nextReward && (
-              <p className="text-sm text-nook-brown/60 font-bold mt-1">
+              <p className="text-xs text-nook-brown/60 font-bold mt-1 leading-snug">
                 再努力 <span className="text-nook-orangeDark">{nextReward.points - score}</span> 分就可以兌換「{nextReward.icon || '🎁'} {nextReward.label}」！
               </p>
             )}
             {!nextReward && affordableRewards.length > 0 && (
-              <p className="text-sm text-nook-greenDark font-bold mt-1">
+              <p className="text-xs text-nook-greenDark font-bold mt-1">
                 你有足夠的分數兌換獎勵了！快去看看吧 🎉
               </p>
             )}
-            <p className="text-sm text-[#7C3AED] font-bold mt-2">
-              你現在有 {availableDiscountCardCount} 張 5 折卡，可以在兌換獎勵時使用。
+            <p className="text-[10px] text-[#6D46C2] font-bold mt-1.5">
+              目前有 {availableDiscountCardCount} 張 5 折卡
             </p>
           </div>
         </div>
@@ -896,27 +903,28 @@ const ChildOverviewSection = ({ currentUser, records, score, rewardItems, scoreI
       {/* 獎勵卡與集點卡 */}
       <FamilyCardsSection
         childId={currentUser.id}
+        childName={currentUser.name}
         rewardCards={rewardCards}
         stampCards={stampCards}
         isParent={false}
       />
 
-      <Card className="border-4 border-white bg-white/60">
+      <Card className="bg-white">
         <button
           type="button"
           onClick={() => setShowGuide((v) => !v)}
           className="w-full flex items-center gap-2"
           aria-expanded={showGuide}
         >
-          <div className="p-2 bg-nook-green rounded-lg text-white"><Icons.BookOpen size={20} /></div>
-          <h3 className="text-lg md:text-xl font-bold text-nook-brown">積分項目指南</h3>
-          <span className="ml-auto flex items-center gap-1 text-sm font-bold text-nook-brown/50">
+          <div className="w-7 h-7 bg-nook-green/15 rounded-lg text-nook-greenDark flex items-center justify-center"><Icons.BookOpen size={15} /></div>
+          <h3 className="text-sm md:text-base font-black text-nook-brown">積分項目指南</h3>
+          <span className="ml-auto flex items-center gap-1 text-xs font-bold text-nook-brown/50">
             {showGuide ? '收合' : '展開'}
             <Icons.ChevronRight size={18} className={`transition-transform ${showGuide ? 'rotate-90' : ''}`} />
           </span>
         </button>
         {showGuide && (
-          <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 mt-4 animate-pop">
+          <div className="grid grid-cols-1 xl:grid-cols-2 gap-3 mt-3 animate-pop">
             <ScoreGuidePanel title="可以怎麼加分" itemsByCategory={positiveItemsByCategory} type={ScoreType.POSITIVE} />
             <ScoreGuidePanel title="哪些行為會扣分" itemsByCategory={negativeItemsByCategory} type={ScoreType.NEGATIVE} />
           </div>
@@ -924,25 +932,25 @@ const ChildOverviewSection = ({ currentUser, records, score, rewardItems, scoreI
       </Card>
 
       {/* 本週表現統計 */}
-      <Card className="border-4 border-white bg-white/60">
-        <div className="flex items-center mb-4 gap-2">
-          <div className="p-2 bg-nook-blue rounded-lg text-white"><Icons.Calendar size={20} /></div>
-          <h3 className="text-lg md:text-xl font-bold text-nook-brown">本週表現</h3>
+      <Card className="bg-white">
+        <div className="flex items-center mb-2.5 gap-2">
+          <div className="w-7 h-7 bg-nook-blue/15 rounded-lg text-nook-blueDark flex items-center justify-center"><Icons.Calendar size={15} /></div>
+          <h3 className="text-sm md:text-base font-black text-nook-brown">本週表現</h3>
         </div>
-        <div className="grid grid-cols-3 gap-3 md:gap-4">
-          <div className="bg-nook-green/10 rounded-2xl p-3 md:p-4 text-center">
-            <div className="text-2xl md:text-3xl font-black text-nook-greenDark">{weekPositive.length}</div>
-            <div className="text-xs md:text-sm font-bold text-nook-brown/60 mt-1">加分次數</div>
+        <div className="grid grid-cols-3 gap-2">
+          <div className="bg-nook-green/10 rounded-xl p-2 text-center">
+            <div className="text-xl font-black text-nook-greenDark">{weekPositive.length}</div>
+            <div className="text-[10px] font-bold text-nook-brown/60">加分</div>
           </div>
-          <div className="bg-nook-red/10 rounded-2xl p-3 md:p-4 text-center">
-            <div className="text-2xl md:text-3xl font-black text-nook-red">{weekNegative.length}</div>
-            <div className="text-xs md:text-sm font-bold text-nook-brown/60 mt-1">扣分次數</div>
+          <div className="bg-nook-red/10 rounded-xl p-2 text-center">
+            <div className="text-xl font-black text-nook-red">{weekNegative.length}</div>
+            <div className="text-[10px] font-bold text-nook-brown/60">扣分</div>
           </div>
-          <div className={`${weekNet >= 0 ? 'bg-nook-blue/10' : 'bg-nook-orange/10'} rounded-2xl p-3 md:p-4 text-center`}>
-            <div className={`text-2xl md:text-3xl font-black ${weekNet >= 0 ? 'text-nook-blueDark' : 'text-nook-orangeDark'}`}>
+          <div className={`${weekNet >= 0 ? 'bg-nook-blue/10' : 'bg-nook-orange/10'} rounded-xl p-2 text-center`}>
+            <div className={`text-xl font-black ${weekNet >= 0 ? 'text-nook-blueDark' : 'text-nook-orangeDark'}`}>
               {weekNet >= 0 ? '+' : ''}{weekNet}
             </div>
-            <div className="text-xs md:text-sm font-bold text-nook-brown/60 mt-1">淨得分</div>
+            <div className="text-[10px] font-bold text-nook-brown/60">淨得分</div>
           </div>
         </div>
       </Card>
@@ -954,12 +962,14 @@ const ChildOverviewSection = ({ currentUser, records, score, rewardItems, scoreI
 // --- 獎勵卡與集點卡展示區 ---
 const FamilyCardsSection = ({
   childId,
+  childName,
   rewardCards,
   stampCards,
   isParent,
   onRedeemRewardCard,
 }: {
   childId: string;
+  childName?: string;
   rewardCards: RewardCard[];
   stampCards: StampCard[];
   isParent: boolean;
@@ -973,41 +983,40 @@ const FamilyCardsSection = ({
   }
 
   return (
-    <Card className="border-4 border-[#FBCFE8] bg-[#FDF2F8]">
-      <div className="flex items-center mb-4 gap-2">
-        <div className="p-2 bg-[#EC4899] rounded-lg text-white"><Icons.Gift size={20} /></div>
-        <h3 className="text-lg md:text-xl font-bold text-nook-brown">我的卡片收藏</h3>
+    <Card className="bg-white">
+      <div className="flex items-center mb-3 gap-2">
+        <div className="w-7 h-7 bg-[#F6A0B8]/20 rounded-lg text-[#C85078] flex items-center justify-center"><Icons.Gift size={15} /></div>
+        <h3 className="text-sm md:text-base font-black text-nook-brown truncate">{childName ? `${childName}的收藏` : '我的卡片'}</h3>
       </div>
 
       {activeRewardCards.length > 0 && (
-        <div className="mb-5">
-          <p className="font-black text-[#DB2777] text-sm mb-3">🎫 獎勵卡（免費兌換）</p>
-          <div className="space-y-3">
+        <div className="mb-3">
+          <p className="font-black text-[#C85078] text-[11px] mb-1.5">獎勵卡</p>
+          <div className="space-y-1.5">
             {activeRewardCards.map((card) => (
-              <div key={card.id} className="bg-white rounded-[1.5rem] p-4 border-2 border-[#FBCFE8] shadow-sm">
-                <div className="flex items-center gap-3">
-                  <div className="w-12 h-12 rounded-2xl bg-[#FDF2F8] flex items-center justify-center text-2xl flex-shrink-0">
+              <div key={card.id} className="bg-[#FDF2F8] rounded-xl p-2.5">
+                <div className="flex items-center gap-2">
+                  <div className="w-8 h-8 rounded-lg bg-white flex items-center justify-center text-lg flex-shrink-0">
                     {card.rewardIcon || '🎁'}
                   </div>
                   <div className="min-w-0 flex-1">
-                    <p className="text-xs font-bold text-nook-brown/50 break-words">🏅 {card.title}</p>
-                    <p className="font-black text-nook-brown leading-tight break-words">{card.rewardLabel}</p>
+                    <p className="text-[9px] font-bold text-nook-brown/45 truncate">{card.title}</p>
+                    <p className="truncate whitespace-nowrap text-[11px] font-black leading-tight text-nook-brown" title={card.rewardLabel}>{card.rewardLabel}</p>
                   </div>
-                  {isParent ? (
-                    <Button
-                      size="sm"
-                      className="bg-[#EC4899] text-white border-[#DB2777] hover:brightness-105 flex-shrink-0"
+                </div>
+                {isParent ? (
+                    <button
+                      type="button"
+                      className="mt-2 min-h-8 w-full rounded-lg bg-[#D85A82] px-2 text-[11px] font-black text-white hover:brightness-105 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#B94168]"
                       onClick={() => onRedeemRewardCard?.(card)}
-                      icon={<Icons.Gift size={16} />}
                     >
-                      兌換
-                    </Button>
+                      兌換這份獎勵
+                    </button>
                   ) : (
-                    <span className="text-xs font-black px-3 py-1.5 rounded-full bg-[#FCE7F3] text-[#DB2777] flex-shrink-0">
-                      找爸媽兌換
+                    <span className="mt-2 block rounded-lg bg-white px-2 py-1.5 text-center text-[10px] font-black text-[#B94168]">
+                      請爸媽協助兌換
                     </span>
                   )}
-                </div>
               </div>
             ))}
           </div>
@@ -1016,8 +1025,8 @@ const FamilyCardsSection = ({
 
       {activeStampCards.length > 0 && (
         <div>
-          <p className="font-black text-nook-orangeDark text-sm mb-3">🏅 集點卡</p>
-          <div className="space-y-3">
+          <p className="font-black text-nook-orangeDark text-[11px] mb-1.5">集點卡</p>
+          <div className="space-y-1.5">
             {activeStampCards.map((card) => (
               <StampCardRow key={card.id} card={card} />
             ))}
@@ -1034,32 +1043,21 @@ const StampCardRow = ({ card }: { card: StampCard }) => {
   const filled = Math.min(card.stamps, card.targetStamps);
 
   return (
-    <div className={`rounded-[1.5rem] p-4 border-2 shadow-sm ${complete ? 'bg-nook-yellow/20 border-nook-orange/40' : 'bg-white border-nook-brown/5'}`}>
-      <div className="flex items-start justify-between gap-3 mb-3">
+    <div className={`rounded-xl p-2.5 ${complete ? 'bg-nook-yellow/20' : 'bg-nook-beige/35'}`}>
+      <div className="flex items-start justify-between gap-2 mb-2">
         <div className="min-w-0">
-          <p className="font-black text-nook-brown leading-tight break-words">{card.title}</p>
-          <p className="text-xs font-bold text-nook-brown/50 break-words">禮物：{card.rewardIcon || '🎁'} {card.rewardLabel}</p>
+          <p className="text-xs font-black text-nook-brown leading-tight break-words">{card.title}</p>
+          <p className="text-[9px] font-bold text-nook-brown/50 truncate">{card.rewardIcon || '🎁'} {card.rewardLabel}</p>
         </div>
-        <span className={`text-xs font-black px-3 py-1 rounded-full flex-shrink-0 ${complete ? 'bg-nook-orange text-white' : 'bg-nook-beige text-nook-brown/60'}`}>
+        <span className={`text-[10px] font-black px-2 py-0.5 rounded-full flex-shrink-0 ${complete ? 'bg-nook-orange text-white' : 'bg-white text-nook-brown/60'}`}>
           {filled}/{card.targetStamps}
         </span>
       </div>
-      <div className="flex flex-wrap gap-1.5">
-        {Array.from({ length: card.targetStamps }).map((_, idx) => (
-          <span
-            key={idx}
-            className={`w-7 h-7 rounded-full flex items-center justify-center text-sm border-2 ${
-              idx < filled
-                ? 'bg-nook-orange text-white border-nook-orangeDark'
-                : 'bg-white text-nook-brown/20 border-nook-brown/10'
-            }`}
-          >
-            {idx < filled ? '★' : '☆'}
-          </span>
-        ))}
+      <div className="h-2 rounded-full bg-white overflow-hidden" aria-label={`已集 ${filled} 點，共 ${card.targetStamps} 點`}>
+        <div className="h-full rounded-full bg-nook-orange" style={{ width: `${Math.min((filled / card.targetStamps) * 100, 100)}%` }} />
       </div>
       {complete && (
-        <p className="text-sm font-black text-nook-orangeDark mt-3">🎉 集滿囉！可以找爸媽兌換禮物！</p>
+        <p className="text-[10px] font-black text-nook-orangeDark mt-1.5">集滿了，可以兌換禮物！</p>
       )}
     </div>
   );
@@ -1074,31 +1072,30 @@ const ScoreGuidePanel = ({
   itemsByCategory: Map<ScoreCategory, ScoreItem[]>;
   type: ScoreType;
 }) => (
-  <div className="rounded-[1.75rem] border-2 border-white bg-white/80 p-4">
-    <h4 className="font-black text-nook-brown text-lg mb-4">{title}</h4>
-    <div className="space-y-4">
+  <div className="rounded-xl bg-nook-beige/35 p-3">
+    <h4 className="font-black text-nook-brown text-sm mb-2.5">{title}</h4>
+    <div className="space-y-3">
       {SCORE_CATEGORY_OPTIONS.map((option) => {
         const items = itemsByCategory.get(option.value) ?? [];
         if (!items.length) return null;
 
         return (
-          <div key={option.value} className="space-y-2">
-            <div className={`px-3 py-2 rounded-full border text-sm font-black inline-flex ${getScoreCategoryChipClassName(option.value)}`}>
+          <div key={option.value} className="space-y-1.5">
+            <div className={`px-2 py-1 rounded-full border text-[10px] font-black inline-flex ${getScoreCategoryChipClassName(option.value)}`}>
               {option.label}
             </div>
             <div className="space-y-2">
               {items.map((item) => (
-                <div key={item.id} className="flex items-center justify-between gap-3 bg-nook-beige/30 rounded-2xl px-4 py-3">
-                  <div className="flex items-center gap-3 min-w-0">
-                    <div className="w-10 h-10 rounded-2xl bg-white flex items-center justify-center text-xl flex-shrink-0">
+                <div key={item.id} className="flex items-center justify-between gap-2 bg-white rounded-lg px-2.5 py-2">
+                  <div className="flex items-center gap-2 min-w-0">
+                    <div className="w-7 h-7 rounded-lg bg-nook-beige/50 flex items-center justify-center text-sm flex-shrink-0">
                       {item.icon || (type === ScoreType.POSITIVE ? '⭐' : '⚠️')}
                     </div>
                     <div className="min-w-0">
-                      <p className="font-bold text-nook-brown break-words">{item.label}</p>
-                      <p className="text-xs font-bold text-nook-brown/40">{getScoreCategoryLabel(item.category)}</p>
+                      <p className="text-xs font-bold text-nook-brown break-words">{item.label}</p>
                     </div>
                   </div>
-                  <div className={`text-sm font-black px-3 py-1 rounded-full ${type === ScoreType.POSITIVE ? 'bg-nook-green/20 text-nook-greenDark' : 'bg-nook-red/20 text-nook-red'}`}>
+                  <div className={`text-[10px] font-black px-2 py-0.5 rounded-full ${type === ScoreType.POSITIVE ? 'bg-nook-green/20 text-nook-greenDark' : 'bg-nook-red/20 text-nook-red'}`}>
                     {type === ScoreType.POSITIVE ? '+' : '-'}{item.points}
                   </div>
                 </div>
@@ -1125,76 +1122,51 @@ const ScoreCard = ({ user, score, onAddPoints, onDeductPoints, onRedeem, canMana
   const isBlue = colorTheme === 'blue';
 
   return (
-    <div className="relative group">
-       <div className="bg-white rounded-[2rem] md:rounded-[2.5rem] soft-card border border-black/5 p-4 md:p-6 relative overflow-hidden transition-transform duration-200 hover:-translate-y-1">
-            {/* 頂部柔和色帶 */}
-            <div className={`absolute inset-x-0 top-0 h-28 bg-gradient-to-b to-transparent ${isBlue ? 'from-nook-blue/25' : 'from-nook-green/25'}`}></div>
-            {/* 花朵裝飾 */}
-            <div className="absolute -right-2 -top-2 opacity-80 animate-sway">
-              <PikminFlower size={54} center={isBlue ? '#4FB0D1' : '#2E9E6E'} />
-            </div>
+    <div className={`relative overflow-hidden bg-white rounded-2xl soft-card border-t-[3px] p-3 md:p-4 ${isBlue ? 'border-nook-blue' : 'border-nook-green'}`}>
+      <div className="absolute right-1.5 top-1 opacity-70 animate-sway">
+        <PikminFlower size={30} center={isBlue ? '#3282A5' : '#2C7A4B'} />
+      </div>
 
-            {/* 卡片頭部：頭像與名稱 */}
-            <div className="relative flex items-center gap-3 md:gap-4 mb-4 md:mb-5">
-                <div className={`w-14 h-14 md:w-20 md:h-20 rounded-full bg-white flex items-center justify-center text-3xl md:text-5xl shadow-[0_4px_14px_-4px_rgba(0,0,0,0.25)] ring-4 ${isBlue ? 'ring-nook-blue/40' : 'ring-nook-green/40'}`}>
-                    {user.avatar}
-                </div>
-                <div className="min-w-0">
-                    <h3 className="text-xl md:text-2xl font-black text-nook-brown leading-tight">{user.name}</h3>
-                    <div className="flex flex-wrap items-center gap-1.5 mt-1.5">
-                      <span className={`px-2.5 py-0.5 rounded-full text-white text-[10px] md:text-xs font-black ${isBlue ? 'bg-nook-blueDark' : 'bg-nook-greenDark'}`}>
-                           目前總分
-                      </span>
-                      <span className="px-2.5 py-0.5 rounded-full text-[10px] md:text-xs font-black bg-[#F3E8FF] text-[#7C3AED]">
-                           5 折卡 {availableDiscountCardCount} 張
-                      </span>
-                    </div>
-                </div>
-            </div>
+      <div className="relative flex items-center gap-2 pr-5 mb-2.5">
+        <div className={`w-10 h-10 md:w-11 md:h-11 rounded-full flex items-center justify-center text-xl md:text-2xl flex-shrink-0 ${isBlue ? 'bg-nook-blue/15' : 'bg-nook-green/15'}`}>
+          {user.avatar}
+        </div>
+        <div className="min-w-0">
+          <h3 className="text-sm md:text-base font-black text-nook-brown leading-tight truncate">{user.name}</h3>
+          <span className="text-[9px] md:text-[10px] font-black text-[#6D46C2]">
+            5 折卡 {availableDiscountCardCount} 張
+          </span>
+        </div>
+      </div>
 
-            {/* 分數顯示區 */}
-            <div className={`relative rounded-2xl md:rounded-3xl p-3 md:p-4 mb-4 md:mb-5 flex items-baseline justify-center gap-2 ${isBlue ? 'bg-nook-blue/15' : 'bg-nook-green/15'}`}>
-                <span className={`text-5xl md:text-6xl font-black ${isBlue ? 'text-nook-blueDark' : 'text-nook-greenDark'}`}>{score}</span>
-                <span className="text-nook-brown/40 font-bold text-lg md:text-xl">分</span>
-            </div>
+      <div className={`rounded-xl px-3 py-2 mb-2.5 flex items-baseline justify-center gap-1 ${isBlue ? 'bg-nook-blue/10' : 'bg-nook-green/10'}`}>
+        <span className={`text-3xl md:text-4xl font-black leading-none ${isBlue ? 'text-nook-blueDark' : 'text-nook-greenDark'}`}>{score}</span>
+        <span className="text-nook-brown/45 font-bold text-xs">分</span>
+      </div>
 
-            {/* 操作按鈕區 */}
-            <div className={`relative grid gap-2 md:gap-3 ${canManageScoreActions ? 'grid-cols-2' : 'grid-cols-1'}`}>
-                {canManageScoreActions && (
-                  <>
-                    <Button 
-                        className="py-2 md:py-3 text-base md:text-lg col-span-1" 
-                        variant={isBlue ? 'secondary' : 'success'} 
-                        onClick={onAddPoints}
-                        icon={<Icons.PlusCircle size={18} />}
-                    >
-                        加分
-                    </Button>
-                    <Button 
-                        className="py-2 md:py-3 text-base md:text-lg col-span-1" 
-                        variant="danger" 
-                        onClick={onDeductPoints}
-                        icon={<Icons.MinusCircle size={18} />}
-                    >
-                        扣分
-                    </Button>
-                  </>
-                )}
-                
-                {/* 兌換獎勵按鈕 */}
-                <button 
-                  type="button"
-                  onClick={(e) => {
-                    e.preventDefault();
-                    onRedeem();
-                  }}
-                  className={`${canManageScoreActions ? 'col-span-2' : 'col-span-1'} py-2.5 md:py-3 rounded-full font-bold text-white bg-[#A88BFA] border-b-4 border-[#8B5CF6] active:border-b-0 active:translate-y-[4px] shadow-sm flex items-center justify-center transition-all hover:brightness-105 text-base md:text-lg`}
-                >
-                  <Icons.Gift size={18} className="mr-2" />
-                  兌換獎勵
-                </button>
-            </div>
-       </div>
+      <div className={`grid gap-1.5 ${canManageScoreActions ? 'grid-cols-2' : 'grid-cols-1'}`}>
+        {canManageScoreActions && (
+          <>
+            <Button size="sm" className="col-span-1 px-2" variant={isBlue ? 'secondary' : 'success'} onClick={onAddPoints}>
+              ＋ 加分
+            </Button>
+            <Button size="sm" className="col-span-1 px-2" variant="danger" onClick={onDeductPoints}>
+              − 扣分
+            </Button>
+          </>
+        )}
+        <button
+          type="button"
+          onClick={(e) => {
+            e.preventDefault();
+            onRedeem();
+          }}
+          className={`${canManageScoreActions ? 'col-span-2' : 'col-span-1'} min-h-8 px-3 py-1 rounded-lg font-bold text-white bg-[#9377D8] border-b-[3px] border-[#7556BA] active:border-b-0 active:translate-y-[3px] flex items-center justify-center transition-all hover:brightness-105 text-xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#7556BA] focus-visible:ring-offset-2`}
+        >
+          <Icons.Gift size={14} className="mr-1.5" />
+          兌換獎勵
+        </button>
+      </div>
     </div>
   );
 };

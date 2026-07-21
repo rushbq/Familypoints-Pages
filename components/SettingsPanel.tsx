@@ -59,17 +59,52 @@ interface StorageInfo {
 type SettingsTabKey = 'goals' | 'scoreItems' | 'rewards' | 'rewardCards' | 'stampCards' | 'data' | 'members';
 type SettingsGroupKey = 'cards' | 'scoring' | 'data';
 
+const SCORE_ICON_OPTIONS = [
+  { icon: '⭐', label: '通用' },
+  { icon: '📚', label: '學習' },
+  { icon: '🧹', label: '家事' },
+  { icon: '🤝', label: '合作' },
+  { icon: '🏃', label: '活動' },
+  { icon: '🌱', label: '習慣' },
+  { icon: '🎨', label: '才藝' },
+  { icon: '⏰', label: '作息' },
+] as const;
+
+const REWARD_ICON_OPTIONS = [
+  { icon: '🎁', label: '通用' },
+  { icon: '🎮', label: '遊戲' },
+  { icon: '🍦', label: '點心' },
+  { icon: '🎬', label: '影音' },
+  { icon: '🛍️', label: '購物' },
+  { icon: '🏖️', label: '出遊' },
+  { icon: '🎵', label: '音樂' },
+  { icon: '⚽', label: '運動' },
+] as const;
+
+const STAMP_ICON_OPTIONS = [
+  { icon: '🎁', label: '通用' },
+  { icon: '📚', label: '書籍' },
+  { icon: '🧸', label: '玩具' },
+  { icon: '🚲', label: '戶外' },
+  { icon: '🎨', label: '創作' },
+  { icon: '🍰', label: '點心' },
+  { icon: '🎮', label: '遊戲' },
+  { icon: '⚽', label: '運動' },
+] as const;
+
 /**
  * 設定頁分組：把原本散落的頁籤收斂成三大群組，群組內再用次頁籤切換。
  */
 const SETTINGS_GROUPS: {
   key: SettingsGroupKey;
   label: string;
+  description: string;
   tabs: { key: SettingsTabKey; label: string; Icon: React.FC<{ size?: number }> }[];
 }[] = [
   {
     key: 'cards',
     label: '目標與卡片',
+    description: '安排階段目標，並管理孩子獲得的收藏卡。',
     tabs: [
       { key: 'goals', label: '目標', Icon: Icons.Calendar },
       { key: 'rewardCards', label: '獎勵卡', Icon: Icons.Award },
@@ -78,7 +113,8 @@ const SETTINGS_GROUPS: {
   },
   {
     key: 'scoring',
-    label: '積分與獎勵',
+    label: '積分與兌換',
+    description: '設定加扣分規則，以及孩子可兌換的獎勵。',
     tabs: [
       { key: 'scoreItems', label: '評分項目', Icon: Icons.ClipboardList },
       { key: 'rewards', label: '獎勵管理', Icon: Icons.Gift },
@@ -268,7 +304,13 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
     };
 
     onUpdateItems([...appData.scoreItems, item]);
-    setNewItem({ label: '', points: 5, type: ScoreType.POSITIVE, category: ScoreCategory.DAILY, icon: '⭐' });
+    setNewItem((prev) => ({
+      label: '',
+      points: 5,
+      type: prev.type ?? ScoreType.POSITIVE,
+      category: prev.category ?? ScoreCategory.DAILY,
+      icon: prev.icon ?? '⭐',
+    }));
   };
 
   // === 獎勵項目邏輯 (New) ===
@@ -643,8 +685,9 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
   };
 
   // 篩選出加分與扣分項目以便分組顯示
-  const positiveItemsByCategory = groupScoreItemsByCategory(appData.scoreItems, ScoreType.POSITIVE);
-  const negativeItemsByCategory = groupScoreItemsByCategory(appData.scoreItems, ScoreType.NEGATIVE);
+  const scoreType = newItem.type ?? ScoreType.POSITIVE;
+  const visibleItemsByCategory = groupScoreItemsByCategory(appData.scoreItems, scoreType);
+  const visibleScoreItemCount = appData.scoreItems.filter((item) => item.type === scoreType).length;
   const today = getTodayDateKey();
   const goalRewards = [...appData.goalRewards].sort((a, b) => b.createdAt - a.createdAt);
   const activeGoals = goalRewards.filter((goal) => getGoalDisplayGroup(goal, today) === 'active');
@@ -671,19 +714,33 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
     .slice(0, 8);
 
   return (
-    <div className="space-y-8">
-      <div className="bg-white/70 border-2 border-white rounded-[2rem] p-3 md:p-4 shadow-sm space-y-3">
-        {/* 第一層：群組 */}
-        <div className="grid grid-cols-2 gap-2">
+    <div className="space-y-4">
+      <div className={`sticky top-0 z-20 rounded-2xl border p-2.5 space-y-2 shadow-sm backdrop-blur-md ${
+        activeGroup === 'cards'
+          ? 'bg-[#FFF9E8]/95 border-nook-yellow/40'
+          : 'bg-[#F0FBF5]/95 border-nook-green/30'
+      }`}>
+        <div className="flex items-center justify-between gap-3 px-1">
+          <div>
+            <p className="text-sm font-black text-nook-brown">設定中心</p>
+            <p className="text-[11px] font-bold text-nook-brown/50">先選管理類別，再調整項目</p>
+          </div>
+          <Icons.Settings size={18} className="text-nook-greenDark/60" />
+        </div>
+
+        {/* 第一層：管理類別 */}
+        <div className="grid grid-cols-2 gap-1.5 rounded-xl bg-white/70 p-1">
           {SETTINGS_GROUPS.map((group) => (
             <button
               key={group.key}
               type="button"
               onClick={() => switchGroup(group.key)}
-              className={`px-2 py-3 rounded-[1.25rem] font-black text-sm md:text-base whitespace-nowrap transition-all ${
+              className={`px-2 py-2 rounded-lg font-black text-xs md:text-sm whitespace-nowrap transition-colors ${
                 activeGroup === group.key
-                  ? 'bg-nook-green text-white shadow-[0_3px_0_0_#2E9E6E]'
-                  : 'bg-white text-nook-brown/60 hover:text-nook-brown hover:bg-nook-beige'
+                  ? activeGroup === 'cards'
+                    ? 'bg-nook-yellow text-nook-brown shadow-[0_3px_0_0_#E9A93F]'
+                    : 'bg-nook-green text-white shadow-[0_3px_0_0_#2E9E6E]'
+                  : 'text-nook-brown/55 hover:text-nook-brown hover:bg-white'
               }`}
             >
               {group.label}
@@ -691,54 +748,55 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
           ))}
         </div>
 
-        {/* 第二層：群組內次頁籤（只有一個時不顯示） */}
+        {/* 第二層：內容頁籤與情境說明放在同一色塊，建立上下聯動。 */}
         {currentGroup.tabs.length > 1 && (
-          <div className="flex gap-2 flex-wrap pt-1 border-t-2 border-nook-brown/5">
-            {currentGroup.tabs.map((tab) => {
-              const TabIcon = tab.Icon;
-              return (
-                <button
-                  key={tab.key}
-                  type="button"
-                  onClick={() => setActiveTab(tab.key)}
-                  className={`inline-flex items-center gap-1.5 px-3 py-2 rounded-full font-bold text-sm whitespace-nowrap transition-all ${
-                    activeTab === tab.key
-                      ? 'bg-nook-greenDark/10 text-nook-greenDark'
-                      : 'text-nook-brown/50 hover:text-nook-brown hover:bg-nook-beige'
-                  }`}
-                >
-                  <TabIcon size={16} />
-                  <span>{tab.label}</span>
-                </button>
-              );
-            })}
+          <div className="rounded-xl bg-white/75 p-1.5">
+            <div className="flex gap-1 flex-nowrap overflow-x-auto no-scrollbar">
+              {currentGroup.tabs.map((tab) => {
+                const TabIcon = tab.Icon;
+                return (
+                  <button
+                    key={tab.key}
+                    type="button"
+                    onClick={() => setActiveTab(tab.key)}
+                    className={`inline-flex flex-1 items-center justify-center gap-1.5 px-2 py-1.5 rounded-lg font-bold text-[11px] sm:text-xs whitespace-nowrap transition-colors ${
+                      activeTab === tab.key
+                        ? 'bg-nook-brown text-white shadow-sm'
+                        : 'text-nook-brown/50 hover:text-nook-brown hover:bg-nook-beige'
+                    }`}
+                  >
+                    <TabIcon size={13} />
+                    <span>{tab.label}</span>
+                  </button>
+                );
+              })}
+            </div>
+            <p className="px-1.5 pt-1.5 text-[10px] font-bold leading-snug text-nook-brown/45">
+              {currentGroup.description}
+            </p>
           </div>
         )}
       </div>
 
       {activeTab === 'goals' && (
         <Card title="🎯 目標獎勵管理" className="bg-[#FFF7D7] border-nook-yellow/40">
-            <div className="space-y-6 mb-8">
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-end">
-              <div>
-                <label className="block text-sm font-bold text-nook-brown mb-2 ml-1">孩子</label>
-                <select
-                  value={newGoal.childId}
-                  onChange={(e) => setNewGoal({ ...newGoal, childId: e.target.value })}
-                  className="w-full p-4 border-2 border-nook-brown/10 rounded-2xl focus:ring-4 focus:ring-nook-yellow/30 focus:border-nook-orange outline-none bg-white text-nook-brown font-bold cursor-pointer"
-                >
-                  {childUsers.map((child) => (
-                    <option key={child.id} value={child.id}>{child.name}</option>
-                  ))}
-                </select>
-              </div>
+            <div className="space-y-4 mb-4">
+              <ChildRadioGroup
+                name="goal-child"
+                label="這個目標屬於誰？"
+                value={newGoal.childId}
+                childrenUsers={childUsers}
+                onChange={(childId) => setNewGoal({ ...newGoal, childId })}
+                accent="yellow"
+              />
+              <div className="grid grid-cols-2 gap-3 md:col-span-2">
               <div>
                 <label className="block text-sm font-bold text-nook-brown mb-2 ml-1">開始日期</label>
                 <input
                   type="date"
                   value={newGoal.startDate}
                   onChange={(e) => setNewGoal({ ...newGoal, startDate: e.target.value })}
-                  className="w-full p-4 border-2 border-nook-brown/10 rounded-2xl focus:ring-4 focus:ring-nook-yellow/30 focus:border-nook-orange outline-none bg-white text-nook-brown font-bold"
+                  className="w-full px-3 py-2.5 border border-nook-brown/10 rounded-xl focus:ring-2 focus:ring-nook-yellow/30 focus:border-nook-orange outline-none bg-white text-nook-brown font-bold"
                 />
               </div>
               <div>
@@ -747,7 +805,7 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
                   type="date"
                   value={newGoal.endDate}
                   onChange={(e) => setNewGoal({ ...newGoal, endDate: e.target.value })}
-                  className="w-full p-4 border-2 border-nook-brown/10 rounded-2xl focus:ring-4 focus:ring-nook-yellow/30 focus:border-nook-orange outline-none bg-white text-nook-brown font-bold"
+                  className="w-full px-3 py-2.5 border border-nook-brown/10 rounded-xl focus:ring-2 focus:ring-nook-yellow/30 focus:border-nook-orange outline-none bg-white text-nook-brown font-bold"
                 />
               </div>
               </div>
@@ -758,7 +816,7 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
                     type="text"
                     value={newGoal.targetText}
                     onChange={(e) => setNewGoal({ ...newGoal, targetText: e.target.value })}
-                    className="w-full p-4 border-2 border-nook-brown/10 rounded-2xl focus:ring-4 focus:ring-nook-yellow/30 focus:border-nook-orange outline-none bg-white text-nook-brown font-bold"
+                    className="w-full px-3 py-2.5 border border-nook-brown/10 rounded-xl focus:ring-2 focus:ring-nook-yellow/30 focus:border-nook-orange outline-none bg-white text-nook-brown font-bold"
                     placeholder="例如：這週每天主動整理書包"
                   />
                 </div>
@@ -770,7 +828,7 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
               </div>
             </div>
 
-            <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 xl:grid-cols-2 gap-3 md:gap-4">
               <GoalSection
                 title="進行中"
                 goals={activeGoals}
@@ -830,90 +888,129 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
       )}
 
       {activeTab === 'scoreItems' && (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        {/* 新增評分項目表單 */}
-        <Card title="🔧 新增評分項目" className="lg:col-span-2 bg-nook-cream border-ac-brown/10">
-            <div className="grid grid-cols-1 md:grid-cols-5 gap-6 items-end">
-            <div className="col-span-1 md:col-span-2">
-                <label className="block text-sm font-bold text-nook-brown mb-2 ml-1">項目名稱</label>
-                <input 
-                type="text" 
-                value={newItem.label}
-                onChange={e => setNewItem({...newItem, label: e.target.value})}
-                className="w-full p-4 border-2 border-nook-brown/10 rounded-2xl focus:ring-4 focus:ring-nook-green/20 focus:border-nook-green outline-none text-nook-brown font-bold bg-white"
-                placeholder="例如：整理房間"
-                />
-            </div>
-            <div>
-                <label className="block text-sm font-bold text-nook-brown mb-2 ml-1">分數權重</label>
-                <input 
-                type="number" 
-                value={newItem.points}
-                onChange={e => setNewItem({...newItem, points: Number(e.target.value)})}
-                className="w-full p-4 border-2 border-nook-brown/10 rounded-2xl focus:ring-4 focus:ring-nook-green/20 focus:border-nook-green outline-none text-nook-brown font-bold bg-white"
-                />
-            </div>
-            <div>
-                <label className="block text-sm font-bold text-nook-brown mb-2 ml-1">類型</label>
-                <select 
-                value={newItem.type}
-                onChange={e => setNewItem({...newItem, type: e.target.value as ScoreType})}
-                className="w-full p-4 border-2 border-nook-brown/10 rounded-2xl focus:ring-4 focus:ring-nook-green/20 focus:border-nook-green outline-none bg-white text-nook-brown font-bold cursor-pointer"
+        <div className="space-y-3">
+          <div className="grid grid-cols-2 rounded-2xl border border-nook-brown/10 bg-white p-1.5 shadow-sm" role="tablist" aria-label="評分類型">
+            {[
+              { type: ScoreType.POSITIVE, label: '加分', hint: '鼓勵好表現', Icon: Icons.PlusCircle },
+              { type: ScoreType.NEGATIVE, label: '扣分', hint: '提醒需改善', Icon: Icons.MinusCircle },
+            ].map(({ type, label, hint, Icon }) => {
+              const active = scoreType === type;
+              return (
+                <button
+                  key={type}
+                  type="button"
+                  role="tab"
+                  aria-selected={active}
+                  onClick={() => setNewItem((prev) => ({ ...prev, type }))}
+                  className={`flex min-h-12 items-center justify-center gap-2 rounded-xl px-2 py-2 transition-colors ${
+                    active
+                      ? type === ScoreType.POSITIVE
+                        ? 'bg-nook-green text-white shadow-sm'
+                        : 'bg-nook-red text-white shadow-sm'
+                      : 'text-nook-brown/50 hover:bg-nook-beige'
+                  }`}
                 >
-                <option value={ScoreType.POSITIVE}>加分項目 (+)</option>
-                <option value={ScoreType.NEGATIVE}>扣分項目 (-)</option>
-                </select>
+                  <Icon size={18} />
+                  <span className="text-left leading-tight">
+                    <span className="block text-sm font-black">{label}</span>
+                    <span className={`block text-[10px] font-bold ${active ? 'text-white/75' : 'text-nook-brown/40'}`}>{hint}</span>
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+
+          <Card
+            title={`${scoreType === ScoreType.POSITIVE ? '🌱 新增加分項目' : '🪨 新增扣分項目'}`}
+            className={scoreType === ScoreType.POSITIVE ? 'bg-[#F0FBF5] border-nook-green/30' : 'bg-[#FFF4F1] border-nook-red/25'}
+          >
+            <p className="mb-3 text-xs font-bold leading-relaxed text-nook-brown/55">
+              {scoreType === ScoreType.POSITIVE
+                ? '把常見的好行為設成快捷項目，記錄時一點就能加分。'
+                : '只保留清楚、可改善的行為，避免孩子看不懂扣分原因。'}
+            </p>
+            <div className="grid grid-cols-[minmax(0,1fr)_6.5rem] gap-3">
+              <div>
+                <label className="mb-1.5 ml-1 block text-xs font-black text-nook-brown">項目名稱</label>
+                <input
+                  type="text"
+                  value={newItem.label}
+                  onChange={(e) => setNewItem({ ...newItem, label: e.target.value })}
+                  className="w-full rounded-xl border border-nook-brown/10 bg-white px-3 py-2.5 font-bold text-nook-brown outline-none focus:border-nook-green focus:ring-2 focus:ring-nook-green/20"
+                  placeholder={scoreType === ScoreType.POSITIVE ? '例如：主動整理房間' : '例如：超過約定時間'}
+                />
+              </div>
+              <div>
+                <label className="mb-1.5 ml-1 block text-xs font-black text-nook-brown">點數</label>
+                <input
+                  type="number"
+                  min={1}
+                  inputMode="numeric"
+                  value={newItem.points}
+                  onChange={(e) => setNewItem({ ...newItem, points: Number(e.target.value) })}
+                  className="w-full rounded-xl border border-nook-brown/10 bg-white px-3 py-2.5 text-center font-black text-nook-brown outline-none focus:border-nook-green focus:ring-2 focus:ring-nook-green/20"
+                />
+              </div>
             </div>
-            <div>
-                <label className="block text-sm font-bold text-nook-brown mb-2 ml-1">分類</label>
+
+            <div className="mt-3">
+              <label className="mb-1.5 ml-1 block text-xs font-black text-nook-brown">分類</label>
+              <div className="relative">
                 <select
-                value={newItem.category}
-                onChange={e => setNewItem({...newItem, category: Number(e.target.value) as ScoreCategory})}
-                className="w-full p-4 border-2 border-nook-brown/10 rounded-2xl focus:ring-4 focus:ring-nook-blue/20 focus:border-nook-blue outline-none bg-white text-nook-brown font-bold cursor-pointer"
+                  value={newItem.category}
+                  onChange={(e) => setNewItem({ ...newItem, category: Number(e.target.value) as ScoreCategory })}
+                  className="w-full appearance-none rounded-xl border border-nook-brown/10 bg-white py-2.5 pl-3 pr-10 font-bold text-nook-brown outline-none focus:border-nook-blue focus:ring-2 focus:ring-nook-blue/20"
                 >
-                {SCORE_CATEGORY_OPTIONS.map(option => (
-                  <option key={option.value} value={option.value}>{option.label}</option>
-                ))}
+                  {SCORE_CATEGORY_OPTIONS.map((option) => (
+                    <option key={option.value} value={option.value}>{option.label}</option>
+                  ))}
                 </select>
+                <Icons.ChevronDown size={17} className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-nook-brown/40" />
+              </div>
             </div>
-            </div>
-            
-            <div className="mt-6">
-            <label className="block text-sm font-bold text-nook-brown mb-3 ml-1">選擇圖示</label>
-            <div className="flex gap-3 flex-wrap">
-                {['⭐','🧹','📚','🤝','🎒','💢','🥦','💯','🏃','💤','🎨','🎹','🐶','🦷','🛏️','👕','🍳','✏️','🙏','🧮','🎯','🚿','📖','🧸','💻','🚲','🎻','🧩','🌱','🐱','😡','📱','🍬','👊','⏰','🗣️'].map(icon => (
-                    <button 
-                    type="button"
-                    key={icon}
-                    onClick={() => setNewItem({...newItem, icon})}
-                    className={`w-12 h-12 rounded-2xl text-2xl flex items-center justify-center border-2 transition-all ${newItem.icon === icon ? 'border-nook-green bg-nook-green text-white scale-110 shadow-md' : 'border-nook-brown/10 hover:bg-white hover:border-nook-brown/30 bg-white/50'}`}
-                    >
-                    {icon}
-                    </button>
-                ))}
-                <Button onClick={handleAddScoreItem} className="ml-auto bg-nook-brown text-white border-nook-brown hover:bg-nook-brown/90" icon={<Icons.Plus size={20} />}>
-                    新增項目
-                </Button>
-            </div>
-            </div>
-        </Card>
 
-        {/* 顯示加分項目列表 */}
-        <div className="space-y-4">
-            <div className="bg-nook-green/20 p-4 rounded-t-[2rem] rounded-b-lg border-b-4 border-nook-green/30 text-center">
-                <h3 className="font-black text-nook-brown text-xl flex items-center justify-center gap-2"><Icons.Trophy className="text-nook-greenDark"/> 加分項目</h3>
+            <IconChoiceGrid
+              label="代表圖示"
+              hint="8 種大方向，之後辨識更快"
+              options={SCORE_ICON_OPTIONS}
+              value={newItem.icon ?? '⭐'}
+              onChange={(icon) => setNewItem({ ...newItem, icon })}
+              tone={scoreType === ScoreType.POSITIVE ? 'green' : 'red'}
+            />
+
+            <Button
+              onClick={handleAddScoreItem}
+              className={`mt-3 w-full text-white ${scoreType === ScoreType.POSITIVE ? 'bg-nook-green border-nook-greenDark' : 'bg-nook-red border-red-700'}`}
+              icon={<Icons.Plus size={18} />}
+            >
+              新增{scoreType === ScoreType.POSITIVE ? '加分' : '扣分'}項目
+            </Button>
+          </Card>
+
+          <section className="space-y-2" aria-label={`${scoreType === ScoreType.POSITIVE ? '加分' : '扣分'}項目清單`}>
+            <div className="flex items-center justify-between px-1">
+              <div>
+                <h3 className="text-sm font-black text-nook-brown">目前的{scoreType === ScoreType.POSITIVE ? '加分' : '扣分'}項目</h3>
+                <p className="text-[11px] font-bold text-nook-brown/45">清單會跟著上方頁籤切換，不需左右或區塊內捲動。</p>
+              </div>
+              <span className="shrink-0 rounded-full bg-white px-2.5 py-1 text-xs font-black text-nook-brown/50">{visibleScoreItemCount} 項</span>
             </div>
-            <div className="space-y-3 h-96 overflow-y-auto pr-2 custom-scrollbar">
-                {SCORE_CATEGORY_OPTIONS.map(option => {
-                  const items = positiveItemsByCategory.get(option.value) ?? [];
+
+            {visibleScoreItemCount === 0 ? (
+              <div className="rounded-2xl border border-dashed border-nook-brown/15 bg-white/60 py-7 text-center text-sm font-bold text-nook-brown/40">
+                尚未建立{scoreType === ScoreType.POSITIVE ? '加分' : '扣分'}項目
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {SCORE_CATEGORY_OPTIONS.map((option) => {
+                  const items = visibleItemsByCategory.get(option.value) ?? [];
                   if (!items.length) return null;
-
                   return (
-                    <div key={option.value} className="space-y-3">
-                      <div className={`px-4 py-2 rounded-2xl border-2 ${getScoreCategoryChipClassName(option.value)}`}>
-                        <span className="font-black">{option.label}</span>
+                    <div key={option.value} className="space-y-1.5">
+                      <div className={`inline-flex rounded-lg border px-2.5 py-1 text-xs font-black ${getScoreCategoryChipClassName(option.value)}`}>
+                        {option.label} · {items.length}
                       </div>
-                      {items.map(item => (
+                      {items.map((item) => (
                         <ItemRow
                           key={item.id}
                           label={item.label}
@@ -927,53 +1024,22 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
                     </div>
                   );
                 })}
-            </div>
-        </div>
-
-        {/* 顯示扣分項目列表 */}
-        <div className="space-y-4">
-            <div className="bg-nook-red/20 p-4 rounded-t-[2rem] rounded-b-lg border-b-4 border-nook-red/30 text-center">
-                <h3 className="font-black text-nook-brown text-xl flex items-center justify-center gap-2"><Icons.AlertCircle className="text-nook-red"/> 扣分項目</h3>
-            </div>
-            <div className="space-y-3 h-96 overflow-y-auto pr-2 custom-scrollbar">
-                {SCORE_CATEGORY_OPTIONS.map(option => {
-                  const items = negativeItemsByCategory.get(option.value) ?? [];
-                  if (!items.length) return null;
-
-                  return (
-                    <div key={option.value} className="space-y-3">
-                      <div className={`px-4 py-2 rounded-2xl border-2 ${getScoreCategoryChipClassName(option.value)}`}>
-                        <span className="font-black">{option.label}</span>
-                      </div>
-                      {items.map(item => (
-                        <ItemRow
-                          key={item.id}
-                          label={item.label}
-                          points={item.points}
-                          icon={item.icon}
-                          type={item.type}
-                          category={item.category}
-                          onDelete={() => handleDeleteScoreItem(item.id)}
-                        />
-                      ))}
-                    </div>
-                  );
-                })}
-            </div>
-        </div>
+              </div>
+            )}
+          </section>
         </div>
       )}
 
       {activeTab === 'rewards' && (
         <Card title="🎁 獎勵兌換項目管理" className="bg-[#F3E8FF] border-[#D8B4FE]">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-6 items-end mb-8">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-3 md:gap-4 items-end mb-4">
             <div className="col-span-1 md:col-span-2">
                 <label className="block text-sm font-bold text-nook-brown mb-2 ml-1">獎勵名稱</label>
                 <input 
                 type="text" 
                 value={newReward.label}
                 onChange={e => setNewReward({...newReward, label: e.target.value})}
-                className="w-full p-4 border-2 border-nook-brown/10 rounded-2xl focus:ring-4 focus:ring-[#A88BFA]/20 focus:border-[#A88BFA] outline-none text-nook-brown font-bold bg-white"
+                className="w-full px-3 py-2.5 border border-nook-brown/10 rounded-xl focus:ring-2 focus:ring-[#A88BFA]/20 focus:border-[#A88BFA] outline-none text-nook-brown font-bold bg-white"
                 placeholder="例如：玩 Switch 30分鐘"
                 />
             </div>
@@ -983,7 +1049,7 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
                 type="number" 
                 value={newReward.points}
                 onChange={e => setNewReward({...newReward, points: Number(e.target.value)})}
-                className="w-full p-4 border-2 border-nook-brown/10 rounded-2xl focus:ring-4 focus:ring-[#A88BFA]/20 focus:border-[#A88BFA] outline-none text-nook-brown font-bold bg-white"
+                className="w-full px-3 py-2.5 border border-nook-brown/10 rounded-xl focus:ring-2 focus:ring-[#A88BFA]/20 focus:border-[#A88BFA] outline-none text-nook-brown font-bold bg-white"
                 />
             </div>
             <div className="flex items-end">
@@ -993,31 +1059,24 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
             </div>
           </div>
 
-          <div className="mt-4 mb-8">
-            <label className="block text-sm font-bold text-nook-brown mb-3 ml-1">選擇圖示</label>
-            <div className="flex gap-3 flex-wrap">
-                {['🎁','🎮','📺','🍦','🍕','🎬','🛍️','🏖️','🎢','🧁','🍫','🎪','🎠','🎡','🎈','🎉','🌈','🎵','🐾','🦄','🍿','🎲','🏕️','🎂','⚽','🤖','🧲','🎭'].map(icon => (
-                    <button
-                    type="button"
-                    key={icon}
-                    onClick={() => setNewReward({...newReward, icon})}
-                    className={`w-12 h-12 rounded-2xl text-2xl flex items-center justify-center border-2 transition-all ${newReward.icon === icon ? 'border-[#A88BFA] bg-[#A88BFA] text-white scale-110 shadow-md' : 'border-nook-brown/10 hover:bg-white hover:border-nook-brown/30 bg-white/50'}`}
-                    >
-                    {icon}
-                    </button>
-                ))}
-            </div>
-          </div>
+          <IconChoiceGrid
+            label="代表圖示"
+            hint="依獎勵的大方向選一個即可"
+            options={REWARD_ICON_OPTIONS}
+            value={newReward.icon ?? '🎁'}
+            onChange={(icon) => setNewReward({ ...newReward, icon })}
+            tone="purple"
+          />
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
              {appData.rewardItems.map(item => (
-                <div key={item.id} className="flex items-center justify-between p-4 bg-white rounded-[1.5rem] border-2 border-[#D8B4FE] shadow-sm">
+                <div key={item.id} className="flex items-center justify-between p-3 bg-white rounded-xl border border-[#D8B4FE] shadow-sm">
                    <div className="flex items-center gap-4">
-                       <div className="w-12 h-12 bg-[#F3E8FF] rounded-2xl flex items-center justify-center text-2xl">
+                       <div className="w-10 h-10 bg-[#F3E8FF] rounded-xl flex items-center justify-center text-2xl">
                            {item.icon || '🎁'}
                        </div>
                        <div>
-                           <div className="font-bold text-nook-brown text-lg">{item.label}</div>
+                           <div className="font-black text-nook-brown text-sm md:text-base">{item.label}</div>
                            <div className="text-xs font-black px-2 py-0.5 rounded-full inline-block bg-[#A88BFA] text-white">
                                {item.points} pt
                            </div>
@@ -1044,31 +1103,27 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
 
       {activeTab === 'rewardCards' && (
         <Card title="🎫 獎勵卡管理" className="bg-[#FDF2F8] border-[#FBCFE8]">
-          <p className="text-sm font-bold text-nook-brown/60 mb-6">
+          <p className="text-sm font-bold text-nook-brown/60 mb-3">
             孩子有特殊表現（例如比賽獲獎）時頒發。頒發時就綁定兌換內容，兌換時<span className="text-[#DB2777]">不扣分</span>。
           </p>
 
-          <div className="space-y-5 mb-8">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div>
-                <label className="block text-sm font-bold text-nook-brown mb-2 ml-1">孩子</label>
-                <select
-                  value={newRewardCard.childId}
-                  onChange={(e) => setNewRewardCard({ ...newRewardCard, childId: e.target.value })}
-                  className="w-full p-4 border-2 border-nook-brown/10 rounded-2xl focus:ring-4 focus:ring-[#EC4899]/20 focus:border-[#EC4899] outline-none bg-white text-nook-brown font-bold cursor-pointer"
-                >
-                  {childUsers.map((child) => (
-                    <option key={child.id} value={child.id}>{child.name}</option>
-                  ))}
-                </select>
-              </div>
+          <div className="space-y-3 mb-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4">
+              <ChildRadioGroup
+                name="reward-card-child"
+                label="這張卡要頒給誰？"
+                value={newRewardCard.childId}
+                childrenUsers={childUsers}
+                onChange={(childId) => setNewRewardCard({ ...newRewardCard, childId })}
+                accent="pink"
+              />
               <div>
                 <label className="block text-sm font-bold text-nook-brown mb-2 ml-1">頒發原因</label>
                 <input
                   type="text"
                   value={newRewardCard.title}
                   onChange={(e) => setNewRewardCard({ ...newRewardCard, title: e.target.value })}
-                  className="w-full p-4 border-2 border-nook-brown/10 rounded-2xl focus:ring-4 focus:ring-[#EC4899]/20 focus:border-[#EC4899] outline-none bg-white text-nook-brown font-bold"
+                  className="w-full px-3 py-2.5 border border-nook-brown/10 rounded-xl focus:ring-2 focus:ring-[#EC4899]/20 focus:border-[#EC4899] outline-none bg-white text-nook-brown font-bold"
                   placeholder="例如：美術比賽獲獎"
                 />
               </div>
@@ -1080,14 +1135,14 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
                 <button
                   type="button"
                   onClick={() => setNewRewardCard({ ...newRewardCard, rewardType: 'ITEM' })}
-                  className={`px-4 py-2 rounded-full font-black border-2 transition-all ${newRewardCard.rewardType === 'ITEM' ? 'bg-[#EC4899] text-white border-[#DB2777]' : 'bg-white text-nook-brown/60 border-nook-brown/10 hover:border-nook-brown/30'}`}
+                  className={`px-4 py-2 rounded-full font-black border transition-all ${newRewardCard.rewardType === 'ITEM' ? 'bg-[#EC4899] text-white border-[#DB2777]' : 'bg-white text-nook-brown/60 border-nook-brown/10 hover:border-nook-brown/30'}`}
                 >
                   現有獎勵（免扣分）
                 </button>
                 <button
                   type="button"
                   onClick={() => setNewRewardCard({ ...newRewardCard, rewardType: 'CUSTOM' })}
-                  className={`px-4 py-2 rounded-full font-black border-2 transition-all ${newRewardCard.rewardType === 'CUSTOM' ? 'bg-[#EC4899] text-white border-[#DB2777]' : 'bg-white text-nook-brown/60 border-nook-brown/10 hover:border-nook-brown/30'}`}
+                  className={`px-4 py-2 rounded-full font-black border transition-all ${newRewardCard.rewardType === 'CUSTOM' ? 'bg-[#EC4899] text-white border-[#DB2777]' : 'bg-white text-nook-brown/60 border-nook-brown/10 hover:border-nook-brown/30'}`}
                 >
                   自訂內容
                 </button>
@@ -1095,17 +1150,20 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
 
               {newRewardCard.rewardType === 'ITEM' ? (
                 appData.rewardItems.length > 0 ? (
-                  <select
-                    value={newRewardCard.rewardItemId}
-                    onChange={(e) => setNewRewardCard({ ...newRewardCard, rewardItemId: e.target.value })}
-                    className="w-full p-4 border-2 border-nook-brown/10 rounded-2xl focus:ring-4 focus:ring-[#EC4899]/20 focus:border-[#EC4899] outline-none bg-white text-nook-brown font-bold cursor-pointer"
-                  >
-                    {appData.rewardItems.map((item) => (
-                      <option key={item.id} value={item.id}>{item.icon || '🎁'} {item.label}</option>
-                    ))}
-                  </select>
+                  <div className="relative">
+                    <select
+                      value={newRewardCard.rewardItemId}
+                      onChange={(e) => setNewRewardCard({ ...newRewardCard, rewardItemId: e.target.value })}
+                      className="w-full appearance-none rounded-xl border border-nook-brown/10 bg-white py-2.5 pl-3 pr-10 font-bold text-nook-brown outline-none focus:border-[#EC4899] focus:ring-2 focus:ring-[#EC4899]/20"
+                    >
+                      {appData.rewardItems.map((item) => (
+                        <option key={item.id} value={item.id}>{item.icon || '🎁'} {item.label}</option>
+                      ))}
+                    </select>
+                    <Icons.ChevronDown size={17} className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-nook-brown/40" />
+                  </div>
                 ) : (
-                  <p className="text-sm font-bold text-nook-red bg-white rounded-2xl p-4 border-2 border-nook-red/20">
+                  <p className="text-sm font-bold text-nook-red bg-white rounded-xl p-3 border border-nook-red/20">
                     目前沒有獎勵項目，請先到「獎勵管理」新增，或改用自訂內容。
                   </p>
                 )
@@ -1115,21 +1173,17 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
                     type="text"
                     value={newRewardCard.customLabel}
                     onChange={(e) => setNewRewardCard({ ...newRewardCard, customLabel: e.target.value })}
-                    className="w-full p-4 border-2 border-nook-brown/10 rounded-2xl focus:ring-4 focus:ring-[#EC4899]/20 focus:border-[#EC4899] outline-none bg-white text-nook-brown font-bold"
+                    className="w-full px-3 py-2.5 border border-nook-brown/10 rounded-xl focus:ring-2 focus:ring-[#EC4899]/20 focus:border-[#EC4899] outline-none bg-white text-nook-brown font-bold"
                     placeholder="例如：週末去看電影"
                   />
-                  <div className="flex gap-2 flex-wrap">
-                    {['🎁','🍦','🍕','🎬','🛍️','🏖️','🎢','🧁','🎡','🎈','🍿','🎂','🐾','⚽'].map((icon) => (
-                      <button
-                        type="button"
-                        key={icon}
-                        onClick={() => setNewRewardCard({ ...newRewardCard, customIcon: icon })}
-                        className={`w-11 h-11 rounded-2xl text-xl flex items-center justify-center border-2 transition-all ${newRewardCard.customIcon === icon ? 'border-[#EC4899] bg-[#EC4899] text-white scale-110 shadow-md' : 'border-nook-brown/10 hover:bg-white hover:border-nook-brown/30 bg-white/50'}`}
-                      >
-                        {icon}
-                      </button>
-                    ))}
-                  </div>
+                  <IconChoiceGrid
+                    label="代表圖示"
+                    hint="用大方向圖示維持卡片一致"
+                    options={REWARD_ICON_OPTIONS}
+                    value={newRewardCard.customIcon}
+                    onChange={(customIcon) => setNewRewardCard({ ...newRewardCard, customIcon })}
+                    tone="pink"
+                  />
                 </div>
               )}
             </div>
@@ -1141,12 +1195,12 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
             </div>
           </div>
 
-          <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 xl:grid-cols-2 gap-3 md:gap-4">
             <CardListColumn title="待兌換" count={activeRewardCards.length} emptyText="目前沒有待兌換的獎勵卡">
               {activeRewardCards.map((card) => (
-                <div key={card.id} className="p-4 bg-white rounded-[1.75rem] border-2 border-[#FBCFE8] shadow-sm">
+                <div key={card.id} className="p-3 bg-white rounded-xl border border-[#FBCFE8] shadow-sm">
                   <div className="flex items-center gap-3">
-                    <div className="w-12 h-12 rounded-2xl bg-[#FDF2F8] flex items-center justify-center text-2xl flex-shrink-0">
+                    <div className="w-10 h-10 rounded-xl bg-[#FDF2F8] flex items-center justify-center text-2xl flex-shrink-0">
                       {card.rewardIcon || '🎁'}
                     </div>
                     <div className="min-w-0 flex-1">
@@ -1167,9 +1221,9 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
             </CardListColumn>
             <CardListColumn title="已兌換（最近 8 筆）" count={redeemedRewardCards.length} emptyText="目前沒有已兌換的獎勵卡">
               {redeemedRewardCards.map((card) => (
-                <div key={card.id} className="p-4 bg-white/60 rounded-[1.75rem] border-2 border-nook-brown/5">
+                <div key={card.id} className="p-3 bg-white/60 rounded-xl border border-nook-brown/5">
                   <div className="flex items-center gap-3">
-                    <div className="w-11 h-11 rounded-2xl bg-nook-beige/50 flex items-center justify-center text-xl flex-shrink-0 grayscale">
+                    <div className="w-9 h-9 rounded-xl bg-nook-beige/50 flex items-center justify-center text-xl flex-shrink-0 grayscale">
                       {card.rewardIcon || '🎁'}
                     </div>
                     <div className="min-w-0 flex-1">
@@ -1187,37 +1241,33 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
 
       {activeTab === 'stampCards' && (
         <Card title="🏅 集點卡管理" className="bg-[#FFF7D7] border-nook-yellow/40">
-          <p className="text-sm font-bold text-nook-brown/60 mb-6">
+          <p className="text-sm font-bold text-nook-brown/60 mb-3">
             由家長手動蓋章的集點卡，<span className="text-nook-orangeDark">獨立於積分</span>（不加分、不扣分）。集滿即可兌換家長指定的實體禮物。
           </p>
 
-          <div className="space-y-5 mb-8">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div>
-                <label className="block text-sm font-bold text-nook-brown mb-2 ml-1">孩子</label>
-                <select
-                  value={newStampCard.childId}
-                  onChange={(e) => setNewStampCard({ ...newStampCard, childId: e.target.value })}
-                  className="w-full p-4 border-2 border-nook-brown/10 rounded-2xl focus:ring-4 focus:ring-nook-yellow/30 focus:border-nook-orange outline-none bg-white text-nook-brown font-bold cursor-pointer"
-                >
-                  {childUsers.map((child) => (
-                    <option key={child.id} value={child.id}>{child.name}</option>
-                  ))}
-                </select>
-              </div>
+          <div className="space-y-3 mb-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4">
+              <ChildRadioGroup
+                name="stamp-card-child"
+                label="這張集點卡屬於誰？"
+                value={newStampCard.childId}
+                childrenUsers={childUsers}
+                onChange={(childId) => setNewStampCard({ ...newStampCard, childId })}
+                accent="orange"
+              />
               <div>
                 <label className="block text-sm font-bold text-nook-brown mb-2 ml-1">集點卡名稱</label>
                 <input
                   type="text"
                   value={newStampCard.title}
                   onChange={(e) => setNewStampCard({ ...newStampCard, title: e.target.value })}
-                  className="w-full p-4 border-2 border-nook-brown/10 rounded-2xl focus:ring-4 focus:ring-nook-yellow/30 focus:border-nook-orange outline-none bg-white text-nook-brown font-bold"
+                  className="w-full px-3 py-2.5 border border-nook-brown/10 rounded-xl focus:ring-2 focus:ring-nook-yellow/30 focus:border-nook-orange outline-none bg-white text-nook-brown font-bold"
                   placeholder="例如：暑假閱讀集點"
                 />
               </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4">
               <div>
                 <label className="block text-sm font-bold text-nook-brown mb-2 ml-1">目標章數</label>
                 <div className="flex gap-2 items-center">
@@ -1226,7 +1276,7 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
                       type="button"
                       key={n}
                       onClick={() => setNewStampCard({ ...newStampCard, targetStamps: n })}
-                      className={`px-5 py-3 rounded-2xl font-black border-2 transition-all ${newStampCard.targetStamps === n ? 'bg-nook-orange text-white border-nook-orangeDark' : 'bg-white text-nook-brown/60 border-nook-brown/10 hover:border-nook-brown/30'}`}
+                      className={`px-5 py-3 rounded-xl font-black border transition-all ${newStampCard.targetStamps === n ? 'bg-nook-orange text-white border-nook-orangeDark' : 'bg-white text-nook-brown/60 border-nook-brown/10 hover:border-nook-brown/30'}`}
                     >
                       {n} 點
                     </button>
@@ -1236,7 +1286,7 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
                     min={1}
                     value={newStampCard.targetStamps}
                     onChange={(e) => setNewStampCard({ ...newStampCard, targetStamps: Number(e.target.value) })}
-                    className="w-24 p-3 border-2 border-nook-brown/10 rounded-2xl focus:ring-4 focus:ring-nook-yellow/30 focus:border-nook-orange outline-none bg-white text-nook-brown font-bold text-center"
+                    className="w-24 p-3 border border-nook-brown/10 rounded-xl focus:ring-2 focus:ring-nook-yellow/30 focus:border-nook-orange outline-none bg-white text-nook-brown font-bold text-center"
                   />
                 </div>
               </div>
@@ -1246,27 +1296,20 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
                   type="text"
                   value={newStampCard.rewardLabel}
                   onChange={(e) => setNewStampCard({ ...newStampCard, rewardLabel: e.target.value })}
-                  className="w-full p-4 border-2 border-nook-brown/10 rounded-2xl focus:ring-4 focus:ring-nook-yellow/30 focus:border-nook-orange outline-none bg-white text-nook-brown font-bold"
+                  className="w-full px-3 py-2.5 border border-nook-brown/10 rounded-xl focus:ring-2 focus:ring-nook-yellow/30 focus:border-nook-orange outline-none bg-white text-nook-brown font-bold"
                   placeholder="例如：一本新的故事書"
                 />
               </div>
             </div>
 
-            <div>
-              <label className="block text-sm font-bold text-nook-brown mb-2 ml-1">禮物圖示</label>
-              <div className="flex gap-2 flex-wrap">
-                {['🎁','📚','🧸','🚲','🎨','🍰','🎮','⚽','🎧','👟','🪀','🧩','🐾','🎫'].map((icon) => (
-                  <button
-                    type="button"
-                    key={icon}
-                    onClick={() => setNewStampCard({ ...newStampCard, rewardIcon: icon })}
-                    className={`w-11 h-11 rounded-2xl text-xl flex items-center justify-center border-2 transition-all ${newStampCard.rewardIcon === icon ? 'border-nook-orange bg-nook-orange text-white scale-110 shadow-md' : 'border-nook-brown/10 hover:bg-white hover:border-nook-brown/30 bg-white/50'}`}
-                  >
-                    {icon}
-                  </button>
-                ))}
-              </div>
-            </div>
+            <IconChoiceGrid
+              label="禮物圖示"
+              hint="選擇最接近的禮物類型"
+              options={STAMP_ICON_OPTIONS}
+              value={newStampCard.rewardIcon}
+              onChange={(rewardIcon) => setNewStampCard({ ...newStampCard, rewardIcon })}
+              tone="orange"
+            />
 
             <div className="flex justify-end">
               <Button onClick={handleAddStampCard} className="bg-nook-orange text-white border-nook-orangeDark hover:brightness-105 min-w-[11rem]" icon={<Icons.Plus size={20} />}>
@@ -1275,13 +1318,13 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
             </div>
           </div>
 
-          <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 xl:grid-cols-2 gap-3 md:gap-4">
             <CardListColumn title="集點中" count={activeStampCards.length} emptyText="目前沒有集點中的卡片">
               {activeStampCards.map((card) => {
                 const complete = isStampCardComplete(card);
                 const filled = Math.min(card.stamps, card.targetStamps);
                 return (
-                  <div key={card.id} className={`p-4 rounded-[1.75rem] border-2 shadow-sm ${complete ? 'bg-nook-yellow/20 border-nook-orange/40' : 'bg-white border-nook-brown/5'}`}>
+                  <div key={card.id} className={`p-3 rounded-xl border shadow-sm ${complete ? 'bg-nook-yellow/20 border-nook-orange/40' : 'bg-white border-nook-brown/5'}`}>
                     <div className="flex items-center justify-between gap-2 mb-2">
                       <span className="text-sm font-black px-3 py-0.5 rounded-full bg-nook-blue/10 text-nook-blueDark">{childNameById(card.childId)}</span>
                       <button
@@ -1299,7 +1342,7 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
                       {Array.from({ length: card.targetStamps }).map((_, idx) => (
                         <span
                           key={idx}
-                          className={`w-7 h-7 rounded-full flex items-center justify-center text-sm border-2 ${idx < filled ? 'bg-nook-orange text-white border-nook-orangeDark' : 'bg-white text-nook-brown/20 border-nook-brown/10'}`}
+                          className={`w-7 h-7 rounded-full flex items-center justify-center text-sm border ${idx < filled ? 'bg-nook-orange text-white border-nook-orangeDark' : 'bg-white text-nook-brown/20 border-nook-brown/10'}`}
                         >
                           {idx < filled ? '★' : '☆'}
                         </span>
@@ -1326,9 +1369,9 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
             </CardListColumn>
             <CardListColumn title="已兌換（最近 8 筆）" count={redeemedStampCards.length} emptyText="目前沒有已兌換的集點卡">
               {redeemedStampCards.map((card) => (
-                <div key={card.id} className="p-4 bg-white/60 rounded-[1.75rem] border-2 border-nook-brown/5">
+                <div key={card.id} className="p-3 bg-white/60 rounded-xl border border-nook-brown/5">
                   <div className="flex items-center gap-3">
-                    <div className="w-11 h-11 rounded-2xl bg-nook-beige/50 flex items-center justify-center text-xl flex-shrink-0 grayscale">
+                    <div className="w-9 h-9 rounded-xl bg-nook-beige/50 flex items-center justify-center text-xl flex-shrink-0 grayscale">
                       {card.rewardIcon || '🎁'}
                     </div>
                     <div className="min-w-0 flex-1">
@@ -1345,10 +1388,10 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
       )}
 
       {activeTab === 'data' && (
-        <div className="space-y-8">
+        <div className="space-y-4">
           <Card title="💾 資料管理" className="bg-white border-nook-blue/30">
               {storageInfo && (
-                <div className="mb-6 p-4 bg-nook-beige/30 rounded-2xl border-2 border-nook-brown/10">
+                <div className="mb-3 p-3 bg-nook-beige/30 rounded-xl border border-nook-brown/10">
                   <div className="flex items-center justify-between mb-2">
                     <span className="font-bold text-nook-brown text-sm">瀏覽器快取使用量</span>
                     <span className="text-xs font-bold text-nook-brown/60">
@@ -1378,7 +1421,7 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
                 </div>
               )}
 
-              <div className="flex flex-col md:flex-row gap-6 items-center">
+              <div className="flex flex-col md:flex-row gap-3 md:gap-4 items-center">
                   <div className="flex-1">
                       <p className="text-nook-brown font-bold mb-2">主資料已同步到 Firebase，這裡仍可下載 JSON 備份</p>
                       <p className="text-nook-brown/60 text-sm">如果你要換帳號、重設資料，或只是想留一份保險備份，建議偶爾下載一次。</p>
@@ -1394,7 +1437,7 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
                   </div>
               </div>
 
-              <div className="mt-6 pt-6 border-t-2 border-nook-brown/10">
+              <div className="mt-3 pt-3 border-t-2 border-nook-brown/10">
                 <div className="flex flex-col md:flex-row items-center justify-between gap-4">
                   <div>
                     <p className="font-bold text-nook-brown">🧹 清理舊紀錄</p>
@@ -1460,7 +1503,7 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
                     <p className="text-sm text-nook-brown/60">雖然主資料在雲端，但無痕模式會讓登入狀態與本機快取更不穩定。</p>
                   </div>
                 </div>
-                <div className="flex items-start gap-3 p-3 bg-nook-green/20 rounded-xl border-2 border-nook-green/30">
+                <div className="flex items-start gap-3 p-3 bg-nook-green/20 rounded-xl border border-nook-green/30">
                   <span className="text-xl">💡</span>
                   <div>
                     <p className="font-bold text-nook-greenDark">建議：定期備份！</p>
@@ -1474,9 +1517,9 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
 
       {activeTab === 'members' && (
         <Card title="👥 成員設定" className="bg-white border-nook-orange/30">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3 md:gap-4">
                 {appData.users.map(user => (
-                    <div key={user.id} className="p-4 rounded-2xl bg-nook-beige/30 border-2 border-nook-brown/10 flex flex-col items-center">
+                    <div key={user.id} className="p-3 rounded-xl bg-nook-beige/30 border border-nook-brown/10 flex flex-col items-center">
                         <div className="text-4xl mb-2">{user.avatar}</div>
                         <div className="w-full space-y-2">
                             <div>
@@ -1519,6 +1562,99 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
   );
 };
 
+const ChildRadioGroup: React.FC<{
+  name: string;
+  label: string;
+  value: string;
+  childrenUsers: User[];
+  onChange: (childId: string) => void;
+  accent: 'yellow' | 'pink' | 'orange';
+}> = ({ name, label, value, childrenUsers, onChange, accent }) => {
+  const selectedClass = {
+    yellow: 'border-nook-orange bg-nook-yellow/35 text-nook-brown',
+    pink: 'border-[#EC4899] bg-[#FDF2F8] text-nook-brown',
+    orange: 'border-nook-orange bg-[#FFF7D7] text-nook-brown',
+  }[accent];
+
+  return (
+    <fieldset>
+      <legend className="mb-1.5 ml-1 text-xs font-black text-nook-brown">{label}</legend>
+      <div className={`grid gap-2 ${childrenUsers.length > 1 ? 'grid-cols-2' : 'grid-cols-1'}`}>
+        {childrenUsers.map((child) => {
+          const selected = child.id === value;
+          return (
+            <label
+              key={child.id}
+              className={`flex min-h-11 cursor-pointer items-center gap-2 rounded-xl border px-3 py-2 transition-colors ${
+                selected ? selectedClass : 'border-nook-brown/10 bg-white text-nook-brown/55 hover:border-nook-brown/25'
+              }`}
+            >
+              <input
+                type="radio"
+                name={name}
+                value={child.id}
+                checked={selected}
+                onChange={() => onChange(child.id)}
+                className="sr-only"
+              />
+              <span className="text-xl" aria-hidden="true">{child.avatar}</span>
+              <span className="min-w-0 flex-1 truncate text-sm font-black">{child.name}</span>
+              <span className={`flex h-4 w-4 shrink-0 items-center justify-center rounded-full border ${selected ? 'border-current' : 'border-nook-brown/20'}`}>
+                {selected && <span className="h-2 w-2 rounded-full bg-current" />}
+              </span>
+            </label>
+          );
+        })}
+      </div>
+    </fieldset>
+  );
+};
+
+const IconChoiceGrid: React.FC<{
+  label: string;
+  hint: string;
+  options: readonly { readonly icon: string; readonly label: string }[];
+  value: string;
+  onChange: (icon: string) => void;
+  tone: 'green' | 'red' | 'purple' | 'pink' | 'orange';
+}> = ({ label, hint, options, value, onChange, tone }) => {
+  const selectedClass = {
+    green: 'border-nook-green bg-nook-green/15 text-nook-greenDark',
+    red: 'border-nook-red bg-nook-red/10 text-nook-red',
+    purple: 'border-[#A88BFA] bg-[#F3E8FF] text-[#6D4ACC]',
+    pink: 'border-[#EC4899] bg-[#FDF2F8] text-[#DB2777]',
+    orange: 'border-nook-orange bg-nook-yellow/25 text-nook-orangeDark',
+  }[tone];
+
+  return (
+    <fieldset className="mt-3">
+      <div className="mb-1.5 flex items-baseline justify-between gap-2 px-1">
+        <legend className="text-xs font-black text-nook-brown">{label}</legend>
+        <span className="text-[10px] font-bold text-nook-brown/40">{hint}</span>
+      </div>
+      <div className="grid grid-cols-4 gap-1.5">
+        {options.map((option) => {
+          const selected = value === option.icon;
+          return (
+            <button
+              type="button"
+              key={option.icon}
+              aria-pressed={selected}
+              onClick={() => onChange(option.icon)}
+              className={`flex min-h-12 flex-col items-center justify-center rounded-xl border px-1 py-1.5 transition-colors ${
+                selected ? selectedClass : 'border-nook-brown/10 bg-white/80 text-nook-brown/50 hover:border-nook-brown/25'
+              }`}
+            >
+              <span className="text-xl leading-none" aria-hidden="true">{option.icon}</span>
+              <span className="mt-1 text-[10px] font-black leading-none">{option.label}</span>
+            </button>
+          );
+        })}
+      </div>
+    </fieldset>
+  );
+};
+
 // --- 通用列表列元件 (用於設定頁面) ---
 interface ItemRowProps {
   label: string;
@@ -1530,13 +1666,13 @@ interface ItemRowProps {
 }
 
 const ItemRow: React.FC<ItemRowProps> = ({ label, points, icon, type, category, onDelete }) => (
-  <div className="flex items-center justify-between p-4 bg-white rounded-[1.5rem] border-2 border-nook-brown/5 hover:border-nook-brown/20 transition-all shadow-sm group">
-    <div className="flex items-center gap-4">
-      <div className="w-12 h-12 bg-nook-beige rounded-2xl flex items-center justify-center text-2xl group-hover:scale-110 transition-transform">
+  <div className="flex items-center justify-between p-3 bg-white rounded-xl border border-nook-brown/5 hover:border-nook-brown/20 transition-colors group">
+    <div className="flex items-center gap-3 min-w-0">
+      <div className="w-9 h-9 bg-nook-beige rounded-lg flex items-center justify-center text-xl flex-shrink-0">
         {icon}
       </div>
-      <div>
-        <div className="font-bold text-nook-brown text-lg">{label}</div>
+      <div className="min-w-0">
+        <div className="font-bold text-nook-brown text-sm truncate">{label}</div>
         <div className="flex flex-wrap items-center gap-2 mt-1">
           <div className={`text-xs font-black px-2 py-0.5 rounded-full inline-block ${type === ScoreType.POSITIVE ? 'bg-nook-green/20 text-nook-greenDark' : 'bg-nook-red/20 text-nook-red'}`}>
             {type === ScoreType.POSITIVE ? '+' : '-'}{points}
@@ -1555,36 +1691,11 @@ const ItemRow: React.FC<ItemRowProps> = ({ label, points, icon, type, category, 
           e.stopPropagation();
           onDelete();
       }} 
-      className="text-nook-brown/30 hover:text-nook-red hover:bg-nook-red/10 p-3 rounded-xl transition-colors"
+      className="text-nook-brown/30 hover:text-nook-red hover:bg-nook-red/10 p-2 rounded-lg transition-colors"
     >
-      <Icons.Trash2 size={20} />
+      <Icons.Trash2 size={17} />
     </button>
   </div>
-);
-
-const SettingsTabButton = ({
-  active,
-  icon,
-  label,
-  onClick,
-}: {
-  active: boolean;
-  icon: React.ReactNode;
-  label: string;
-  onClick: () => void;
-}) => (
-  <button
-    type="button"
-    onClick={onClick}
-    className={`inline-flex items-center gap-2 px-4 py-3 rounded-[1.25rem] font-black whitespace-nowrap transition-all ${
-      active
-        ? 'bg-nook-green text-white shadow-[0_4px_0_0_#2E9E6E]'
-        : 'bg-white text-nook-brown/60 hover:text-nook-brown hover:bg-nook-beige'
-    }`}
-  >
-    {icon}
-    <span>{label}</span>
-  </button>
 );
 
 const CardListColumn: React.FC<{
@@ -1593,17 +1704,17 @@ const CardListColumn: React.FC<{
   emptyText: string;
   children?: React.ReactNode;
 }> = ({ title, count, emptyText, children }) => (
-  <div className="space-y-4">
-    <div className="bg-white/70 p-4 rounded-[2rem] border-2 border-white shadow-sm">
+  <div className="space-y-2">
+    <div className="bg-white/70 p-3 rounded-xl">
       <div className="flex items-center justify-between gap-3">
-        <h3 className="font-black text-nook-brown text-xl">{title}</h3>
+        <h3 className="font-black text-nook-brown text-base">{title}</h3>
         <span className="text-xs font-black text-nook-brown/50 bg-nook-beige px-3 py-1 rounded-full">{count} 筆</span>
       </div>
     </div>
 
-    <div className="space-y-3 max-h-[28rem] overflow-y-auto pr-2 custom-scrollbar">
+    <div className="space-y-2">
       {count === 0 ? (
-        <div className="text-center py-10 rounded-[2rem] border-2 border-dashed border-nook-brown/10 bg-white/50 text-nook-brown/40 font-bold">
+        <div className="text-center py-6 rounded-xl border border-dashed border-nook-brown/10 bg-white/50 text-nook-brown/40 text-sm font-bold">
           {emptyText}
         </div>
       ) : (
@@ -1623,37 +1734,37 @@ interface GoalSectionProps {
 }
 
 const GoalSection: React.FC<GoalSectionProps> = ({ title, goals, users, appData, emptyText, actionRenderer }) => (
-  <div className="space-y-4">
-    <div className="bg-white/70 p-4 rounded-[2rem] border-2 border-white shadow-sm">
+  <div className="space-y-2">
+    <div className="bg-white/70 p-3 rounded-xl">
       <div className="flex items-center justify-between gap-3">
-        <h3 className="font-black text-nook-brown text-xl">{title}</h3>
+        <h3 className="font-black text-nook-brown text-base">{title}</h3>
         <span className="text-xs font-black text-nook-brown/50 bg-nook-beige px-3 py-1 rounded-full">{goals.length} 筆</span>
       </div>
     </div>
 
-    <div className="space-y-3 max-h-[28rem] overflow-y-auto pr-2 custom-scrollbar">
+    <div className="space-y-2">
       {goals.map((goal) => {
         const child = users.find((user) => user.id === goal.childId);
         const linkedCardCount = appData.discountCards.filter((card) => card.goalId === goal.id).length;
 
         return (
-          <div key={goal.id} className="p-4 bg-white rounded-[1.75rem] border-2 border-nook-brown/5 shadow-sm">
-            <div className="flex flex-wrap items-center gap-2 mb-3">
-              <span className="text-sm font-black px-3 py-1 rounded-full bg-nook-blue/10 text-nook-blueDark">
+          <div key={goal.id} className="p-3 bg-white rounded-xl border border-nook-brown/5">
+            <div className="flex flex-wrap items-center gap-1.5 mb-2">
+              <span className="text-xs font-black px-2 py-0.5 rounded-full bg-nook-blue/10 text-nook-blueDark">
                 {child?.name ?? '未指定孩子'}
               </span>
-              <span className="text-xs font-black px-3 py-1 rounded-full bg-nook-yellow/20 text-nook-orangeDark">
+              <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-nook-yellow/20 text-nook-orangeDark">
                 {getGoalRewardStatusLabel(goal.status)}
               </span>
               {linkedCardCount > 0 && (
-                <span className="text-xs font-black px-3 py-1 rounded-full bg-[#F3E8FF] text-[#7C3AED]">
+                <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-[#F3E8FF] text-[#6D46C2]">
                   已發 5 折卡
                 </span>
               )}
             </div>
 
-            <p className="font-bold text-nook-brown text-lg leading-relaxed">{goal.targetText}</p>
-            <p className="text-sm font-bold text-nook-brown/50 mt-2">{formatGoalDateRange(goal)}</p>
+            <p className="font-bold text-nook-brown text-sm leading-snug">{goal.targetText}</p>
+            <p className="text-xs font-bold text-nook-brown/50 mt-1">{formatGoalDateRange(goal)}</p>
 
             {goal.resolvedByName && (
               <p className="text-xs font-bold text-nook-brown/40 mt-2">
@@ -1662,7 +1773,7 @@ const GoalSection: React.FC<GoalSectionProps> = ({ title, goals, users, appData,
             )}
 
             {actionRenderer && (
-              <div className="flex flex-wrap gap-2 mt-4">
+              <div className="flex flex-wrap gap-1.5 mt-2.5">
                 {actionRenderer(goal)}
               </div>
             )}
@@ -1671,7 +1782,7 @@ const GoalSection: React.FC<GoalSectionProps> = ({ title, goals, users, appData,
       })}
 
       {goals.length === 0 && (
-        <div className="text-center py-10 rounded-[2rem] border-2 border-dashed border-nook-brown/10 bg-white/50 text-nook-brown/40 font-bold">
+        <div className="text-center py-6 rounded-xl border border-dashed border-nook-brown/10 bg-white/50 text-nook-brown/40 text-sm font-bold">
           {emptyText}
         </div>
       )}
