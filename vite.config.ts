@@ -3,6 +3,8 @@ import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import { VitePWA } from 'vite-plugin-pwa';
 
+const buildVersion = new Date().toISOString();
+
 export default defineConfig({
   // GitHub Pages 部署設定（倉庫名：Familypoints-Pages）
   base: '/Familypoints-Pages/',
@@ -76,7 +78,20 @@ export default defineConfig({
         ],
       },
     }),
+    {
+      name: 'emit-app-version',
+      generateBundle() {
+        this.emitFile({
+          type: 'asset',
+          fileName: 'version.json',
+          source: JSON.stringify({ version: buildVersion }),
+        });
+      },
+    },
   ],
+  define: {
+    __APP_VERSION__: JSON.stringify(buildVersion),
+  },
   resolve: {
     alias: {
       '@': path.resolve(__dirname, '.'),

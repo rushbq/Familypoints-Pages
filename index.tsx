@@ -2,6 +2,7 @@ import React from 'react';
 import ReactDOM from 'react-dom/client';
 import App from './App';
 import { PWAUpdatePrompt } from './components/PWAUpdatePrompt';
+import { startVersionMonitor } from './services/versionService';
 
 const rootElement = document.getElementById('root');
 if (!rootElement) {
@@ -15,3 +16,5 @@ root.render(
     <PWAUpdatePrompt />
   </React.StrictMode>
 );
+
+startVersionMonitor();

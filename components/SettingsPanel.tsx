@@ -789,25 +789,25 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
                 onChange={(childId) => setNewGoal({ ...newGoal, childId })}
                 accent="yellow"
               />
-              <div className="grid grid-cols-2 gap-3 md:col-span-2">
-              <div>
-                <label className="block text-sm font-bold text-nook-brown mb-2 ml-1">開始日期</label>
-                <input
-                  type="date"
-                  value={newGoal.startDate}
-                  onChange={(e) => setNewGoal({ ...newGoal, startDate: e.target.value })}
-                  className="w-full px-3 py-2.5 border border-nook-brown/10 rounded-xl focus:ring-2 focus:ring-nook-yellow/30 focus:border-nook-orange outline-none bg-white text-nook-brown font-bold"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-bold text-nook-brown mb-2 ml-1">結束日期</label>
-                <input
-                  type="date"
-                  value={newGoal.endDate}
-                  onChange={(e) => setNewGoal({ ...newGoal, endDate: e.target.value })}
-                  className="w-full px-3 py-2.5 border border-nook-brown/10 rounded-xl focus:ring-2 focus:ring-nook-yellow/30 focus:border-nook-orange outline-none bg-white text-nook-brown font-bold"
-                />
-              </div>
+              <div className="grid grid-cols-2 gap-2 md:col-span-2">
+                <div className="min-w-0">
+                  <label className="mb-1 ml-1 block text-[11px] font-black text-nook-brown">開始日期</label>
+                  <input
+                    type="date"
+                    value={newGoal.startDate}
+                    onChange={(e) => setNewGoal({ ...newGoal, startDate: e.target.value })}
+                    className="compact-date-input block min-h-10 min-w-0 w-full max-w-full rounded-xl border border-nook-brown/10 bg-white px-2 py-2 text-sm font-bold text-nook-brown outline-none focus:border-nook-orange focus:ring-2 focus:ring-nook-yellow/30"
+                  />
+                </div>
+                <div className="min-w-0">
+                  <label className="mb-1 ml-1 block text-[11px] font-black text-nook-brown">結束日期</label>
+                  <input
+                    type="date"
+                    value={newGoal.endDate}
+                    onChange={(e) => setNewGoal({ ...newGoal, endDate: e.target.value })}
+                    className="compact-date-input block min-h-10 min-w-0 w-full max-w-full rounded-xl border border-nook-brown/10 bg-white px-2 py-2 text-sm font-bold text-nook-brown outline-none focus:border-nook-orange focus:ring-2 focus:ring-nook-yellow/30"
+                  />
+                </div>
               </div>
               <div className="space-y-4">
                 <div>
@@ -1068,7 +1068,7 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
             tone="purple"
           />
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="mt-3 grid grid-cols-1 gap-3 md:grid-cols-2 md:gap-4">
              {appData.rewardItems.map(item => (
                 <div key={item.id} className="flex items-center justify-between p-3 bg-white rounded-xl border border-[#D8B4FE] shadow-sm">
                    <div className="flex items-center gap-4">
