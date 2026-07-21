@@ -2,9 +2,14 @@ declare const __APP_VERSION__: string;
 
 const VERSION_CHECK_INTERVAL_MS = 5 * 60 * 1000;
 const RELOAD_RETRY_DELAY_MS = 30 * 1000;
+const MIN_VERSION_CHECK_INTERVAL_MS = 60 * 1000;
 const RELOAD_GUARD_KEY = 'family-points-version-reload';
 const SERVICE_WORKER_PATH = `${import.meta.env.BASE_URL}sw.js`;
+const GITHUB_VERSION_API_URL = 'https://api.github.com/repos/rushbq/Familypoints-Pages/contents/version.json?ref=gh-pages';
 const REMOTE_VERSION_MANIFEST_URL = 'https://raw.githubusercontent.com/rushbq/Familypoints-Pages/gh-pages/version.json';
+
+let lastVersionCheckAt = 0;
+let versionCheckPromise: Promise<void> | null = null;
 
 interface VersionManifest {
   version: string;
@@ -18,6 +23,7 @@ const withCacheBuster = (source: string) => {
 
 const fetchVersionManifest = async () => {
   const sources = [
+    GITHUB_VERSION_API_URL,
     REMOTE_VERSION_MANIFEST_URL,
     `${import.meta.env.BASE_URL}version.json`,
   ];
@@ -26,7 +32,12 @@ const fetchVersionManifest = async () => {
     try {
       const response = await fetch(withCacheBuster(source), {
         cache: 'no-store',
-        headers: { 'Cache-Control': 'no-cache' },
+        headers: {
+          'Cache-Control': 'no-cache',
+          Accept: source === GITHUB_VERSION_API_URL
+            ? 'application/vnd.github.raw+json'
+            : 'application/json',
+        },
       });
       if (!response.ok) continue;
 
@@ -98,7 +109,7 @@ const reloadForVersion = async (nextVersion: string) => {
   window.location.replace(url.toString());
 };
 
-const checkForNewVersion = async () => {
+const performVersionCheck = async () => {
   if (document.visibilityState === 'hidden') return;
 
   try {
@@ -115,6 +126,17 @@ const checkForNewVersion = async () => {
   } catch (error) {
     console.warn('暫時無法檢查應用程式版本，稍後會自動重試。', error);
   }
+};
+
+const checkForNewVersion = () => {
+  if (versionCheckPromise) return versionCheckPromise;
+  if (Date.now() - lastVersionCheckAt < MIN_VERSION_CHECK_INTERVAL_MS) return Promise.resolve();
+
+  lastVersionCheckAt = Date.now();
+  versionCheckPromise = performVersionCheck().finally(() => {
+    versionCheckPromise = null;
+  });
+  return versionCheckPromise;
 };
 
 export const startVersionMonitor = () => {
