@@ -3,6 +3,7 @@ declare const __APP_VERSION__: string;
 const VERSION_CHECK_INTERVAL_MS = 5 * 60 * 1000;
 const RELOAD_RETRY_DELAY_MS = 30 * 1000;
 const RELOAD_GUARD_KEY = 'family-points-version-reload';
+const SERVICE_WORKER_PATH = `${import.meta.env.BASE_URL}sw.js`;
 
 interface VersionManifest {
   version: string;
@@ -27,10 +28,24 @@ const clearSiteRuntimeCaches = async () => {
     const cacheNames = await window.caches.keys();
     await Promise.all(cacheNames.map((cacheName) => window.caches.delete(cacheName)));
   }
+};
 
-  if ('serviceWorker' in navigator) {
-    const registrations = await navigator.serviceWorker.getRegistrations();
-    await Promise.all(registrations.map((registration) => registration.unregister()));
+const registerUpdateServiceWorker = async () => {
+  if (!('serviceWorker' in navigator)) return;
+
+  try {
+    const registration = await navigator.serviceWorker.register(SERVICE_WORKER_PATH, {
+      scope: import.meta.env.BASE_URL,
+      updateViaCache: 'none',
+    });
+
+    if (registration.waiting) {
+      registration.waiting.postMessage({ type: 'SKIP_WAITING' });
+    }
+
+    await registration.update();
+  } catch (error) {
+    console.warn('暫時無法啟用自動更新服務，稍後會再次嘗試。', error);
   }
 };
 
@@ -86,6 +101,8 @@ const checkForNewVersion = async () => {
 export const startVersionMonitor = () => {
   if (import.meta.env.DEV || typeof window === 'undefined') return;
 
+  void registerUpdateServiceWorker();
+
   const initialCheckTimer = window.setTimeout(checkForNewVersion, 1500);
   const interval = window.setInterval(checkForNewVersion, VERSION_CHECK_INTERVAL_MS);
 
@@ -93,14 +110,17 @@ export const startVersionMonitor = () => {
     if (document.visibilityState === 'visible') void checkForNewVersion();
   };
   const handlePageShow = () => void checkForNewVersion();
+  const handleControllerChange = () => void checkForNewVersion();
 
   document.addEventListener('visibilitychange', handleVisibilityChange);
   window.addEventListener('pageshow', handlePageShow);
+  navigator.serviceWorker?.addEventListener('controllerchange', handleControllerChange);
 
   return () => {
     window.clearTimeout(initialCheckTimer);
     window.clearInterval(interval);
     document.removeEventListener('visibilitychange', handleVisibilityChange);
     window.removeEventListener('pageshow', handlePageShow);
+    navigator.serviceWorker?.removeEventListener('controllerchange', handleControllerChange);
   };
 };

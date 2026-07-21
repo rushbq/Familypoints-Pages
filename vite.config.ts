@@ -1,9 +1,11 @@
 import path from 'path';
+import { readFileSync } from 'fs';
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import { VitePWA } from 'vite-plugin-pwa';
 
 const buildVersion = new Date().toISOString();
+const serviceWorkerTemplate = readFileSync(path.resolve(__dirname, 'service-worker.js'), 'utf8');
 
 export default defineConfig({
   // GitHub Pages 部署設定（倉庫名：Familypoints-Pages）
@@ -85,6 +87,11 @@ export default defineConfig({
           type: 'asset',
           fileName: 'version.json',
           source: JSON.stringify({ version: buildVersion }),
+        });
+        this.emitFile({
+          type: 'asset',
+          fileName: 'sw.js',
+          source: serviceWorkerTemplate.replaceAll('__APP_BUILD_VERSION__', buildVersion),
         });
       },
     },
