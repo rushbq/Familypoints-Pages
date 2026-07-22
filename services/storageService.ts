@@ -3,7 +3,6 @@ import { AppState, ScoreRecord } from '../types';
 import {
   db as localDb,
   initializeDatabase,
-  getStorageInfo as getLocalStorageInfo,
   getDefaultState,
 } from './database';
 import { normalizeScoreItem, normalizeScoreRecord } from './familyUtils';
@@ -16,7 +15,6 @@ import { auth, firestore } from './firebase';
 export interface SaveResult {
   success: boolean;
   error?: string;
-  storageWarning?: boolean; // 儲存空間警告 (超過 80%)
 }
 
 export const normalizeAppState = (state?: Partial<AppState>): AppState => {
@@ -156,7 +154,7 @@ export const saveState = async (state: AppState): Promise<SaveResult> => {
     const uid = getCurrentUid();
     await setDoc(getStateRef(uid), normalizeAppState(state));
 
-    return { success: true, storageWarning: false };
+    return { success: true };
   } catch (err) {
     const errorMessage = err instanceof Error ? err.message : '未知錯誤';
     console.error('❌ 儲存雲端狀態失敗:', errorMessage);
@@ -194,49 +192,4 @@ export const getRecordsByChild = async (childId: string, days?: number): Promise
 export const getUnreadMessageCount = async (): Promise<number> => {
   const state = await loadState();
   return state.messages.filter((message) => !message.isRead).length;
-};
-
-export const getStorageInfo = async () => {
-  const info = await getLocalStorageInfo();
-
-  return {
-    ...info,
-    usedFormatted: info.usedFormatted === '未知' ? '雲端同步中' : info.usedFormatted,
-    quotaFormatted: info.quotaFormatted === '未知' ? '瀏覽器快取' : info.quotaFormatted,
-  };
-};
-
-export const cleanupOldRecords = async (daysToKeep: number = 365): Promise<number> => {
-  const state = await loadState();
-  const cutoffTime = Date.now() - (daysToKeep * 24 * 60 * 60 * 1000);
-  const filteredRecords = state.records.filter((record) => record.timestamp >= cutoffTime);
-  const deletedCount = state.records.length - filteredRecords.length;
-
-  if (deletedCount > 0) {
-    await saveState({
-      ...state,
-      records: filteredRecords,
-    });
-  }
-
-  return deletedCount;
-};
-
-export const exportAllData = async (): Promise<string> => {
-  const state = await loadState();
-
-  return JSON.stringify(
-    {
-      ...state,
-      exportedAt: new Date().toISOString(),
-      version: '4.2-garden-20-points',
-    },
-    null,
-    2,
-  );
-};
-
-export const importAllData = async (jsonData: string): Promise<void> => {
-  const data = JSON.parse(jsonData) as Partial<AppState>;
-  await saveState(normalizeAppState(data));
 };

@@ -80,8 +80,6 @@ export const PreviewHarness: React.FC<{ role: string }> = ({ role }) => {
       onMarkMessageRead={(id: string) =>
         setData((p) => ({ ...p, messages: p.messages.map((m) => (m.id === id ? { ...m, isRead: true } : m)) }))
       }
-      onUpdateUsers={(users: User[]) => setData((p) => ({ ...p, users }))}
-      onImportData={(state: AppState) => setData(state)}
       onUpdateRewardItems={(items: RewardItem[]) => setData((p) => ({ ...p, rewardItems: items }))}
       onUpdateGoalRewards={(updater: (items: GoalReward[]) => GoalReward[]) => setData((p) => ({ ...p, goalRewards: updater(p.goalRewards) }))}
       onUpdateDiscountCards={(updater: (items: DiscountCard[]) => DiscountCard[]) => setData((p) => ({ ...p, discountCards: updater(p.discountCards) }))}

@@ -52,8 +52,6 @@ interface DashboardProps {
   onUpdateItems: (items: ScoreItem[]) => void;
   onSendMessage: (msg: Omit<SecretMessage, 'id' | 'timestamp' | 'isRead'>) => void;
   onMarkMessageRead: (id: string) => void;
-  onUpdateUsers: (users: User[]) => void;
-  onImportData: (state: AppState) => void;
   onUpdateRewardItems: (items: RewardItem[]) => void;
   onUpdateGoalRewards: (updater: (items: GoalReward[]) => GoalReward[]) => void;
   onUpdateDiscountCards: (updater: (items: DiscountCard[]) => DiscountCard[]) => void;
@@ -75,8 +73,6 @@ export const Dashboard: React.FC<DashboardProps> = ({
   onUpdateItems,
   onSendMessage,
   onMarkMessageRead,
-  onUpdateUsers,
-  onImportData,
   onUpdateRewardItems,
   onUpdateGoalRewards,
   onUpdateDiscountCards,
@@ -270,8 +266,6 @@ export const Dashboard: React.FC<DashboardProps> = ({
           <SettingsPanel 
             appData={data}
             onUpdateItems={onUpdateItems} 
-            onUpdateUsers={onUpdateUsers}
-            onImportData={onImportData}
             onUpdateRewardItems={onUpdateRewardItems}
             onUpdateGoalRewards={onUpdateGoalRewards}
             onUpdateDiscountCards={onUpdateDiscountCards}

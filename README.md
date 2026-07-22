@@ -122,7 +122,6 @@ VITE_FIREBASE_APP_ID=your_app_id
 | 限制項目 | 說明 |
 |---------|------|
 | 🔐 **帳號綁定** | 手機、平板、電腦都必須登入同一組 Firebase Email/Password |
-| 🗑️ **建議備份** | 雲端同步雖然可靠，仍建議定期下載 JSON 備份 |
 | 🔒 **無痕模式** | 無痕/私密瀏覽模式不利於保持登入狀態與本機快取，**不建議使用** |
 | 🌐 **首次搬遷** | 舊版 IndexedDB 資料只會從你原本使用的裝置搬上雲端一次，請先在原裝置登入新版本 |
 
@@ -130,10 +129,7 @@ VITE_FIREBASE_APP_ID=your_app_id
 
 1. **所有裝置使用同一組 Firebase 帳號**
 2. **第一次上線先用舊裝置登入**，讓舊資料自動搬到雲端
-3. **定期備份！** 進入「設定」頁面下載備份檔案（JSON 格式）
-4. 如需更換帳號或重建資料，可透過「匯入備份」功能還原資料
-
-**建議每週備份一次資料，避免意外遺失珍貴的積分紀錄！**
+3. 日常使用時保持網路連線，讓最新資料持續同步至 Firebase
 
 ## 📲 PWA 支援
 
@@ -177,4 +173,4 @@ PWA 會快取靜態資源 (JS、CSS、字體等)，即使短暫斷線仍可瀏�
 
 ---
 
-💡 **提示：** 記得定期備份資料！如有任何問題或建議，歡迎到 [GitHub Issues](https://github.com/rushbq/Familypoints-Pages/issues) 回報。
+💡 **提示：** 如有任何問題或建議，歡迎到 [GitHub Issues](https://github.com/rushbq/Familypoints-Pages/issues) 回報。

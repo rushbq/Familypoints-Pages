@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { onAuthStateChanged, signOut, User as FirebaseUser } from 'firebase/auth';
-import { normalizeAppState, saveState, SaveResult, subscribeState } from './services/storageService';
+import { saveState, SaveResult, subscribeState } from './services/storageService';
 import {
   AppState,
   DiscountCard,
@@ -21,7 +21,6 @@ import { PreviewHarness } from './components/PreviewHarness';
 import { auth, firebaseConfigError } from './services/firebase';
 import {
   addGardenPositivePoints,
-  normalizeFamilyGarden,
   startFamilyGardenPlant,
   waterFamilyGarden,
 } from './services/gardenUtils';
@@ -104,9 +103,6 @@ const App: React.FC = () => {
     if (!result.success) {
       setSaveWarning(`⚠️ 儲存失敗: ${result.error}`);
       setTimeout(() => setSaveWarning(null), 5000);
-    } else if (result.storageWarning) {
-      setSaveWarning('⚠️ 儲存空間即將用完，建議備份資料後清理舊紀錄');
-      setTimeout(() => setSaveWarning(null), 5000);
     } else {
       lastSyncedStateRef.current = serializedState;
     }
@@ -166,14 +162,6 @@ const App: React.FC = () => {
     setData((prev) => (prev ? { ...prev, rewardItems: items } : prev));
   };
 
-  const handleUpdateUsers = (users: User[]) => {
-    setData((prev) => (prev ? {
-      ...prev,
-      users,
-      familyGarden: normalizeFamilyGarden(prev.familyGarden, users),
-    } : prev));
-  };
-
   const handleWaterGarden = (childId: string) => {
     if (!currentUser || currentUser.role !== UserRole.CHILD || currentUser.id !== childId) return;
     const timestamp = Date.now();
@@ -214,10 +202,6 @@ const App: React.FC = () => {
 
   const handleUpdateStampCards = (updater: (items: StampCard[]) => StampCard[]) => {
     setData((prev) => (prev ? { ...prev, stampCards: updater(prev.stampCards) } : prev));
-  };
-
-  const handleImportData = (newData: AppState) => {
-    setData(normalizeAppState(newData));
   };
 
   const handleSendMessage = (msg: Omit<SecretMessage, 'id' | 'timestamp' | 'isRead'>) => {
@@ -331,8 +315,6 @@ const App: React.FC = () => {
         onUpdateItems={handleUpdateItems}
         onSendMessage={handleSendMessage}
         onMarkMessageRead={handleMarkMessageRead}
-        onUpdateUsers={handleUpdateUsers}
-        onImportData={handleImportData}
         onUpdateRewardItems={handleUpdateRewardItems}
         onUpdateGoalRewards={handleUpdateGoalRewards}
         onUpdateDiscountCards={handleUpdateDiscountCards}
