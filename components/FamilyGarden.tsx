@@ -27,6 +27,11 @@ interface FamilyGardenProps {
 const STAGE_LABELS = ['種子', '發芽', '長出新葉', '小植株', '花苞', '開花'];
 const WATERING_FEEDBACK = ['種子喝到水了！', '嫩芽冒出來了！', '長出新的葉片了！', '植物長得更高了！', '花苞準備開花了！', '植物開花了！'];
 
+const getGardenName = (children: User[]): string => {
+  const nameCharacters = children.slice(0, 2).map((child) => Array.from(child.name).at(-1) ?? child.name);
+  return nameCharacters.length > 0 ? `${nameCharacters.join('')}花園` : '家庭花園';
+};
+
 export const FamilyGarden: React.FC<FamilyGardenProps> = ({
   currentUser,
   users,
@@ -40,6 +45,7 @@ export const FamilyGarden: React.FC<FamilyGardenProps> = ({
   const species = getGardenSpecies(activePlant?.speciesId ?? 'sunflower');
   const isChild = currentUser.role === UserRole.CHILD;
   const childUsers = users.filter((user) => user.role === UserRole.CHILD);
+  const gardenName = getGardenName(childUsers);
   const currentChildId = isChild ? currentUser.id : null;
   const currentAvailableWaterings = currentChildId
     ? getAvailableGardenWaterings(garden, currentChildId)
@@ -88,8 +94,8 @@ export const FamilyGarden: React.FC<FamilyGardenProps> = ({
               <Icons.Leaf size={18} />
             </span>
             <div>
-              <h2 id="family-garden-title" className="text-base font-bold text-nook-greenDark">我們的家庭花園</h2>
-              <p className="text-xs font-bold text-nook-brown/75">一起澆水，也一起認識植物</p>
+              <h2 id="family-garden-title" className="text-base font-bold text-nook-greenDark">{gardenName}</h2>
+              <p className="text-xs font-bold text-nook-brown/75">兩個人的陽光，養大同一株植物</p>
             </div>
           </div>
         </div>

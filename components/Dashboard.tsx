@@ -134,8 +134,8 @@ export const Dashboard: React.FC<DashboardProps> = ({
       case 'overview':
         return (
           <div className="space-y-4 md:space-y-5 animate-pop">
-            {/* 歡迎標題區塊 */}
-            <div className="flex items-start justify-between gap-3">
+            {isParent ? (
+              <div className="flex items-start justify-between gap-3">
                 <div>
                     <h2 className="text-xl md:text-2xl font-black text-nook-brown leading-tight">
                         {new Date().getHours() < 12 ? '早安！' : '你好！'} 
@@ -146,7 +146,16 @@ export const Dashboard: React.FC<DashboardProps> = ({
                 <div className="bg-white px-2.5 py-1.5 rounded-xl flex-shrink-0 soft-card">
                     <span className="font-bold text-nook-brown/60 text-xs">{new Date().toLocaleDateString('zh-TW', { month: 'numeric', day: 'numeric', weekday: 'short' })}</span>
                 </div>
-            </div>
+              </div>
+            ) : (
+              <ChildHomeSummary
+                currentUser={currentUser}
+                score={childScores[0]?.score ?? 0}
+                rewardItems={data.rewardItems}
+                availableDiscountCardCount={getUnusedDiscountCards(data.discountCards, currentUser.id).length}
+                onRedeem={() => setIsRedeemingReward({ childId: currentUser.id })}
+              />
+            )}
 
             {isParent && (
               <ParentGoalReminderSection
@@ -157,22 +166,23 @@ export const Dashboard: React.FC<DashboardProps> = ({
               />
             )}
 
-            {/* 成員積分卡片區塊 - 動態渲染 */}
-            <div className={`grid gap-3 md:gap-4 ${visibleChildren.length === 1 ? 'grid-cols-1 max-w-xl mx-auto' : 'grid-cols-2'}`}>
-              {childScores.map((cs, idx) => (
-                <ScoreCard 
-                  key={cs.user.id}
-                  user={cs.user} 
-                  score={cs.score} 
-                  onAddPoints={() => isParent && setIsLoggingAction({ childId: cs.user.id, type: 'POSITIVE' })}
-                  onDeductPoints={() => isParent && setIsLoggingAction({ childId: cs.user.id, type: 'NEGATIVE' })}
-                  onRedeem={() => setIsRedeemingReward({ childId: cs.user.id })}
-                  canManageScoreActions={isParent}
-                  colorTheme={colorThemes[idx % colorThemes.length]}
-                  availableDiscountCardCount={getUnusedDiscountCards(data.discountCards, cs.user.id).length}
-                />
-              ))}
-            </div>
+            {isParent && (
+              <div className={`grid gap-3 md:gap-4 ${visibleChildren.length === 1 ? 'grid-cols-1 max-w-xl mx-auto' : 'grid-cols-2'}`}>
+                {childScores.map((cs, idx) => (
+                  <ScoreCard
+                    key={cs.user.id}
+                    user={cs.user}
+                    score={cs.score}
+                    onAddPoints={() => setIsLoggingAction({ childId: cs.user.id, type: 'POSITIVE' })}
+                    onDeductPoints={() => setIsLoggingAction({ childId: cs.user.id, type: 'NEGATIVE' })}
+                    onRedeem={() => setIsRedeemingReward({ childId: cs.user.id })}
+                    canManageScoreActions
+                    colorTheme={colorThemes[idx % colorThemes.length]}
+                    availableDiscountCardCount={getUnusedDiscountCards(data.discountCards, cs.user.id).length}
+                  />
+                ))}
+              </div>
+            )}
 
             <FamilyGarden
               currentUser={currentUser}
@@ -206,11 +216,8 @@ export const Dashboard: React.FC<DashboardProps> = ({
                 <ChildOverviewSection
                   currentUser={currentUser}
                   records={data.records}
-                  score={childScores[0]?.score ?? 0}
-                  rewardItems={data.rewardItems}
                   scoreItems={data.scoreItems}
                   goalRewards={activeGoalReminders.filter((goal) => goal.childId === currentUser.id)}
-                  availableDiscountCardCount={getUnusedDiscountCards(data.discountCards, currentUser.id).length}
                   rewardCards={data.rewardCards}
                   stampCards={data.stampCards}
                 />
@@ -410,27 +417,33 @@ export const Dashboard: React.FC<DashboardProps> = ({
   return (
     <div className="flex flex-col lg:flex-row h-screen overflow-hidden app-bg">
       {/* ===== 桌面版側邊導覽列 (lg 以上；手機與 iPad 直式改用底部導覽) ===== */}
-      <aside className="hidden lg:flex w-64 bg-nook-cream border-r border-nook-greenDark/10 flex-col flex-shrink-0 z-20 relative">
+      <aside className="relative z-20 hidden w-20 flex-shrink-0 flex-col border-r border-nook-greenDark/10 bg-nook-cream lg:flex">
 
         <button
           type="button"
           onClick={() => setActiveTab('overview')}
-          className="p-5 flex items-center justify-start text-left"
+          className="flex justify-center p-4"
+          aria-label="回到首頁"
+          title="Sweet Home・鈞佑花園"
         >
-           <div className="w-10 h-10 bg-nook-green/15 rounded-full flex items-center justify-center">
-             <GardenFlower size={27} />
+           <div className="flex h-9 w-9 items-center justify-center rounded-full bg-nook-green/15">
+             <GardenFlower size={24} />
            </div>
-           <div className="ml-3">
-             <h1 className="font-black text-lg text-nook-brown leading-none">Sweet Home</h1>
-             <span className="text-nook-greenDark font-bold text-[10px] tracking-[0.14em]">FAMILY GARDEN</span>
-           </div>
+           <span className="sr-only">Sweet Home，鈞佑花園</span>
         </button>
         
-        <nav className="flex-1 px-3 py-2 space-y-2 overflow-y-auto no-scrollbar">
+        <nav className="flex-1 space-y-1 overflow-y-auto px-2 py-2 no-scrollbar" aria-label="主要導覽">
+          <NavItem
+            active={activeTab === 'overview'}
+            onClick={() => setActiveTab('overview')}
+            icon={<Icons.Home size={20} />}
+            label="首頁"
+            bgColor="bg-nook-green"
+          />
           <NavItem 
             active={activeTab === 'log'} 
             onClick={() => setActiveTab('log')} 
-            icon={<Icons.ClipboardList size={24} />} 
+            icon={<Icons.ClipboardList size={20} />}
             label="日誌" 
             bgColor="bg-nook-blue"
           />
@@ -438,50 +451,40 @@ export const Dashboard: React.FC<DashboardProps> = ({
             <NavItem 
               active={activeTab === 'settings'} 
               onClick={() => setActiveTab('settings')} 
-              icon={<Icons.Settings size={24} />} 
+              icon={<Icons.Settings size={20} />}
               label="設定" 
               bgColor="bg-nook-brown"
             />
           )}
         </nav>
 
-        <div className="p-3 mt-auto space-y-2">
-           {/* 使用者簡介卡片 */}
-           <div className="bg-nook-yellow/15 p-3 rounded-xl">
-               <div className="flex items-center">
-                 <div className="w-9 h-9 rounded-full bg-white flex items-center justify-center text-lg border border-nook-brown/10 flex-shrink-0">
-                   {currentUser.avatar}
-                 </div>
-                 <div className="overflow-hidden ml-2">
-                   <p className="text-sm font-black text-nook-brown truncate">{currentUser.name}</p>
-                   <p className="text-xs text-nook-brown/60 font-bold">{isParent ? '管理員' : '成員'}</p>
-                 </div>
-               </div>
-           </div>
-
-           {/* 雲端帳號資訊 (整合進側欄) */}
-           <div className="bg-white/80 p-3 rounded-xl">
-               <div className="hidden lg:flex items-center gap-2 mb-2">
-                 <span className="text-[10px] font-black text-nook-brown/40 tracking-wider">☁️ 雲端帳號</span>
-               </div>
-               <p className="text-xs font-bold text-nook-brown/70 truncate hidden lg:block mb-2">{cloudEmail}</p>
-               <button
-                 type="button"
-                 onClick={onCloudLogout}
-                 className="w-full px-3 py-1.5 rounded-xl bg-nook-brown/5 text-nook-brown/60 text-xs font-bold hover:bg-nook-brown/10 transition-colors text-center"
-               >
-                 <span className="hidden lg:inline">切換雲端帳號</span>
-                 <span className="lg:hidden">☁️</span>
-               </button>
-           </div>
-
-          <button 
-            onClick={onLogout}
-            className="w-full group flex items-center justify-center lg:justify-start p-3 rounded-2xl text-nook-brown/50 hover:text-nook-greenDark hover:bg-nook-green/10 transition-colors font-bold"
-          >
-            <Icons.User size={22} className="lg:mr-2" />
-            <span className="hidden lg:inline">切換角色</span>
-          </button>
+        <div className="mt-auto border-t border-nook-greenDark/10 p-2">
+          <div className="flex justify-center py-2" title={`${currentUser.name}・${cloudEmail}`}>
+            <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full border border-nook-brown/10 bg-white text-lg">
+              {currentUser.avatar}
+            </div>
+            <span className="sr-only">{currentUser.name}，{cloudEmail}</span>
+          </div>
+          <div className="grid grid-cols-2 gap-1">
+            <button
+              type="button"
+              onClick={onCloudLogout}
+              className="flex min-h-10 items-center justify-center rounded-xl text-nook-brown/70 transition-colors hover:bg-white hover:text-nook-brown focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-nook-greenDark"
+              aria-label="切換雲端帳號"
+              title="切換雲端帳號"
+            >
+              <Icons.LogOut size={18} />
+            </button>
+            <button
+              type="button"
+              onClick={onLogout}
+              className="flex min-h-10 items-center justify-center rounded-xl text-nook-brown/70 transition-colors hover:bg-white hover:text-nook-greenDark focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-nook-greenDark"
+              aria-label="切換家庭角色"
+              title="切換家庭角色"
+            >
+              <Icons.User size={18} />
+            </button>
+          </div>
         </div>
       </aside>
 
@@ -493,7 +496,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
               <GardenFlower size={24} className="animate-sway" />
               <div>
                 <h1 className="text-base font-black text-nook-brown leading-none">Sweet Home</h1>
-                <span className="text-[9px] font-black tracking-[0.12em] text-nook-greenDark">FAMILY GARDEN</span>
+                <span className="text-xs font-bold text-nook-greenDark">鈞佑花園</span>
               </div>
             </div>
             <div className="flex items-center gap-2">
@@ -513,7 +516,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
         {/* 手機版雲端帳號下拉面板 */}
         {showCloudInfo && (
           <div className="lg:hidden bg-white border-b border-nook-brown/5 px-4 py-2.5 animate-pop z-20 relative">
-            <p className="text-[10px] font-black text-nook-brown/40 tracking-wider">☁️ 雲端帳號</p>
+            <p className="text-xs font-bold text-nook-brown/75">☁️ 雲端帳號</p>
             <p className="text-sm font-bold text-nook-brown break-all mb-3">{cloudEmail}</p>
             <button
               type="button"
@@ -526,7 +529,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
           </div>
         )}
 
-        <div className="relative p-3.5 md:p-6 lg:p-8 max-w-6xl mx-auto pb-24 lg:pb-8">
+        <div className="relative mx-auto max-w-6xl p-3.5 pb-24 md:p-6 md:pb-24 lg:p-6 lg:pb-6 xl:p-8">
           <div className="relative z-10">{renderContent()}</div>
         </div>
       </main>
@@ -610,20 +613,24 @@ export const Dashboard: React.FC<DashboardProps> = ({
 // --- 桌面版側欄按鈕元件 ---
 const NavItem = ({ active, onClick, icon, label, bgColor, badge = 0 }: { active: boolean, onClick: () => void, icon: React.ReactNode, label: string, bgColor: string, badge?: number }) => (
   <button
+    type="button"
     onClick={onClick}
-    className={`w-full flex items-center p-2.5 rounded-xl transition-colors duration-200 group relative ${
+    aria-current={active ? 'page' : undefined}
+    aria-label={label}
+    title={label}
+    className={`group relative flex w-full justify-center rounded-xl p-2 transition-colors duration-200 ${
       active 
         ? 'bg-white text-nook-brown'
-        : 'text-nook-brown/60 hover:bg-white/60'
+        : 'text-nook-brown/70 hover:bg-white/60 hover:text-nook-brown'
     }`}
   >
-    <div className={`w-9 h-9 rounded-lg flex items-center justify-center text-white ${bgColor}`}>
+    <div className={`flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl text-white ${bgColor}`}>
       {icon}
     </div>
-    <span className="ml-3 font-black text-sm">{label}</span>
+    <span className="sr-only">{label}</span>
     
     {badge > 0 && (
-        <div className="absolute top-1 right-2 w-5 h-5 bg-nook-red border-2 border-white rounded-full text-white text-[10px] font-bold flex items-center justify-center">
+        <div className="absolute right-2 top-1 flex h-5 w-5 items-center justify-center rounded-full border-2 border-white bg-nook-red text-xs font-bold text-white">
             {badge}
         </div>
     )}
@@ -643,7 +650,7 @@ const MobileNavItem = ({ active, onClick, icon, label, isDanger = false }: { act
     }`}
   >
     {icon}
-    <span className={`text-[10px] font-bold mt-0.5 ${active ? 'text-nook-greenDark' : ''}`}>{label}</span>
+    <span className={`mt-0.5 text-xs font-bold ${active ? 'text-nook-greenDark' : ''}`}>{label}</span>
   </button>
 );
 
@@ -685,6 +692,82 @@ const getEncouragement = (score: number): string => {
   // 用日期當 seed，每天換一句
   const dayIndex = Math.floor(Date.now() / (24 * 60 * 60 * 1000)) % msgs.length;
   return msgs[dayIndex];
+};
+
+const ChildHomeSummary = ({
+  currentUser,
+  score,
+  rewardItems,
+  availableDiscountCardCount,
+  onRedeem,
+}: {
+  currentUser: User;
+  score: number;
+  rewardItems: RewardItem[];
+  availableDiscountCardCount: number;
+  onRedeem: () => void;
+}) => {
+  const nextReward = rewardItems
+    .filter((reward) => reward.points > score)
+    .sort((a, b) => a.points - b.points)[0];
+  const affordableRewardCount = rewardItems.filter((reward) => reward.points <= score).length;
+  const rewardProgress = nextReward ? Math.min(100, (score / nextReward.points) * 100) : 100;
+  const nextRewardLabel = nextReward?.label.replace(/\s*[（(]\d+\s*分[）)]\s*$/, '') ?? '';
+
+  return (
+    <section aria-label={`${currentUser.name}的今日積分`} className="overflow-hidden rounded-2xl bg-white soft-card">
+      <div className="flex items-start gap-3 px-4 pb-3 pt-4 md:items-center md:px-5 md:pb-4 md:pt-5">
+        <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-full bg-nook-blue/15 text-2xl">
+          {currentUser.avatar}
+        </div>
+        <div className="min-w-0 flex-1">
+          <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1">
+            <div>
+              <h2 className="text-lg font-black leading-tight text-nook-brown">
+                {new Date().getHours() < 12 ? '早安' : '你好'}，{currentUser.name}
+              </h2>
+              <p className="mt-1 text-xs font-bold text-nook-brown/75">{getEncouragement(score)}</p>
+            </div>
+            <div className="flex items-baseline gap-1">
+              <span className="text-3xl font-black leading-none text-nook-blueDark tabular-nums">{score}</span>
+              <span className="text-xs font-bold text-nook-brown/75">分</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="border-t border-nook-greenDark/10 px-4 py-3 md:flex md:items-center md:gap-4 md:px-5">
+        <div className="min-w-0 flex-1">
+          <div className="flex items-center justify-between gap-3 text-xs font-bold">
+            <span className="truncate text-nook-brown">
+              {nextReward
+                ? `下一個：${nextReward.icon || '🎁'} ${nextRewardLabel}`
+                : affordableRewardCount > 0
+                  ? `已有 ${affordableRewardCount} 個獎勵可以兌換`
+                  : '繼續累積，就能兌換第一個獎勵'}
+            </span>
+            {nextReward && <span className="flex-shrink-0 text-nook-orangeDark">還差 {nextReward.points - score} 分</span>}
+          </div>
+          <div
+            className="mt-2 h-2 overflow-hidden rounded-full bg-nook-beige"
+            role="progressbar"
+            aria-label="下一個獎勵的積分進度"
+            aria-valuemin={0}
+            aria-valuemax={nextReward?.points ?? Math.max(score, 1)}
+            aria-valuenow={Math.min(score, nextReward?.points ?? score)}
+          >
+            <div className="h-full rounded-full bg-nook-blue" style={{ width: `${rewardProgress}%` }} />
+          </div>
+        </div>
+        <div className="mt-3 flex items-center gap-2 md:mt-0">
+          <span className="text-xs font-bold text-[#6D46C2]">5 折卡 {availableDiscountCardCount} 張</span>
+          <Button size="sm" variant="reward" onClick={onRedeem} icon={<Icons.Gift size={15} />}>
+            兌換獎勵
+          </Button>
+        </div>
+      </div>
+    </section>
+  );
 };
 
 const ParentGoalReminderSection = ({
@@ -836,14 +919,11 @@ const ParentRecentRecordsGrid = ({
   </div>
 );
 
-const ChildOverviewSection = ({ currentUser, records, score, rewardItems, scoreItems, goalRewards, availableDiscountCardCount, rewardCards, stampCards }: {
+const ChildOverviewSection = ({ currentUser, records, scoreItems, goalRewards, rewardCards, stampCards }: {
   currentUser: User;
   records: ScoreRecord[];
-  score: number;
-  rewardItems: { id: string; label: string; points: number; icon?: string }[];
   scoreItems: ScoreItem[];
   goalRewards: GoalReward[];
-  availableDiscountCardCount: number;
   rewardCards: RewardCard[];
   stampCards: StampCard[];
 }) => {
@@ -860,11 +940,10 @@ const ChildOverviewSection = ({ currentUser, records, score, rewardItems, scoreI
   const weekNegative = weekRecords.filter(r => r.pointsChange < 0);
   const weekNet = weekRecords.reduce((sum, r) => sum + r.pointsChange, 0);
 
-  // 最近可兌換的獎勵（分數最接近且買得起的）
-  const affordableRewards = rewardItems.filter(r => r.points <= score).sort((a, b) => b.points - a.points);
-  const nextReward = rewardItems.filter(r => r.points > score).sort((a, b) => a.points - b.points)[0];
   const positiveItemsByCategory = groupScoreItemsByCategory(scoreItems, ScoreType.POSITIVE);
   const negativeItemsByCategory = groupScoreItemsByCategory(scoreItems, ScoreType.NEGATIVE);
+  const hasFamilyCards = getActiveRewardCards(rewardCards, currentUser.id).length > 0
+    || getActiveStampCards(stampCards, currentUser.id).length > 0;
 
   return (
     <div className="space-y-3 md:space-y-4">
@@ -879,8 +958,8 @@ const ChildOverviewSection = ({ currentUser, records, score, rewardItems, scoreI
               <div key={goal.id} className="bg-white/85 rounded-xl p-3">
                 <p className="text-sm font-black text-nook-brown leading-snug">{goal.targetText}</p>
                 <div className="flex flex-wrap items-center justify-between gap-1 mt-1.5">
-                  <p className="text-[10px] font-bold text-nook-brown/45">{formatGoalDateRange(goal)}</p>
-                  <p className="text-[10px] font-bold text-nook-orangeDark">達成可獲得 5 折卡</p>
+                  <p className="text-xs font-bold text-nook-brown/75">{formatGoalDateRange(goal)}</p>
+                  <p className="text-xs font-bold text-nook-orangeDark">達成可獲得 5 折卡</p>
                 </div>
               </div>
             ))}
@@ -888,39 +967,40 @@ const ChildOverviewSection = ({ currentUser, records, score, rewardItems, scoreI
         </Card>
       )}
 
-      {/* 鼓勵語句 */}
-      <Card className="bg-nook-yellow/10">
-        <div className="flex items-start gap-3">
-          <div className="text-2xl flex-shrink-0">
-            {score >= 100 ? '👑' : score >= 50 ? '🌟' : score >= 20 ? '🌱' : '💪'}
-          </div>
-          <div className="min-w-0 flex-1">
-            <p className="text-sm md:text-base font-black text-nook-brown">{getEncouragement(score)}</p>
-            {nextReward && (
-              <p className="text-xs text-nook-brown/60 font-bold mt-1 leading-snug">
-                再努力 <span className="text-nook-orangeDark">{nextReward.points - score}</span> 分就可以兌換「{nextReward.icon || '🎁'} {nextReward.label}」！
-              </p>
-            )}
-            {!nextReward && affordableRewards.length > 0 && (
-              <p className="text-xs text-nook-greenDark font-bold mt-1">
-                你有足夠的分數兌換獎勵了！快去看看吧 🎉
-              </p>
-            )}
-            <p className="text-[10px] text-[#6D46C2] font-bold mt-1.5">
-              目前有 {availableDiscountCardCount} 張 5 折卡
-            </p>
-          </div>
-        </div>
-      </Card>
+      <div className={`grid gap-3 ${hasFamilyCards ? 'md:grid-cols-2' : 'grid-cols-1'}`}>
+        {hasFamilyCards && (
+          <FamilyCardsSection
+            childId={currentUser.id}
+            childName={currentUser.name}
+            rewardCards={rewardCards}
+            stampCards={stampCards}
+            isParent={false}
+          />
+        )}
 
-      {/* 獎勵卡與集點卡 */}
-      <FamilyCardsSection
-        childId={currentUser.id}
-        childName={currentUser.name}
-        rewardCards={rewardCards}
-        stampCards={stampCards}
-        isParent={false}
-      />
+        <Card className="bg-white">
+          <div className="mb-3 flex items-center gap-2">
+            <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-nook-blue/15 text-nook-blueDark"><Icons.TrendingUp size={15} /></div>
+            <h3 className="text-sm font-black text-nook-brown md:text-base">這週的進步</h3>
+          </div>
+          <div className="grid grid-cols-3 gap-2">
+            <div className="rounded-xl bg-nook-green/10 p-2 text-center">
+              <div className="text-xl font-black text-nook-greenDark">{weekPositive.length}</div>
+              <div className="text-xs font-bold text-nook-brown/75">加分</div>
+            </div>
+            <div className="rounded-xl bg-nook-red/10 p-2 text-center">
+              <div className="text-xl font-black text-nook-red">{weekNegative.length}</div>
+              <div className="text-xs font-bold text-nook-brown/75">扣分</div>
+            </div>
+            <div className={`${weekNet >= 0 ? 'bg-nook-blue/10' : 'bg-nook-orange/10'} rounded-xl p-2 text-center`}>
+              <div className={`text-xl font-black ${weekNet >= 0 ? 'text-nook-blueDark' : 'text-nook-orangeDark'}`}>
+                {weekNet >= 0 ? '+' : ''}{weekNet}
+              </div>
+              <div className="text-xs font-bold text-nook-brown/75">淨得分</div>
+            </div>
+          </div>
+        </Card>
+      </div>
 
       <Card className="bg-white">
         <button
@@ -944,30 +1024,6 @@ const ChildOverviewSection = ({ currentUser, records, score, rewardItems, scoreI
         )}
       </Card>
 
-      {/* 本週表現統計 */}
-      <Card className="bg-white">
-        <div className="flex items-center mb-2.5 gap-2">
-          <div className="w-7 h-7 bg-nook-blue/15 rounded-lg text-nook-blueDark flex items-center justify-center"><Icons.Calendar size={15} /></div>
-          <h3 className="text-sm md:text-base font-black text-nook-brown">本週表現</h3>
-        </div>
-        <div className="grid grid-cols-3 gap-2">
-          <div className="bg-nook-green/10 rounded-xl p-2 text-center">
-            <div className="text-xl font-black text-nook-greenDark">{weekPositive.length}</div>
-            <div className="text-[10px] font-bold text-nook-brown/60">加分</div>
-          </div>
-          <div className="bg-nook-red/10 rounded-xl p-2 text-center">
-            <div className="text-xl font-black text-nook-red">{weekNegative.length}</div>
-            <div className="text-[10px] font-bold text-nook-brown/60">扣分</div>
-          </div>
-          <div className={`${weekNet >= 0 ? 'bg-nook-blue/10' : 'bg-nook-orange/10'} rounded-xl p-2 text-center`}>
-            <div className={`text-xl font-black ${weekNet >= 0 ? 'text-nook-blueDark' : 'text-nook-orangeDark'}`}>
-              {weekNet >= 0 ? '+' : ''}{weekNet}
-            </div>
-            <div className="text-[10px] font-bold text-nook-brown/60">淨得分</div>
-          </div>
-        </div>
-      </Card>
-      {/* 最近動態已移至「日誌」頁，首頁不再重複顯示 */}
     </div>
   );
 };
@@ -1004,7 +1060,7 @@ const FamilyCardsSection = ({
 
       {activeRewardCards.length > 0 && (
         <div className="mb-3">
-          <p className="font-black text-[#C85078] text-[11px] mb-1.5">獎勵卡</p>
+          <p className="mb-2 text-xs font-black text-[#C85078]">獎勵卡</p>
           <div className="space-y-1.5">
             {activeRewardCards.map((card) => (
               <div key={card.id} className="bg-[#FDF2F8] rounded-xl p-2.5">
@@ -1013,20 +1069,20 @@ const FamilyCardsSection = ({
                     {card.rewardIcon || '🎁'}
                   </div>
                   <div className="min-w-0 flex-1">
-                    <p className="text-[9px] font-bold text-nook-brown/45 truncate">{card.title}</p>
-                    <p className="truncate whitespace-nowrap text-[11px] font-black leading-tight text-nook-brown" title={card.rewardLabel}>{card.rewardLabel}</p>
+                    <p className="truncate text-xs font-bold text-nook-brown/75">{card.title}</p>
+                    <p className="truncate whitespace-nowrap text-xs font-black leading-tight text-nook-brown" title={card.rewardLabel}>{card.rewardLabel}</p>
                   </div>
                 </div>
                 {isParent ? (
                     <button
                       type="button"
-                      className="mt-2 min-h-8 w-full rounded-lg bg-[#D85A82] px-2 text-[11px] font-black text-white hover:brightness-105 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#B94168]"
+                      className="mt-2 min-h-8 w-full rounded-lg bg-[#D85A82] px-2 text-xs font-black text-white hover:brightness-105 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#B94168]"
                       onClick={() => onRedeemRewardCard?.(card)}
                     >
                       兌換這份獎勵
                     </button>
                   ) : (
-                    <span className="mt-2 block rounded-lg bg-white px-2 py-1.5 text-center text-[10px] font-black text-[#B94168]">
+                    <span className="mt-2 block rounded-lg bg-white px-2 py-1.5 text-center text-xs font-black text-[#B94168]">
                       請爸媽協助兌換
                     </span>
                   )}
@@ -1038,7 +1094,7 @@ const FamilyCardsSection = ({
 
       {activeStampCards.length > 0 && (
         <div>
-          <p className="font-black text-nook-orangeDark text-[11px] mb-1.5">集點卡</p>
+          <p className="mb-2 text-xs font-black text-nook-orangeDark">集點卡</p>
           <div className="space-y-1.5">
             {activeStampCards.map((card) => (
               <StampCardRow key={card.id} card={card} />
@@ -1060,9 +1116,9 @@ const StampCardRow = ({ card }: { card: StampCard }) => {
       <div className="flex items-start justify-between gap-2 mb-2">
         <div className="min-w-0">
           <p className="text-xs font-black text-nook-brown leading-tight break-words">{card.title}</p>
-          <p className="text-[9px] font-bold text-nook-brown/50 truncate">{card.rewardIcon || '🎁'} {card.rewardLabel}</p>
+          <p className="truncate text-xs font-bold text-nook-brown/75">{card.rewardIcon || '🎁'} {card.rewardLabel}</p>
         </div>
-        <span className={`text-[10px] font-black px-2 py-0.5 rounded-full flex-shrink-0 ${complete ? 'bg-nook-orange text-white' : 'bg-white text-nook-brown/60'}`}>
+        <span className={`flex-shrink-0 rounded-full px-2 py-0.5 text-xs font-black ${complete ? 'bg-nook-orange text-white' : 'bg-white text-nook-brown/75'}`}>
           {filled}/{card.targetStamps}
         </span>
       </div>
@@ -1070,7 +1126,7 @@ const StampCardRow = ({ card }: { card: StampCard }) => {
         <div className="h-full rounded-full bg-nook-orange" style={{ width: `${Math.min((filled / card.targetStamps) * 100, 100)}%` }} />
       </div>
       {complete && (
-        <p className="text-[10px] font-black text-nook-orangeDark mt-1.5">集滿了，可以兌換禮物！</p>
+        <p className="mt-2 text-xs font-black text-nook-orangeDark">集滿了，可以兌換禮物！</p>
       )}
     </div>
   );
@@ -1094,7 +1150,7 @@ const ScoreGuidePanel = ({
 
         return (
           <div key={option.value} className="space-y-1.5">
-            <div className={`px-2 py-1 rounded-full border text-[10px] font-black inline-flex ${getScoreCategoryChipClassName(option.value)}`}>
+            <div className={`inline-flex rounded-full border px-2 py-1 text-xs font-black ${getScoreCategoryChipClassName(option.value)}`}>
               {option.label}
             </div>
             <div className="space-y-2">
@@ -1108,7 +1164,7 @@ const ScoreGuidePanel = ({
                       <p className="text-xs font-bold text-nook-brown break-words">{item.label}</p>
                     </div>
                   </div>
-                  <div className={`text-[10px] font-black px-2 py-0.5 rounded-full ${type === ScoreType.POSITIVE ? 'bg-nook-green/20 text-nook-greenDark' : 'bg-nook-red/20 text-nook-red'}`}>
+                  <div className={`rounded-full px-2 py-0.5 text-xs font-black ${type === ScoreType.POSITIVE ? 'bg-nook-green/20 text-nook-greenDark' : 'bg-nook-red/20 text-nook-red'}`}>
                     {type === ScoreType.POSITIVE ? '+' : '-'}{item.points}
                   </div>
                 </div>
@@ -1146,7 +1202,7 @@ const ScoreCard = ({ user, score, onAddPoints, onDeductPoints, onRedeem, canMana
         </div>
         <div className="min-w-0">
           <h3 className="text-sm md:text-base font-black text-nook-brown leading-tight truncate">{user.name}</h3>
-          <span className="text-[9px] md:text-[10px] font-black text-[#6D46C2]">
+          <span className="text-xs font-black text-[#6D46C2]">
             5 折卡 {availableDiscountCardCount} 張
           </span>
         </div>

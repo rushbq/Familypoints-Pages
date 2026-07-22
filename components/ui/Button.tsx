@@ -1,7 +1,7 @@
 import React, { ButtonHTMLAttributes } from 'react';
 
 interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
-  variant?: 'primary' | 'secondary' | 'danger' | 'success' | 'outline' | 'ghost';
+  variant?: 'primary' | 'secondary' | 'danger' | 'success' | 'reward' | 'outline' | 'ghost';
   size?: 'sm' | 'md' | 'lg' | 'xl';
   icon?: React.ReactNode;
 }
@@ -26,6 +26,8 @@ export const Button: React.FC<ButtonProps> = ({
     success: "bg-nook-green text-white border-b-[3px] border-nook-greenDark hover:brightness-105 active:border-b-0",
     // Red (Danger/Cancel)
     danger: "bg-nook-red text-white border-b-[3px] border-[#B84F49] hover:brightness-105 active:border-b-0",
+    // Lavender (Rewards)
+    reward: "bg-[#9377D8] text-white border-b-[3px] border-[#7556BA] hover:brightness-105 active:border-b-0",
     // Brown Outline
     outline: "bg-white border border-nook-brown/20 text-nook-brown hover:bg-nook-beige active:translate-y-0",
     // Ghost
