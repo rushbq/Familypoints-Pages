@@ -7,6 +7,7 @@ import {
   StampCardStatus,
   UserRole,
 } from '../types';
+import { createInitialFamilyGarden } from './gardenUtils';
 
 /**
  * 開發預覽用的假資料（僅在 import.meta.env.DEV 下透過 PreviewHarness 使用）。
@@ -20,12 +21,23 @@ const dateKey = (offsetDays: number): string => {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 };
 
-export const getMockState = (): AppState => ({
-  users: [
+export const getMockState = (): AppState => {
+  const users = [
     { id: 'parent_1', name: '爸爸/媽媽', role: UserRole.PARENT, avatar: '👑' },
     { id: 'child_1', name: '丞鈞', role: UserRole.CHILD, avatar: '🧑' },
     { id: 'child_2', name: '佑佑', role: UserRole.CHILD, avatar: '🧒' },
-  ],
+  ];
+  const familyGarden = createInitialFamilyGarden(users, now - 12 * DAY);
+  familyGarden.childProgress = [
+    { childId: 'child_1', earnedPositivePoints: 275, usedWaterings: 1 },
+    { childId: 'child_2', earnedPositivePoints: 65, usedWaterings: 0 },
+  ];
+  familyGarden.plants[0].waterings = [
+    { id: 'gw_1', childId: 'child_1', childName: '丞鈞', wateredAt: now - 3 * DAY },
+  ];
+
+  return {
+  users,
   scoreItems: [
     { id: 'item_1', label: '做家事', points: 5, type: ScoreType.POSITIVE, category: ScoreCategory.DAILY, icon: '🧹' },
     { id: 'item_2', label: '成績優異 (95↑)', points: 10, type: ScoreType.POSITIVE, category: ScoreCategory.ACADEMIC, icon: '💯' },
@@ -67,4 +79,6 @@ export const getMockState = (): AppState => ({
     { id: 'sc_1', childId: 'child_1', title: '暑假閱讀集點', targetStamps: 10, stamps: 6, rewardLabel: '一本新的故事書', rewardIcon: '📚', status: StampCardStatus.ACTIVE, createdAt: now - 15 * DAY },
     { id: 'sc_2', childId: 'child_2', title: '主動刷牙集點', targetStamps: 5, stamps: 5, rewardLabel: '小汽車玩具', rewardIcon: '🚗', status: StampCardStatus.ACTIVE, createdAt: now - 7 * DAY },
   ],
-});
+  familyGarden,
+  };
+};

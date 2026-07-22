@@ -14,6 +14,11 @@ import {
 } from '../types';
 import { Dashboard } from './Dashboard';
 import { getMockState } from '../services/mockData';
+import {
+  addGardenPositivePoints,
+  startFamilyGardenPlant,
+  waterFamilyGarden,
+} from '../services/gardenUtils';
 
 /**
  * 開發預覽用的 Dashboard 外殼（僅 import.meta.env.DEV）。
@@ -29,9 +34,25 @@ export const PreviewHarness: React.FC<{ role: string }> = ({ role }) => {
       : data.users.find((u) => u.role === UserRole.CHILD)!;
 
   const onAddRecord = (record: Omit<ScoreRecord, 'id' | 'timestamp'>): ScoreRecord => {
-    const newRecord: ScoreRecord = { ...record, id: Date.now().toString(), timestamp: Date.now() };
-    setData((prev) => ({ ...prev, records: [...prev.records, newRecord] }));
+    const timestamp = Date.now();
+    const newRecord: ScoreRecord = { ...record, id: timestamp.toString(), timestamp };
+    setData((prev) => ({
+      ...prev,
+      records: [...prev.records, newRecord],
+      familyGarden: newRecord.pointsChange > 0
+        ? addGardenPositivePoints(prev.familyGarden, newRecord.childId, newRecord.pointsChange)
+        : prev.familyGarden,
+    }));
     return newRecord;
+  };
+
+  const onWaterGarden = (childId: string) => {
+    if (currentUser.role !== UserRole.CHILD || currentUser.id !== childId) return;
+    const timestamp = Date.now();
+    setData((prev) => {
+      const result = waterFamilyGarden(prev.familyGarden, currentUser, timestamp.toString(), timestamp);
+      return result.didWater ? { ...prev, familyGarden: result.garden } : prev;
+    });
   };
 
   return (
@@ -54,6 +75,14 @@ export const PreviewHarness: React.FC<{ role: string }> = ({ role }) => {
       onUpdateDiscountCards={(updater: (items: DiscountCard[]) => DiscountCard[]) => setData((p) => ({ ...p, discountCards: updater(p.discountCards) }))}
       onUpdateRewardCards={(updater: (items: RewardCard[]) => RewardCard[]) => setData((p) => ({ ...p, rewardCards: updater(p.rewardCards) }))}
       onUpdateStampCards={(updater: (items: StampCard[]) => StampCard[]) => setData((p) => ({ ...p, stampCards: updater(p.stampCards) }))}
+      onWaterGarden={onWaterGarden}
+      onStartGardenPlant={(speciesId: string) => {
+        const timestamp = Date.now();
+        setData((prev) => ({
+          ...prev,
+          familyGarden: startFamilyGardenPlant(prev.familyGarden, speciesId, timestamp.toString(), timestamp),
+        }));
+      }}
       cloudEmail="preview@example.com"
       onCloudLogout={() => window.alert('（預覽模式）切換帳號')}
     />

@@ -14,6 +14,7 @@ import {
   UserRole,
 } from '../types';
 import { inferScoreItemCategory, normalizeScoreItem, normalizeScoreRecord } from './familyUtils';
+import { createInitialFamilyGarden } from './gardenUtils';
 
 /**
  * FamilyPointsDB - 使用 Dexie.js 封裝 IndexedDB
@@ -130,17 +131,22 @@ export const INITIAL_REWARD_ITEMS: RewardItem[] = [
  * 取得預設應用程式狀態
  * 當 IndexedDB 失敗或需要重置時使用
  */
-export const getDefaultState = () => ({
-  users: INITIAL_USERS,
-  scoreItems: INITIAL_SCORE_ITEMS,
-  rewardItems: INITIAL_REWARD_ITEMS,
-  records: [] as ScoreRecord[],
-  messages: [] as SecretMessage[],
-  goalRewards: [] as GoalReward[],
-  discountCards: [] as DiscountCard[],
-  rewardCards: [] as RewardCard[],
-  stampCards: [] as StampCard[],
-});
+export const getDefaultState = () => {
+  const users = INITIAL_USERS.map((user) => ({ ...user }));
+
+  return {
+    users,
+    scoreItems: INITIAL_SCORE_ITEMS,
+    rewardItems: INITIAL_REWARD_ITEMS,
+    records: [] as ScoreRecord[],
+    messages: [] as SecretMessage[],
+    goalRewards: [] as GoalReward[],
+    discountCards: [] as DiscountCard[],
+    rewardCards: [] as RewardCard[],
+    stampCards: [] as StampCard[],
+    familyGarden: createInitialFamilyGarden(users),
+  };
+};
 
 /**
  * 初始化資料庫

@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { User, UserRole } from '../types';
 import { Button } from './ui/Button';
 import { Icons } from './Icons';
-import { PikminFlower } from './PikminFlower';
+import { GardenFlower } from './GardenFlower';
 
 interface RoleSelectorProps {
   users: User[];
@@ -70,7 +70,7 @@ export const RoleSelector: React.FC<RoleSelectorProps> = ({ users, onSelectUser,
     <div className="min-h-screen flex flex-col items-center justify-center p-4 relative overflow-hidden leaf-pattern">
       <div className="text-center mb-5 z-10 animate-pop">
         <div className="flex items-center justify-center gap-2 mb-1">
-          <PikminFlower size={30} />
+          <GardenFlower size={30} />
           <h1 className="text-xl md:text-2xl font-black text-nook-brown tracking-wide">Sweet Home</h1>
         </div>
         <p className="text-nook-greenDark font-black text-sm">今天是誰要進入家庭花園？</p>

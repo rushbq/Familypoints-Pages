@@ -1,10 +1,7 @@
 import React from 'react';
 
-/**
- * Pikmin Bloom 風格的小花圖案（5 片圓潤花瓣 + 花心）。
- * 用於裝飾、項目符號與強調點綴。
- */
-export const PikminFlower: React.FC<{
+/** 通用的原創五瓣花圖示，用於產品識別與輕量點綴。 */
+export const GardenFlower: React.FC<{
   size?: number;
   petal?: string;
   center?: string;
@@ -26,10 +23,7 @@ export const PikminFlower: React.FC<{
   </svg>
 );
 
-/**
- * 背景裝飾用的漂浮花朵層（絕對定位、不攔截點擊）。
- * 放在有 position:relative 的容器內即可。
- */
+/** 背景裝飾用的漂浮花朵層（絕對定位、不攔截點擊）。 */
 const DECOR_FLOWERS: { top: string; left?: string; right?: string; size: number; petal: string; center: string; delay: string }[] = [
   { top: '4%', left: '-2%', size: 64, petal: '#FBDCEB', center: '#F48FB1', delay: '0s' },
   { top: '18%', right: '-3%', size: 88, petal: '#FFFFFF', center: '#F6C544', delay: '1.2s' },
@@ -39,13 +33,13 @@ const DECOR_FLOWERS: { top: string; left?: string; right?: string; size: number;
 
 export const FloatingFlowers: React.FC<{ className?: string }> = ({ className }) => (
   <div className={`pointer-events-none absolute inset-0 overflow-hidden ${className ?? ''}`} aria-hidden="true">
-    {DECOR_FLOWERS.map((f, i) => (
+    {DECOR_FLOWERS.map((flower, index) => (
       <div
-        key={i}
+        key={index}
         className="absolute opacity-20 animate-sway"
-        style={{ top: f.top, left: f.left, right: f.right, animationDelay: f.delay }}
+        style={{ top: flower.top, left: flower.left, right: flower.right, animationDelay: flower.delay }}
       >
-        <PikminFlower size={f.size} petal={f.petal} center={f.center} />
+        <GardenFlower size={flower.size} petal={flower.petal} center={flower.center} />
       </div>
     ))}
   </div>

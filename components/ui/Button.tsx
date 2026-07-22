@@ -14,7 +14,7 @@ export const Button: React.FC<ButtonProps> = ({
   icon,
   ...props 
 }) => {
-  // Pikmin Bloom 風格：緊湊、圓潤，保留輕微按壓深度。
+  // Sweet Home 風格：緊湊、圓潤，保留輕微按壓深度。
   const baseStyles = "inline-flex min-h-10 items-center justify-center rounded-xl font-bold transition-[transform,filter,background-color,border-color] duration-200 active:translate-y-[3px] focus:outline-none focus-visible:ring-2 focus-visible:ring-nook-greenDark focus-visible:ring-offset-2 disabled:opacity-45 disabled:pointer-events-none";
   
   const variants = {

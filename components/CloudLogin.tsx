@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { signInWithEmailAndPassword } from 'firebase/auth';
 import { auth } from '../services/firebase';
 import { Button } from './ui/Button';
-import { PikminFlower } from './PikminFlower';
+import { GardenFlower } from './GardenFlower';
 
 export const CloudLogin: React.FC = () => {
   const [email, setEmail] = useState('');
@@ -30,7 +30,7 @@ export const CloudLogin: React.FC = () => {
       <div className="w-full max-w-sm bg-white rounded-2xl soft-card p-5 md:p-6 relative z-10 animate-pop">
         <div className="flex items-center gap-3 mb-5">
           <div className="w-12 h-12 rounded-full bg-nook-green/10 flex items-center justify-center flex-shrink-0">
-            <PikminFlower size={30} />
+            <GardenFlower size={30} />
           </div>
           <div>
             <p className="text-[11px] font-black tracking-[0.16em] text-nook-greenDark">SWEET HOME</p>

@@ -7,6 +7,7 @@ import {
   getDefaultState,
 } from './database';
 import { normalizeScoreItem, normalizeScoreRecord } from './familyUtils';
+import { normalizeFamilyGarden } from './gardenUtils';
 import { auth, firestore } from './firebase';
 
 /**
@@ -20,6 +21,7 @@ export interface SaveResult {
 
 export const normalizeAppState = (state?: Partial<AppState>): AppState => {
   const defaults = getDefaultState();
+  const users = state?.users ?? defaults.users;
   const scoreItems = (state?.scoreItems ?? defaults.scoreItems).map(normalizeScoreItem);
   const rewardItems = state?.rewardItems ?? defaults.rewardItems;
   const rewardIds = new Set(rewardItems.map((item) => item.id));
@@ -29,7 +31,7 @@ export const normalizeAppState = (state?: Partial<AppState>): AppState => {
   );
 
   return {
-    users: state?.users ?? defaults.users,
+    users,
     scoreItems,
     rewardItems,
     records,
@@ -38,6 +40,7 @@ export const normalizeAppState = (state?: Partial<AppState>): AppState => {
     discountCards: state?.discountCards ?? defaults.discountCards,
     rewardCards: state?.rewardCards ?? defaults.rewardCards,
     stampCards: state?.stampCards ?? defaults.stampCards,
+    familyGarden: normalizeFamilyGarden(state?.familyGarden, users),
   };
 };
 
@@ -226,7 +229,7 @@ export const exportAllData = async (): Promise<string> => {
     {
       ...state,
       exportedAt: new Date().toISOString(),
-      version: '4.0-cloud',
+      version: '4.1-family-garden',
     },
     null,
     2,

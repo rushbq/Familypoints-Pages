@@ -12,12 +12,19 @@ import {
   SecretMessage,
   StampCard,
   User,
+  UserRole,
 } from './types';
 import { RoleSelector } from './components/RoleSelector';
 import { Dashboard } from './components/Dashboard';
 import { CloudLogin } from './components/CloudLogin';
 import { PreviewHarness } from './components/PreviewHarness';
 import { auth, firebaseConfigError } from './services/firebase';
+import {
+  addGardenPositivePoints,
+  normalizeFamilyGarden,
+  startFamilyGardenPlant,
+  waterFamilyGarden,
+} from './services/gardenUtils';
 
 /**
  * 應用程式主元件
@@ -129,15 +136,25 @@ const App: React.FC = () => {
 
   const handleAddRecord = (record: Omit<ScoreRecord, 'id' | 'timestamp'>): ScoreRecord | null => {
     if (!data) return null;
+    const timestamp = Date.now();
     const newRecord: ScoreRecord = {
       ...record,
-      id: Date.now().toString(),
-      timestamp: Date.now()
+      id: timestamp.toString(),
+      timestamp,
     };
-    setData((prev) => (prev ? {
-      ...prev,
-      records: [...prev.records, newRecord]
-    } : prev));
+    setData((prev) => {
+      if (!prev) return prev;
+      const recordCreator = prev.users.find((user) => user.id === newRecord.createdById);
+      const shouldCountForGarden = newRecord.pointsChange > 0 && recordCreator?.role === UserRole.PARENT;
+
+      return {
+        ...prev,
+        records: [...prev.records, newRecord],
+        familyGarden: shouldCountForGarden
+          ? addGardenPositivePoints(prev.familyGarden, newRecord.childId, newRecord.pointsChange)
+          : prev.familyGarden,
+      };
+    });
     return newRecord;
   };
 
@@ -150,7 +167,37 @@ const App: React.FC = () => {
   };
 
   const handleUpdateUsers = (users: User[]) => {
-    setData((prev) => (prev ? { ...prev, users } : prev));
+    setData((prev) => (prev ? {
+      ...prev,
+      users,
+      familyGarden: normalizeFamilyGarden(prev.familyGarden, users),
+    } : prev));
+  };
+
+  const handleWaterGarden = (childId: string) => {
+    if (!currentUser || currentUser.role !== UserRole.CHILD || currentUser.id !== childId) return;
+    const timestamp = Date.now();
+
+    setData((prev) => {
+      if (!prev) return prev;
+      const result = waterFamilyGarden(prev.familyGarden, currentUser, timestamp.toString(), timestamp);
+      return result.didWater ? { ...prev, familyGarden: result.garden } : prev;
+    });
+  };
+
+  const handleStartGardenPlant = (speciesId: string) => {
+    if (!currentUser) return;
+    const timestamp = Date.now();
+
+    setData((prev) => prev ? {
+      ...prev,
+      familyGarden: startFamilyGardenPlant(
+        prev.familyGarden,
+        speciesId,
+        timestamp.toString(),
+        timestamp,
+      ),
+    } : prev);
   };
 
   const handleUpdateGoalRewards = (updater: (items: GoalReward[]) => GoalReward[]) => {
@@ -291,6 +338,8 @@ const App: React.FC = () => {
         onUpdateDiscountCards={handleUpdateDiscountCards}
         onUpdateRewardCards={handleUpdateRewardCards}
         onUpdateStampCards={handleUpdateStampCards}
+        onWaterGarden={handleWaterGarden}
+        onStartGardenPlant={handleStartGardenPlant}
         cloudEmail={cloudUser.email || '已登入雲端帳號'}
         onCloudLogout={handleCloudLogout}
       />

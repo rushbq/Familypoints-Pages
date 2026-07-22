@@ -2,7 +2,7 @@
 <html lang="zh-TW">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
     <meta http-equiv="Pragma" content="no-cache" />
     <meta http-equiv="Expires" content="0" />
@@ -44,7 +44,7 @@
     </script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Varela+Round&family=Zen+Maru+Gothic:wght@400;500;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Varela+Round&family=Zen+Maru+Gothic:wght@400;500;700;900&display=swap" rel="stylesheet">
     <style>
       /* 隱藏滾動條 */
       .no-scrollbar::-webkit-scrollbar { display: none; }
@@ -55,7 +55,7 @@
         color: #394438;
       }
 
-      /* Pikmin Bloom 風格：清爽草地與天空色調，不使用高噪音紋理。 */
+      /* Sweet Home 花園風格：清爽草地與天空色調，不使用高噪音紋理。 */
       .app-bg {
         background:
           radial-gradient(circle at 8% 6%, rgba(246, 217, 107, 0.18), transparent 18rem),
@@ -94,6 +94,15 @@
       }
       .animate-pop {
         animation: popIn 0.22s cubic-bezier(0.22, 1, 0.36, 1) both;
+      }
+
+      @keyframes gardenGrow {
+        0% { opacity: 0.72; transform: translateY(4px) scale(0.98); }
+        100% { opacity: 1; transform: translateY(0) scale(1); }
+      }
+      .garden-plant-stage {
+        animation: gardenGrow 0.22s cubic-bezier(0.22, 1, 0.36, 1) both;
+        transform-origin: 50% 92%;
       }
 
       @media (prefers-reduced-motion: reduce) {

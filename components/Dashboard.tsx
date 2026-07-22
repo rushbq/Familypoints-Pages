@@ -26,7 +26,8 @@ import { ActionLogger } from './ActionLogger';
 import { SettingsPanel } from './SettingsPanel';
 import { RewardRedeemer } from './RewardRedeemer';
 import { ConfirmationModal } from './ui/ConfirmationModal';
-import { PikminFlower } from './PikminFlower';
+import { GardenFlower } from './GardenFlower';
+import { FamilyGarden } from './FamilyGarden';
 import {
   formatGoalDateRange,
   getActiveRewardCards,
@@ -58,6 +59,8 @@ interface DashboardProps {
   onUpdateDiscountCards: (updater: (items: DiscountCard[]) => DiscountCard[]) => void;
   onUpdateRewardCards: (updater: (items: RewardCard[]) => RewardCard[]) => void;
   onUpdateStampCards: (updater: (items: StampCard[]) => StampCard[]) => void;
+  onWaterGarden: (childId: string) => void;
+  onStartGardenPlant: (speciesId: string) => void;
   cloudEmail: string;
   onCloudLogout: () => void;
 }
@@ -79,6 +82,8 @@ export const Dashboard: React.FC<DashboardProps> = ({
   onUpdateDiscountCards,
   onUpdateRewardCards,
   onUpdateStampCards,
+  onWaterGarden,
+  onStartGardenPlant,
   cloudEmail,
   onCloudLogout,
 }) => {
@@ -168,6 +173,14 @@ export const Dashboard: React.FC<DashboardProps> = ({
                 />
               ))}
             </div>
+
+            <FamilyGarden
+              currentUser={currentUser}
+              users={data.users}
+              garden={data.familyGarden}
+              onWaterGarden={onWaterGarden}
+              onStartGardenPlant={onStartGardenPlant}
+            />
 
              {/* 家長專屬：獎勵卡與集點卡 */}
              {isParent && (
@@ -405,7 +418,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
           className="p-5 flex items-center justify-start text-left"
         >
            <div className="w-10 h-10 bg-nook-green/15 rounded-full flex items-center justify-center">
-             <PikminFlower size={27} />
+             <GardenFlower size={27} />
            </div>
            <div className="ml-3">
              <h1 className="font-black text-lg text-nook-brown leading-none">Sweet Home</h1>
@@ -477,7 +490,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
         {/* 手機版頂部導覽 */}
         <header className="sticky top-0 bg-white/95 z-30 px-4 py-2 flex justify-between items-center lg:hidden border-b border-nook-greenDark/10">
             <div className="flex items-center gap-2">
-              <PikminFlower size={24} className="animate-sway" />
+              <GardenFlower size={24} className="animate-sway" />
               <div>
                 <h1 className="text-base font-black text-nook-brown leading-none">Sweet Home</h1>
                 <span className="text-[9px] font-black tracking-[0.12em] text-nook-greenDark">FAMILY GARDEN</span>
@@ -1124,7 +1137,7 @@ const ScoreCard = ({ user, score, onAddPoints, onDeductPoints, onRedeem, canMana
   return (
     <div className={`relative overflow-hidden bg-white rounded-2xl soft-card border-t-[3px] p-3 md:p-4 ${isBlue ? 'border-nook-blue' : 'border-nook-green'}`}>
       <div className="absolute right-1.5 top-1 opacity-70 animate-sway">
-        <PikminFlower size={30} center={isBlue ? '#3282A5' : '#2C7A4B'} />
+        <GardenFlower size={30} center={isBlue ? '#3282A5' : '#2C7A4B'} />
       </div>
 
       <div className="relative flex items-center gap-2 pr-5 mb-2.5">

@@ -186,6 +186,43 @@ export interface StampCard {
 }
 
 /**
+ * 家庭花園中，每位孩子的累積進度。
+ * earnedPositivePoints 只增加、不因扣分或兌換倒退；usedWaterings 記錄已使用次數。
+ */
+export interface GardenChildProgress {
+  childId: string;
+  earnedPositivePoints: number;
+  usedWaterings: number;
+}
+
+/** 一次由孩子親自完成的澆水事件。 */
+export interface GardenWateringEvent {
+  id: string;
+  childId: string;
+  childName: string;
+  wateredAt: number;
+}
+
+/** 一株植物從種下到開花的完整週期，也是圖鑑的歷史來源。 */
+export interface GardenPlantCycle {
+  id: string;
+  speciesId: string;
+  startedAt: number;
+  completedAt?: number | null;
+  waterings: GardenWateringEvent[];
+}
+
+/** 兩個孩子共同使用的家庭花園狀態。 */
+export interface FamilyGardenState {
+  version: 1;
+  pointsPerWatering: number;
+  wateringsToBloom: number;
+  activePlantId?: string | null;
+  childProgress: GardenChildProgress[];
+  plants: GardenPlantCycle[];
+}
+
+/**
  * 應用程式全域狀態介面
  * 儲存所有資料結構
  */
@@ -199,4 +236,5 @@ export interface AppState {
   discountCards: DiscountCard[];// 打折卡
   rewardCards: RewardCard[];// 獎勵卡
   stampCards: StampCard[];  // 集點卡
+  familyGarden: FamilyGardenState;// 家庭共育花園
 }
