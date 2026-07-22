@@ -59,67 +59,92 @@ export const RoleSelector: React.FC<RoleSelectorProps> = ({ users, onSelectUser,
     setPin(prev => prev.slice(0, -1));
   };
 
-  const getRoleLabel = (user: User) => {
-    if (user.role === UserRole.PARENT) return '家長';
-    if (user.id === 'child_1') return '寶貝一號'; 
-    if (user.id === 'child_2') return '寶貝二號';
-    return '可愛寶貝';
-  };
+  const childUsers = users.filter((user) => user.role === UserRole.CHILD);
+  const parentUsers = users.filter((user) => user.role === UserRole.PARENT);
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center p-4 relative overflow-hidden leaf-pattern">
-      <div className="text-center mb-5 z-10 animate-pop">
-        <div className="flex items-center justify-center gap-2 mb-1">
-          <GardenFlower size={30} />
-          <h1 className="text-xl md:text-2xl font-black text-nook-brown tracking-wide">Sweet Home</h1>
-        </div>
-        <p className="text-nook-greenDark font-black text-sm">今天是誰要進入家庭花園？</p>
-      </div>
-
-      {/* 角色卡片列表 */}
-      <div className="grid grid-cols-3 gap-2.5 md:gap-4 max-w-2xl w-full z-10">
-        {users.map((user, idx) => (
-          <div key={user.id} className="transition-transform duration-200" style={{ animationDelay: `${idx * 80}ms` }}>
-            <button
-              type="button"
-              onClick={() => handleUserClick(user)}
-              className="w-full bg-white rounded-2xl soft-card p-3 md:p-4 h-full flex flex-col items-center text-center group hover:-translate-y-1 transition-transform focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-nook-greenDark"
-            >
-              <div className={`w-14 h-14 md:w-16 md:h-16 rounded-full flex items-center justify-center text-3xl md:text-4xl mb-2 ring-4 ring-white ${user.role === UserRole.PARENT ? 'bg-nook-orange/20' : 'bg-nook-green/15'}`}>
-                {user.avatar}
-              </div>
-              <h2 className="text-sm md:text-base font-black text-nook-brown leading-tight line-clamp-2">{user.name}</h2>
-              <span className={`mt-1.5 px-2 py-0.5 rounded-full text-white text-[10px] font-bold ${user.role === UserRole.PARENT ? 'bg-nook-orangeDark' : 'bg-nook-greenDark'}`}>
-                {getRoleLabel(user)}
-              </span>
-            </button>
+    <main className="relative min-h-screen overflow-hidden leaf-pattern">
+      <div className="mx-auto flex min-h-screen w-full max-w-3xl flex-col justify-center px-4 py-8 md:px-6">
+        <header className="mb-6 text-center animate-pop">
+          <div className="mb-2 flex items-center justify-center gap-2">
+            <GardenFlower size={34} />
+            <h1 className="text-2xl font-black text-nook-brown">Sweet Home</h1>
           </div>
-        ))}
-      </div>
+          <p className="text-base font-black text-nook-greenDark">選擇要進入鈞佑花園的角色</p>
+          <p className="mt-1 text-sm font-bold text-nook-brown/75">孩子可以澆水與查看進度，家長可以管理積分與獎勵。</p>
+        </header>
 
-      {/* 雲端帳號資訊 (整合在頁面底部) */}
-      <div className="z-10 mt-4 w-full max-w-sm">
-        <div className="bg-white/80 rounded-xl px-3 py-2 flex items-center justify-between gap-3">
-          <div className="min-w-0 flex-1">
-            <p className="text-[10px] font-black text-nook-brown/40 tracking-wider">☁️ 雲端帳號</p>
-            <p className="text-xs font-bold text-nook-brown truncate">{cloudEmail}</p>
+        <section aria-labelledby="child-role-title">
+          <div className="mb-2 flex items-center justify-between px-1">
+            <h2 id="child-role-title" className="text-sm font-black text-nook-brown">孩子的入口</h2>
+            <span className="text-xs font-bold text-nook-greenDark">不用密碼</span>
+          </div>
+          <div className={`grid gap-3 ${childUsers.length > 1 ? 'grid-cols-2' : 'grid-cols-1'}`}>
+            {childUsers.map((user) => (
+              <button
+                key={user.id}
+                type="button"
+                onClick={() => handleUserClick(user)}
+                className="group flex min-h-40 flex-col items-center justify-center rounded-2xl bg-white p-4 text-center soft-card transition-[transform,background-color] duration-200 hover:-translate-y-1 hover:bg-nook-green/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-nook-greenDark focus-visible:ring-offset-2"
+              >
+                <span className="flex h-16 w-16 items-center justify-center rounded-full bg-nook-green/15 text-4xl ring-4 ring-nook-green/5" aria-hidden="true">
+                  {user.avatar}
+                </span>
+                <span className="mt-3 text-lg font-black text-nook-brown">{user.name}</span>
+                <span className="mt-1 inline-flex items-center gap-1 text-xs font-bold text-nook-greenDark">
+                  進入我的首頁 <Icons.ChevronRight size={15} />
+                </span>
+              </button>
+            ))}
+          </div>
+        </section>
+
+        {parentUsers.length > 0 && (
+          <section aria-labelledby="parent-role-title" className="mt-5">
+            <h2 id="parent-role-title" className="mb-2 px-1 text-sm font-black text-nook-brown">家長管理</h2>
+            <div className="space-y-2">
+              {parentUsers.map((user) => (
+                <button
+                  key={user.id}
+                  type="button"
+                  onClick={() => handleUserClick(user)}
+                  className="flex min-h-16 w-full items-center gap-3 rounded-2xl bg-white px-4 py-3 text-left soft-card transition-colors hover:bg-nook-orange/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-nook-orangeDark focus-visible:ring-offset-2"
+                >
+                  <span className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-full bg-nook-orange/15 text-2xl" aria-hidden="true">{user.avatar}</span>
+                  <span className="min-w-0 flex-1">
+                    <span className="block truncate text-base font-black text-nook-brown">{user.name}</span>
+                    <span className="block text-xs font-bold text-nook-brown/75">進入管理頁需要輸入 6 位數密碼</span>
+                  </span>
+                  <Icons.Shield size={20} className="flex-shrink-0 text-nook-orangeDark" />
+                </button>
+              ))}
+            </div>
+          </section>
+        )}
+
+        <footer className="mt-5 flex items-center justify-between gap-3 border-t border-nook-greenDark/10 px-1 pt-4">
+          <div className="min-w-0">
+            <p className="text-xs font-bold text-nook-brown/75">☁️ 目前雲端帳號</p>
+            <p className="truncate text-sm font-bold text-nook-brown">{cloudEmail}</p>
           </div>
           <button
             type="button"
             onClick={onCloudLogout}
-            className="px-3 py-1.5 rounded-lg bg-nook-brown/5 text-nook-brown/60 text-xs font-bold hover:bg-nook-brown/10 transition-colors flex-shrink-0"
+            className="min-h-10 flex-shrink-0 rounded-xl px-3 text-xs font-bold text-nook-brown/75 transition-colors hover:bg-white hover:text-nook-brown focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-nook-greenDark"
           >
             切換帳號
           </button>
-        </div>
+        </footer>
       </div>
       
       {/* --- 家長密碼輸入視窗 (Modal) --- */}
       {showPinModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-nook-brown/60">
-          <div className="bg-nook-cream rounded-2xl p-5 w-full max-w-xs soft-card animate-pop">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-nook-brown/60 p-4" role="dialog" aria-modal="true" aria-labelledby="parent-pin-title">
+          <div className="w-full max-w-xs rounded-2xl bg-nook-cream p-5 soft-card animate-pop">
             <div className="text-center mb-4">
-              <h3 className="text-lg font-black text-nook-brown mb-2">家長密碼</h3>
+              <div className="mx-auto mb-2 flex h-10 w-10 items-center justify-center rounded-full bg-nook-orange/15 text-nook-orangeDark"><Icons.Shield size={20} /></div>
+              <h3 id="parent-pin-title" className="mb-1 text-lg font-black text-nook-brown">家長密碼</h3>
+              <p className="mb-3 text-xs font-bold text-nook-brown/75">請輸入 6 位數密碼進入管理頁</p>
               
               {/* PIN 碼顯示點 */}
               <div className="flex justify-center gap-2.5 h-11 items-center bg-white rounded-xl px-4 mb-2 border border-nook-brown/10">
@@ -167,9 +192,6 @@ export const RoleSelector: React.FC<RoleSelectorProps> = ({ users, onSelectUser,
         </div>
       )}
       
-      <div className="fixed bottom-2 text-nook-brown/35 text-[10px] font-bold">
-        Designed by Clyde v1.3
-      </div>
-    </div>
+    </main>
   );
 };

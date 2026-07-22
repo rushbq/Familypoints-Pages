@@ -57,7 +57,7 @@ interface StorageInfo {
 }
 
 type SettingsTabKey = 'goals' | 'scoreItems' | 'rewards' | 'rewardCards' | 'stampCards' | 'data' | 'members';
-type SettingsGroupKey = 'cards' | 'scoring' | 'data';
+type SettingsGroupKey = 'cards' | 'scoring' | 'system';
 
 const SCORE_ICON_OPTIONS = [
   { icon: '⭐', label: '通用' },
@@ -120,7 +120,15 @@ const SETTINGS_GROUPS: {
       { key: 'rewards', label: '獎勵管理', Icon: Icons.Gift },
     ],
   },
-  // 「資料」頁籤已移除：Firebase 自動同步，手動備份少用（程式碼保留，暫不開放）
+  {
+    key: 'system',
+    label: '家庭與資料',
+    description: '調整家庭成員資料，以及備份或整理應用程式資料。',
+    tabs: [
+      { key: 'members', label: '家庭成員', Icon: Icons.User },
+      { key: 'data', label: '資料管理', Icon: Icons.Download },
+    ],
+  },
 ];
 
 const getDefaultGoalDateRange = () => {
@@ -216,15 +224,6 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
   });
 
   const [activeTab, setActiveTab] = useState<SettingsTabKey>('goals');
-  const [activeGroup, setActiveGroup] = useState<SettingsGroupKey>('cards');
-  const currentGroup = SETTINGS_GROUPS.find((g) => g.key === activeGroup) ?? SETTINGS_GROUPS[0];
-
-  const switchGroup = (key: SettingsGroupKey) => {
-    const group = SETTINGS_GROUPS.find((g) => g.key === key);
-    if (!group) return;
-    setActiveGroup(key);
-    setActiveTab(group.tabs[0].key);
-  };
 
   // --- 儲存空間資訊 ---
   const [storageInfo, setStorageInfo] = useState<StorageInfo | null>(null);
@@ -712,71 +711,78 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
   const redeemedStampCards = sortedStampCards
     .filter((card) => card.status === StampCardStatus.REDEEMED)
     .slice(0, 8);
+  const currentSettingsGroup = SETTINGS_GROUPS.find((group) => group.tabs.some((tab) => tab.key === activeTab))
+    ?? SETTINGS_GROUPS[0];
+  const currentSettingsTab = currentSettingsGroup.tabs.find((tab) => tab.key === activeTab)
+    ?? currentSettingsGroup.tabs[0];
+  const CurrentSettingsIcon = currentSettingsTab.Icon;
 
   return (
-    <div className="space-y-4">
-      <div className={`sticky top-0 z-20 rounded-2xl border p-2.5 space-y-2 shadow-sm backdrop-blur-md ${
-        activeGroup === 'cards'
-          ? 'bg-[#FFF9E8]/95 border-nook-yellow/40'
-          : 'bg-[#F0FBF5]/95 border-nook-green/30'
-      }`}>
-        <div className="flex items-center justify-between gap-3 px-1">
+    <div className="grid items-start gap-5 lg:grid-cols-[13rem_minmax(0,1fr)]">
+      <aside className="sticky top-4 hidden rounded-2xl bg-white p-3 soft-card lg:block">
+        <div className="flex items-center gap-2 border-b border-nook-greenDark/10 px-2 pb-3">
+          <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-nook-green/15 text-nook-greenDark"><Icons.Settings size={18} /></span>
           <div>
-            <p className="text-sm font-black text-nook-brown">設定中心</p>
-            <p className="text-[11px] font-bold text-nook-brown/50">先選管理類別，再調整項目</p>
+            <h2 className="text-base font-black text-nook-brown">設定中心</h2>
+            <p className="text-xs font-bold text-nook-brown/75">依功能分類管理</p>
           </div>
-          <Icons.Settings size={18} className="text-nook-greenDark/60" />
         </div>
-
-        {/* 第一層：管理類別 */}
-        <div className="grid grid-cols-2 gap-1.5 rounded-xl bg-white/70 p-1">
+        <nav className="mt-3 space-y-4" aria-label="設定項目">
           {SETTINGS_GROUPS.map((group) => (
-            <button
-              key={group.key}
-              type="button"
-              onClick={() => switchGroup(group.key)}
-              className={`px-2 py-2 rounded-lg font-black text-xs md:text-sm whitespace-nowrap transition-colors ${
-                activeGroup === group.key
-                  ? activeGroup === 'cards'
-                    ? 'bg-nook-yellow text-nook-brown shadow-[0_3px_0_0_#E9A93F]'
-                    : 'bg-nook-green text-white shadow-[0_3px_0_0_#2E9E6E]'
-                  : 'text-nook-brown/55 hover:text-nook-brown hover:bg-white'
-              }`}
-            >
-              {group.label}
-            </button>
+            <section key={group.key} aria-labelledby={`settings-group-${group.key}`}>
+              <h3 id={`settings-group-${group.key}`} className="mb-1 px-2 text-xs font-black text-nook-brown/75">{group.label}</h3>
+              <div className="space-y-1">
+                {group.tabs.map((tab) => {
+                  const TabIcon = tab.Icon;
+                  const selected = activeTab === tab.key;
+                  return (
+                    <button
+                      key={tab.key}
+                      type="button"
+                      onClick={() => setActiveTab(tab.key)}
+                      aria-current={selected ? 'page' : undefined}
+                      className={`flex min-h-10 w-full items-center gap-2 rounded-xl px-3 text-left text-sm font-bold transition-colors ${selected ? 'bg-nook-green/15 text-nook-greenDark' : 'text-nook-brown/75 hover:bg-nook-beige hover:text-nook-brown'}`}
+                    >
+                      <TabIcon size={17} />
+                      <span>{tab.label}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            </section>
           ))}
+        </nav>
+      </aside>
+
+      <div className="min-w-0 space-y-4">
+        <div className="sticky top-14 z-20 rounded-2xl bg-white p-2 soft-card lg:hidden">
+          <div className="flex gap-1 overflow-x-auto no-scrollbar" aria-label="設定項目">
+            {SETTINGS_GROUPS.flatMap((group) => group.tabs).map((tab) => {
+              const TabIcon = tab.Icon;
+              const selected = activeTab === tab.key;
+              return (
+                <button
+                  key={tab.key}
+                  type="button"
+                  onClick={() => setActiveTab(tab.key)}
+                  aria-current={selected ? 'page' : undefined}
+                  className={`inline-flex min-h-10 flex-shrink-0 items-center gap-1.5 rounded-xl px-3 text-xs font-bold transition-colors ${selected ? 'bg-nook-green text-white' : 'text-nook-brown/75 hover:bg-nook-beige'}`}
+                >
+                  <TabIcon size={15} />
+                  {tab.label}
+                </button>
+              );
+            })}
+          </div>
         </div>
 
-        {/* 第二層：內容頁籤與情境說明放在同一色塊，建立上下聯動。 */}
-        {currentGroup.tabs.length > 1 && (
-          <div className="rounded-xl bg-white/75 p-1.5">
-            <div className="flex gap-1 flex-nowrap overflow-x-auto no-scrollbar">
-              {currentGroup.tabs.map((tab) => {
-                const TabIcon = tab.Icon;
-                return (
-                  <button
-                    key={tab.key}
-                    type="button"
-                    onClick={() => setActiveTab(tab.key)}
-                    className={`inline-flex flex-1 items-center justify-center gap-1.5 px-2 py-1.5 rounded-lg font-bold text-[11px] sm:text-xs whitespace-nowrap transition-colors ${
-                      activeTab === tab.key
-                        ? 'bg-nook-brown text-white shadow-sm'
-                        : 'text-nook-brown/50 hover:text-nook-brown hover:bg-nook-beige'
-                    }`}
-                  >
-                    <TabIcon size={13} />
-                    <span>{tab.label}</span>
-                  </button>
-                );
-              })}
-            </div>
-            <p className="px-1.5 pt-1.5 text-[10px] font-bold leading-snug text-nook-brown/45">
-              {currentGroup.description}
-            </p>
+        <header className="flex items-start gap-3 px-1">
+          <span className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl bg-nook-green/15 text-nook-greenDark"><CurrentSettingsIcon size={20} /></span>
+          <div>
+            <h2 className="text-lg font-black text-nook-brown">{currentSettingsTab.label}</h2>
+            <p className="mt-0.5 text-sm font-bold text-nook-brown/75">{currentSettingsGroup.description}</p>
           </div>
-        )}
-      </div>
+        </header>
 
       {activeTab === 'goals' && (
         <Card title="🎯 目標獎勵管理" className="bg-[#FFF7D7] border-nook-yellow/40">
@@ -791,7 +797,7 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
               />
               <div className="grid grid-cols-2 gap-2 md:col-span-2">
                 <div className="min-w-0">
-                  <label className="mb-1 ml-1 block text-[11px] font-black text-nook-brown">開始日期</label>
+                  <label className="mb-1 ml-1 block text-xs font-black text-nook-brown">開始日期</label>
                   <input
                     type="date"
                     value={newGoal.startDate}
@@ -800,7 +806,7 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
                   />
                 </div>
                 <div className="min-w-0">
-                  <label className="mb-1 ml-1 block text-[11px] font-black text-nook-brown">結束日期</label>
+                  <label className="mb-1 ml-1 block text-xs font-black text-nook-brown">結束日期</label>
                   <input
                     type="date"
                     value={newGoal.endDate}
@@ -913,7 +919,7 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
                   <Icon size={18} />
                   <span className="text-left leading-tight">
                     <span className="block text-sm font-black">{label}</span>
-                    <span className={`block text-[10px] font-bold ${active ? 'text-white/75' : 'text-nook-brown/40'}`}>{hint}</span>
+                    <span className={`block text-xs font-bold ${active ? 'text-white' : 'text-nook-brown/75'}`}>{hint}</span>
                   </span>
                 </button>
               );
@@ -991,7 +997,7 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
             <div className="flex items-center justify-between px-1">
               <div>
                 <h3 className="text-sm font-black text-nook-brown">目前的{scoreType === ScoreType.POSITIVE ? '加分' : '扣分'}項目</h3>
-                <p className="text-[11px] font-bold text-nook-brown/45">清單會跟著上方頁籤切換，不需左右或區塊內捲動。</p>
+                <p className="text-xs font-bold text-nook-brown/75">清單會跟著上方頁籤切換，不需左右或區塊內捲動。</p>
               </div>
               <span className="shrink-0 rounded-full bg-white px-2.5 py-1 text-xs font-black text-nook-brown/50">{visibleScoreItemCount} 項</span>
             </div>
@@ -1547,6 +1553,8 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
         </Card>
       )}
 
+      </div>
+
       {/* 共用確認視窗 */}
       <ConfirmationModal
         isOpen={modalConfig.isOpen}
@@ -1630,7 +1638,7 @@ const IconChoiceGrid: React.FC<{
     <fieldset className="mt-3">
       <div className="mb-1.5 flex items-baseline justify-between gap-2 px-1">
         <legend className="text-xs font-black text-nook-brown">{label}</legend>
-        <span className="text-[10px] font-bold text-nook-brown/40">{hint}</span>
+        <span className="text-xs font-bold text-nook-brown/75">{hint}</span>
       </div>
       <div className="grid grid-cols-4 gap-1.5">
         {options.map((option) => {
@@ -1646,7 +1654,7 @@ const IconChoiceGrid: React.FC<{
               }`}
             >
               <span className="text-xl leading-none" aria-hidden="true">{option.icon}</span>
-              <span className="mt-1 text-[10px] font-black leading-none">{option.label}</span>
+              <span className="mt-1 text-xs font-black leading-none">{option.label}</span>
             </button>
           );
         })}
@@ -1753,11 +1761,11 @@ const GoalSection: React.FC<GoalSectionProps> = ({ title, goals, users, appData,
               <span className="text-xs font-black px-2 py-0.5 rounded-full bg-nook-blue/10 text-nook-blueDark">
                 {child?.name ?? '未指定孩子'}
               </span>
-              <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-nook-yellow/20 text-nook-orangeDark">
+              <span className="rounded-full bg-nook-yellow/20 px-2 py-0.5 text-xs font-black text-nook-orangeDark">
                 {getGoalRewardStatusLabel(goal.status)}
               </span>
               {linkedCardCount > 0 && (
-                <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-[#F3E8FF] text-[#6D46C2]">
+                <span className="rounded-full bg-[#F3E8FF] px-2 py-0.5 text-xs font-black text-[#6D46C2]">
                   已發 5 折卡
                 </span>
               )}

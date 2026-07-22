@@ -29,8 +29,8 @@ export const getMockState = (): AppState => {
   ];
   const familyGarden = createInitialFamilyGarden(users, now - 12 * DAY);
   familyGarden.childProgress = [
-    { childId: 'child_1', earnedPositivePoints: 275, usedWaterings: 1 },
-    { childId: 'child_2', earnedPositivePoints: 65, usedWaterings: 0 },
+    { childId: 'child_1', earnedPositivePoints: 55, usedWaterings: 1 },
+    { childId: 'child_2', earnedPositivePoints: 13, usedWaterings: 0 },
   ];
   familyGarden.plants[0].waterings = [
     { id: 'gw_1', childId: 'child_1', childName: '丞鈞', wateredAt: now - 3 * DAY },

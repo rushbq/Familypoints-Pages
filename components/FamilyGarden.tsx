@@ -190,12 +190,12 @@ export const FamilyGarden: React.FC<FamilyGardenProps> = ({
                 </Button>
               )}
               <p id="garden-water-hint" className="mt-2 text-center text-xs font-bold text-nook-brown/75">
-                澆水不會扣除你的分數
+                家長登記好事加分時，1 分會變成 1 點陽光；集滿 {garden.pointsPerWatering} 點可澆水一次，且不會扣分。
               </p>
             </div>
           ) : (
             <div className="mt-4 rounded-xl bg-nook-yellow/20 px-3 py-2">
-              <p className="text-xs font-bold text-[#765812]">家長可以查看進度，澆水留給孩子親自完成。</p>
+              <p className="text-xs font-bold text-[#765812]">每登記 1 分好事，就會同步累積 1 點陽光；每 {garden.pointsPerWatering} 點可澆水一次。澆水留給孩子親自完成。</p>
             </div>
           )}
 

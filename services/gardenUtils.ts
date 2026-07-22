@@ -103,6 +103,8 @@ export const GARDEN_SPECIES: GardenSpecies[] = [
 
 export const DEFAULT_GARDEN_SPECIES_ID = GARDEN_SPECIES[0].id;
 
+type FamilyGardenInput = Partial<Omit<FamilyGardenState, 'version'>> & { version?: number };
+
 export const getGardenSpecies = (speciesId: string): GardenSpecies =>
   GARDEN_SPECIES.find((species) => species.id === speciesId) ?? GARDEN_SPECIES[0];
 
@@ -121,8 +123,8 @@ export const createInitialFamilyGarden = (
   users: User[],
   timestamp: number = Date.now(),
 ): FamilyGardenState => ({
-  version: 1,
-  pointsPerWatering: 100,
+  version: 2,
+  pointsPerWatering: 20,
   wateringsToBloom: 5,
   activePlantId: timestamp.toString(),
   childProgress: users
@@ -140,22 +142,30 @@ export const createInitialFamilyGarden = (
 });
 
 export const normalizeFamilyGarden = (
-  input: Partial<FamilyGardenState> | null | undefined,
+  input: FamilyGardenInput | null | undefined,
   users: User[],
 ): FamilyGardenState => {
-  if (!input || input.version !== 1) {
+  if (!input || (input.version !== 1 && input.version !== 2)) {
     return createInitialFamilyGarden(users);
   }
 
-  const pointsPerWatering = Math.max(1, toNonNegativeInteger(input.pointsPerWatering) || 100);
+  const pointsPerWatering = input.version === 1
+    ? 20
+    : Math.max(1, toNonNegativeInteger(input.pointsPerWatering) || 20);
+  const legacyPointsPerWatering = Math.max(1, toNonNegativeInteger(input.pointsPerWatering) || 100);
   const wateringsToBloom = Math.max(1, toNonNegativeInteger(input.wateringsToBloom) || 5);
   const progressMap = new Map<string, GardenChildProgress>();
 
   (input.childProgress ?? []).forEach((progress) => {
     if (!progress?.childId) return;
+    const earnedPositivePoints = toNonNegativeInteger(progress.earnedPositivePoints);
+    const migratedPositivePoints = input.version === 1
+      ? Math.floor(earnedPositivePoints / legacyPointsPerWatering) * pointsPerWatering
+        + Math.floor((earnedPositivePoints % legacyPointsPerWatering) / legacyPointsPerWatering * pointsPerWatering)
+      : earnedPositivePoints;
     progressMap.set(progress.childId, {
       childId: progress.childId,
-      earnedPositivePoints: toNonNegativeInteger(progress.earnedPositivePoints),
+      earnedPositivePoints: migratedPositivePoints,
       usedWaterings: toNonNegativeInteger(progress.usedWaterings),
     });
   });
@@ -202,7 +212,7 @@ export const normalizeFamilyGarden = (
     : plants[plants.length - 1].id;
 
   return {
-    version: 1,
+    version: 2,
     pointsPerWatering,
     wateringsToBloom,
     activePlantId,

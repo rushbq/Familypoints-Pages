@@ -214,7 +214,7 @@ export interface GardenPlantCycle {
 
 /** 兩個孩子共同使用的家庭花園狀態。 */
 export interface FamilyGardenState {
-  version: 1;
+  version: 2;
   pointsPerWatering: number;
   wateringsToBloom: number;
   activePlantId?: string | null;

@@ -229,7 +229,7 @@ export const exportAllData = async (): Promise<string> => {
     {
       ...state,
       exportedAt: new Date().toISOString(),
-      version: '4.1-family-garden',
+      version: '4.2-garden-20-points',
     },
     null,
     2,

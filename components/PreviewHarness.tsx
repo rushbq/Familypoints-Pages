@@ -13,6 +13,7 @@ import {
   UserRole,
 } from '../types';
 import { Dashboard } from './Dashboard';
+import { RoleSelector } from './RoleSelector';
 import { getMockState } from '../services/mockData';
 import {
   addGardenPositivePoints,
@@ -23,10 +24,21 @@ import {
 /**
  * 開發預覽用的 Dashboard 外殼（僅 import.meta.env.DEV）。
  * 用本地 state 模擬 App.tsx 的資料流，讓沒有 Firebase 登入時也能預覽並互動。
- * 網址加上 ?preview=child 或 ?preview=parent 即可切換角色。
+ * 網址加上 ?preview=child、?preview=parent 或 ?preview=roles 即可預覽指定入口。
  */
 export const PreviewHarness: React.FC<{ role: string }> = ({ role }) => {
   const [data, setData] = useState<AppState>(() => getMockState());
+
+  if (role === 'roles') {
+    return (
+      <RoleSelector
+        users={data.users}
+        onSelectUser={(user) => window.alert(`（預覽模式）進入 ${user.name} 的首頁`)}
+        cloudEmail="preview@example.com"
+        onCloudLogout={() => window.alert('（預覽模式）切換帳號')}
+      />
+    );
+  }
 
   const currentUser: User =
     role === 'parent'
