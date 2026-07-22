@@ -32,3 +32,6 @@ coverage
 *.njsproj
 *.sln
 *.sw?
+
+# Impeccable 本機設計工作檔
+**/.impeccable/
