@@ -42,7 +42,9 @@ import {
   Hash,
   TrendingUp,
   Calendar,
-  Award
+  Award,
+  Camera,
+  ImageOff
 } from 'lucide-react';
 
 export const Icons = {
@@ -89,5 +91,7 @@ export const Icons = {
   Hash,
   TrendingUp,
   Calendar,
-  Award
+  Award,
+  Camera,
+  ImageOff
 };

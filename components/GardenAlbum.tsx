@@ -1,7 +1,8 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { FamilyGardenState } from '../types';
 import {
   GARDEN_SPECIES,
+  GardenSpecies,
   getGardenCollectionCount,
   getGardenSpecies,
   isCooperativeBloom,
@@ -16,6 +17,85 @@ interface GardenAlbumProps {
   onStartPlant: (speciesId: string) => void;
 }
 
+/** 真實照片放大檢視：讓孩子在野外也認得出這種植物 */
+const GardenPhotoViewer: React.FC<{ species: GardenSpecies; onClose: () => void }> = ({ species, onClose }) => {
+  const [failed, setFailed] = useState(false);
+
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') onClose();
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [onClose]);
+
+  return (
+    <div
+      role="dialog"
+      aria-modal="true"
+      aria-label={`${species.commonName}的真實照片`}
+      className="fixed inset-0 z-50 flex items-center justify-center bg-nook-brown/70 p-4 animate-pop"
+      onClick={onClose}
+    >
+      <div
+        className="max-h-full w-full max-w-lg overflow-y-auto rounded-2xl bg-white p-3 custom-scrollbar md:p-4"
+        onClick={(event) => event.stopPropagation()}
+      >
+        <div className="flex items-start justify-between gap-3">
+          <div className="min-w-0">
+            <h4 className="text-lg font-black text-nook-greenDark">{species.commonName}</h4>
+            <p className="text-xs font-bold italic text-nook-brown/75">{species.scientificName}</p>
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            aria-label="關閉照片"
+            className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl text-nook-brown/70 hover:bg-nook-beige hover:text-nook-brown focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-nook-greenDark"
+          >
+            <Icons.X size={20} />
+          </button>
+        </div>
+
+        <div className="mt-2 overflow-hidden rounded-xl bg-nook-beige">
+          {failed ? (
+            <div className="flex min-h-[180px] flex-col items-center justify-center gap-2 px-4 py-8 text-center">
+              <Icons.ImageOff size={28} className="text-nook-brown/60" />
+              <p className="text-sm font-bold text-nook-brown/75">照片載入失敗，請確認網路連線</p>
+            </div>
+          ) : (
+            <img
+              src={species.photoUrl}
+              alt={`${species.commonName}（${species.scientificName}）的真實照片`}
+              loading="lazy"
+              referrerPolicy="no-referrer"
+              onError={() => setFailed(true)}
+              className="block max-h-[52vh] w-full object-contain"
+            />
+          )}
+        </div>
+
+        <div className="mt-2 flex items-center gap-2 rounded-xl bg-nook-beige/60 px-3 py-2">
+          <div className="w-16 flex-shrink-0" aria-hidden="true">
+            <GardenPlant speciesId={species.id} stage={5} />
+          </div>
+          <p className="text-xs font-bold leading-relaxed text-nook-brown">
+            左邊是圖鑑裡的插畫，上面是野外真正的樣子。{species.identifyingFeature}
+          </p>
+        </div>
+
+        <a
+          href={species.photoSourceUrl}
+          target="_blank"
+          rel="noreferrer"
+          className="mt-2 block text-right text-xs font-bold text-nook-brown/60 hover:text-nook-greenDark"
+        >
+          照片：{species.photoCredit}（Wikimedia Commons）↗
+        </a>
+      </div>
+    </div>
+  );
+};
+
 export const GardenAlbum: React.FC<GardenAlbumProps> = ({
   garden,
   canStartNextPlant,
@@ -28,6 +108,7 @@ export const GardenAlbum: React.FC<GardenAlbumProps> = ({
   const [selectedSpeciesId, setSelectedSpeciesId] = useState(suggestedSpeciesId);
   const [searchQuery, setSearchQuery] = useState('');
   const [collectionFilter, setCollectionFilter] = useState<'all' | 'collected' | 'uncollected'>('all');
+  const [photoSpecies, setPhotoSpecies] = useState<GardenSpecies | null>(null);
   const selectedSpecies = getGardenSpecies(selectedSpeciesId);
   const selectedCount = getGardenCollectionCount(garden, selectedSpecies.id);
   const cooperativeCount = garden.plants.filter((plant) => (
@@ -126,7 +207,7 @@ export const GardenAlbum: React.FC<GardenAlbumProps> = ({
 
       <div role="tabpanel" className="mt-2 rounded-2xl bg-nook-beige/55 p-3 md:p-4">
         <div className="grid items-center gap-3 md:grid-cols-[180px_1fr] md:gap-5">
-          <div className="mx-auto w-full max-w-[180px]" aria-hidden={selectedCount === 0}>
+          <div className="mx-auto w-full max-w-[180px]">
             {selectedCount > 0 ? (
               <GardenPlant speciesId={selectedSpecies.id} stage={5} />
             ) : (
@@ -135,6 +216,15 @@ export const GardenAlbum: React.FC<GardenAlbumProps> = ({
                 <p className="-mt-4 text-center text-xs font-bold text-nook-brown">等待第一次開花</p>
               </div>
             )}
+            {/* 點開看真實照片，讓孩子在野外也認得出這種植物 */}
+            <button
+              type="button"
+              onClick={() => setPhotoSpecies(selectedSpecies)}
+              className="mt-1 flex min-h-10 w-full items-center justify-center gap-1.5 rounded-xl bg-white px-3 text-xs font-bold text-nook-greenDark soft-card transition-transform hover:bg-nook-green/10 active:translate-y-[2px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-nook-greenDark"
+            >
+              <Icons.Camera size={15} />
+              看真實照片
+            </button>
           </div>
 
           <div className="min-w-0">
@@ -192,6 +282,10 @@ export const GardenAlbum: React.FC<GardenAlbumProps> = ({
           </div>
         </div>
       </div>
+
+      {photoSpecies && (
+        <GardenPhotoViewer species={photoSpecies} onClose={() => setPhotoSpecies(null)} />
+      )}
     </section>
   );
 };

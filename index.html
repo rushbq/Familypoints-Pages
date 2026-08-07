@@ -96,13 +96,84 @@
         animation: popIn 0.22s cubic-bezier(0.22, 1, 0.36, 1) both;
       }
 
+      /* 植物長大：帶一點回彈，讓每次澆水都看得出變化 */
       @keyframes gardenGrow {
-        0% { opacity: 0.72; transform: translateY(4px) scale(0.98); }
+        0% { opacity: 0.6; transform: translateY(10px) scale(0.9); }
+        55% { opacity: 1; transform: translateY(-5px) scale(1.055); }
+        78% { transform: translateY(1px) scale(0.985); }
         100% { opacity: 1; transform: translateY(0) scale(1); }
       }
       .garden-plant-stage {
-        animation: gardenGrow 0.22s cubic-bezier(0.22, 1, 0.36, 1) both;
+        animation: gardenGrow 0.62s cubic-bezier(0.22, 1, 0.36, 1) both;
         transform-origin: 50% 92%;
+      }
+
+      /* ===== 澆水互動動畫 ===== */
+
+      /* 灑水壺滑入、傾倒、再收回 */
+      @keyframes gardenCan {
+        0% { transform: translate(52px, -40px) rotate(8deg); opacity: 0; }
+        16% { transform: translate(0, 0) rotate(8deg); opacity: 1; }
+        30% { transform: translate(0, 0) rotate(-34deg); opacity: 1; }
+        78% { transform: translate(0, 0) rotate(-34deg); opacity: 1; }
+        90% { transform: translate(0, 0) rotate(8deg); opacity: 1; }
+        100% { transform: translate(52px, -40px) rotate(8deg); opacity: 0; }
+      }
+      .garden-can {
+        animation: gardenCan 1.5s cubic-bezier(0.22, 1, 0.36, 1) both;
+        transform-origin: 78% 62%;
+      }
+
+      /* 水滴落下：終點用百分比，才能跟著不同階段的舞台高度自動調整 */
+      @keyframes gardenDrop {
+        0% { top: 0%; transform: scaleY(0.6); opacity: 0; }
+        15% { opacity: 1; }
+        80% { opacity: 1; }
+        100% { top: var(--drop-end, 100%); transform: scaleY(1.35); opacity: 0; }
+      }
+      .garden-drop {
+        animation: gardenDrop 0.58s cubic-bezier(0.45, 0, 0.75, 0.45) both;
+      }
+
+      /* 水花在土面擴散 */
+      @keyframes gardenSplash {
+        0% { transform: translateX(-50%) scale(0.25); opacity: 0.85; }
+        100% { transform: translateX(-50%) scale(1.8); opacity: 0; }
+      }
+      .garden-splash {
+        animation: gardenSplash 0.7s ease-out both;
+      }
+
+      /* 閃亮亮的小星星 */
+      @keyframes gardenSparkle {
+        0% { transform: scale(0.2); opacity: 0; }
+        40% { transform: scale(1.1); opacity: 1; }
+        100% { transform: scale(0.5) translateY(-28px); opacity: 0; }
+      }
+      .garden-sparkle {
+        animation: gardenSparkle 1s ease-out both;
+      }
+
+      /* 摸摸看植物時的搖擺 */
+      @keyframes gardenWiggle {
+        0%, 100% { transform: rotate(0deg); }
+        22% { transform: rotate(-3.5deg); }
+        48% { transform: rotate(3deg); }
+        74% { transform: rotate(-1.5deg); }
+      }
+      .garden-wiggle {
+        animation: gardenWiggle 0.6s ease-in-out both;
+        transform-origin: 50% 92%;
+      }
+
+      /* 開花慶祝：花瓣飄落 */
+      @keyframes gardenPetalFall {
+        0% { transform: translate3d(0, -20px, 0) rotate(0deg); opacity: 0; }
+        12% { opacity: 1; }
+        100% { transform: translate3d(var(--petal-x, 0px), 300px, 0) rotate(460deg); opacity: 0; }
+      }
+      .garden-petal {
+        animation: gardenPetalFall 2.4s ease-in both;
       }
 
       @media (prefers-reduced-motion: reduce) {

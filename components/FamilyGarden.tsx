@@ -14,6 +14,7 @@ import {
 import { Button } from './ui/Button';
 import { GardenAlbum } from './GardenAlbum';
 import { GardenPlant } from './GardenPlant';
+import { getGardenScene } from './GardenScene';
 import { Icons } from './Icons';
 
 interface FamilyGardenProps {
@@ -26,6 +27,109 @@ interface FamilyGardenProps {
 
 const STAGE_LABELS = ['種子', '發芽', '長出新葉', '小植株', '花苞', '開花'];
 const WATERING_FEEDBACK = ['種子喝到水了！', '嫩芽冒出來了！', '長出新的葉片了！', '植物長得更高了！', '花苞準備開花了！', '植物開花了！'];
+
+/** 澆水動畫總長度；水真正澆到土裡的時間點 */
+const WATERING_DURATION_MS = 1600;
+const WATERING_LANDS_AT_MS = 900;
+
+/** 從壺嘴依序落下的水滴（x 偏移、延遲秒數、落到水道的哪個位置） */
+const WATER_DROPS = [
+  { x: -2, delay: 0.34, end: '100%' },
+  { x: 8, delay: 0.42, end: '90%' },
+  { x: -8, delay: 0.5, end: '104%' },
+  { x: 14, delay: 0.58, end: '86%' },
+  { x: 2, delay: 0.66, end: '100%' },
+  { x: -12, delay: 0.74, end: '96%' },
+  { x: 10, delay: 0.82, end: '92%' },
+  { x: 0, delay: 0.9, end: '102%' },
+];
+
+const WATER_SPARKLES = [
+  { left: '28%', top: '36%', delay: 0.95, size: 15 },
+  { left: '68%', top: '28%', delay: 1.06, size: 12 },
+  { left: '50%', top: '50%', delay: 1.16, size: 10 },
+];
+
+/** 開花慶祝時飄落的花瓣（左側位置、延遲秒數、左右飄移量） */
+const BLOOM_PETALS = [
+  { left: '14%', delay: 0, drift: 24 },
+  { left: '30%', delay: 0.18, drift: -18 },
+  { left: '44%', delay: 0.36, drift: 30 },
+  { left: '58%', delay: 0.1, drift: -26 },
+  { left: '72%', delay: 0.28, drift: 20 },
+  { left: '86%', delay: 0.44, drift: -22 },
+];
+
+const prefersReducedMotion = (): boolean =>
+  window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false;
+
+/** 澆水過程：灑水壺傾倒、水滴落下、土面濺起水花、冒出小星星 */
+const WateringEffect: React.FC = () => (
+  <div className="pointer-events-none absolute inset-0 z-20 overflow-hidden" aria-hidden="true">
+    <div className="garden-can absolute left-1/2 top-[4%] -translate-x-[6px]">
+      <svg width="92" height="68" viewBox="0 0 78 58">
+        <path d="M26 16 H60 C63.5 16 65.5 18.4 64.6 21.4 L59.6 47.6 C58.8 51.6 55.6 54 51.6 54 H34.4 C30.4 54 27.2 51.6 26.4 47.6 L21.4 21.4 C20.5 18.4 22.5 16 26 16 Z" fill="#7BC0DE" stroke="#3282A5" strokeWidth="3" strokeLinejoin="round" />
+        <path d="M32 16 C34 5 52 5 54 16" fill="none" stroke="#3282A5" strokeWidth="4" strokeLinecap="round" />
+        <path d="M22 25 L8 34 L6 42" fill="none" stroke="#3282A5" strokeWidth="5" strokeLinecap="round" />
+        <ellipse cx="6" cy="46" rx="9.5" ry="5" fill="#9AD3EA" stroke="#3282A5" strokeWidth="2.5" />
+        <path d="M32 23 H54" stroke="#DCF0F9" strokeWidth="3" strokeLinecap="round" opacity="0.85" />
+      </svg>
+    </div>
+
+    {/* 水道：從壺嘴一路延伸到土面，高度隨舞台自動調整 */}
+    <div className="absolute bottom-[16%] left-1/2 top-[22%] w-0">
+      {WATER_DROPS.map((drop) => (
+        <span
+          key={drop.delay}
+          className="garden-drop absolute h-3 w-[7px] rounded-full bg-nook-blue"
+          style={{
+            left: `${drop.x}px`,
+            animationDelay: `${drop.delay}s`,
+            '--drop-end': drop.end,
+          } as React.CSSProperties}
+        />
+      ))}
+    </div>
+
+    {[0.86, 1.04].map((delay) => (
+      <span
+        key={delay}
+        className="garden-splash absolute bottom-[13%] left-1/2 h-4 w-20 rounded-full border-[3px] border-nook-blue/70"
+        style={{ animationDelay: `${delay}s` }}
+      />
+    ))}
+
+    {WATER_SPARKLES.map((sparkle) => (
+      <span
+        key={sparkle.delay}
+        className="garden-sparkle absolute leading-none"
+        style={{ left: sparkle.left, top: sparkle.top, fontSize: sparkle.size, animationDelay: `${sparkle.delay}s` }}
+      >
+        ✨
+      </span>
+    ))}
+  </div>
+);
+
+/** 開花慶祝：花瓣飄落與蝴蝶 */
+const BloomEffect: React.FC<{ color: string; accent: string }> = ({ color, accent }) => (
+  <div className="pointer-events-none absolute inset-0 z-20 overflow-hidden" aria-hidden="true">
+    {BLOOM_PETALS.map((petal, index) => (
+      <span
+        key={petal.left}
+        className="garden-petal absolute top-0 block h-3.5 w-2.5 rounded-full"
+        style={{
+          left: petal.left,
+          backgroundColor: index % 2 === 0 ? color : accent,
+          animationDelay: `${petal.delay}s`,
+          '--petal-x': `${petal.drift}px`,
+        } as React.CSSProperties}
+      />
+    ))}
+    <span className="garden-sparkle absolute left-[22%] top-[24%] text-2xl leading-none" style={{ animationDelay: '0.25s' }}>🦋</span>
+    <span className="garden-sparkle absolute right-[20%] top-[16%] text-xl leading-none" style={{ animationDelay: '0.6s' }}>🦋</span>
+  </div>
+);
 
 const getGardenName = (children: User[]): string => {
   const nameCharacters = children.slice(0, 2).map((child) => Array.from(child.name).at(-1) ?? child.name);
@@ -43,6 +147,8 @@ export const FamilyGarden: React.FC<FamilyGardenProps> = ({
   const stage = Math.min(activePlant?.waterings.length ?? 0, garden.wateringsToBloom);
   const bloomed = isGardenPlantBloomed(activePlant, garden);
   const species = getGardenSpecies(activePlant?.speciesId ?? 'sunflower');
+  // 每澆一次水就換一幕背景，避免同一個場景看久了失去新鮮感
+  const scene = getGardenScene(activePlant?.id ?? 'garden', stage);
   const isChild = currentUser.role === UserRole.CHILD;
   const childUsers = users.filter((user) => user.role === UserRole.CHILD);
   const gardenName = getGardenName(childUsers);
@@ -60,7 +166,14 @@ export const FamilyGarden: React.FC<FamilyGardenProps> = ({
   const [showAlbum, setShowAlbum] = useState(false);
   const [feedback, setFeedback] = useState<string | null>(null);
   const [isWatering, setIsWatering] = useState(false);
-  const wateringTimeoutRef = useRef<number | null>(null);
+  const [isCelebrating, setIsCelebrating] = useState(false);
+  const [isPetting, setIsPetting] = useState(false);
+  const timeoutsRef = useRef<number[]>([]);
+  const albumRef = useRef<HTMLDivElement>(null);
+
+  const schedule = (callback: () => void, delayMs: number) => {
+    timeoutsRef.current.push(window.setTimeout(callback, delayMs));
+  };
 
   useEffect(() => {
     if (!feedback) return undefined;
@@ -69,20 +182,54 @@ export const FamilyGarden: React.FC<FamilyGardenProps> = ({
   }, [feedback]);
 
   useEffect(() => () => {
-    if (wateringTimeoutRef.current !== null) {
-      window.clearTimeout(wateringTimeoutRef.current);
-    }
+    timeoutsRef.current.forEach((timeoutId) => window.clearTimeout(timeoutId));
+    timeoutsRef.current = [];
   }, []);
+
+  // 圖鑑在卡片最下方，展開後把它捲進畫面，才不用自己找。
+  // 等瀏覽器排完展開後的版面再捲，否則平滑捲動會停在錯的位置（標題被頂欄蓋住）。
+  useEffect(() => {
+    if (!showAlbum) return undefined;
+    const frameId = window.requestAnimationFrame(() => {
+      albumRef.current?.scrollIntoView({
+        behavior: prefersReducedMotion() ? 'auto' : 'smooth',
+        block: 'start',
+      });
+    });
+    return () => window.cancelAnimationFrame(frameId);
+  }, [showAlbum]);
 
   const handleWater = () => {
     if (!currentChildId || currentAvailableWaterings < 1 || bloomed || isWatering) return;
+
+    const nextStage = Math.min(stage + 1, garden.wateringsToBloom);
+    const willBloom = nextStage >= garden.wateringsToBloom;
+    const applyWatering = () => {
+      onWaterGarden(currentChildId);
+      setFeedback(WATERING_FEEDBACK[Math.min(nextStage, WATERING_FEEDBACK.length - 1)]);
+    };
+
+    // 關閉動畫時直接完成澆水，不讓孩子空等
+    if (prefersReducedMotion()) {
+      applyWatering();
+      return;
+    }
+
     setIsWatering(true);
-    setFeedback(WATERING_FEEDBACK[Math.min(stage + 1, 5)]);
-    onWaterGarden(currentChildId);
-    wateringTimeoutRef.current = window.setTimeout(() => {
-      setIsWatering(false);
-      wateringTimeoutRef.current = null;
-    }, 250);
+    // 等水真的澆到土裡，植物才長大，因果看起來才對
+    schedule(() => {
+      applyWatering();
+      if (willBloom) setIsCelebrating(true);
+    }, WATERING_LANDS_AT_MS);
+    schedule(() => setIsWatering(false), WATERING_DURATION_MS);
+    if (willBloom) schedule(() => setIsCelebrating(false), WATERING_LANDS_AT_MS + 2600);
+  };
+
+  // 摸摸看：讓孩子在等待澆水次數時也有東西可以玩
+  const handlePetPlant = () => {
+    if (isPetting || isWatering) return;
+    setIsPetting(true);
+    schedule(() => setIsPetting(false), 620);
   };
 
   return (
@@ -113,7 +260,10 @@ export const FamilyGarden: React.FC<FamilyGardenProps> = ({
       </div>
 
       <div className="grid gap-0 md:grid-cols-[minmax(0,1.15fr)_minmax(270px,0.85fr)]">
-        <div className={`relative flex items-end justify-center overflow-hidden bg-nook-beige/50 px-5 pt-4 ${stage <= 1 ? 'min-h-[230px] md:min-h-[250px]' : stage === 2 ? 'min-h-[280px] md:min-h-[300px]' : 'min-h-[300px] md:min-h-[340px]'}`}>
+        <div
+          style={{ background: scene.backdrop }}
+          className={`relative flex items-end justify-center overflow-hidden px-5 pt-4 transition-[background] duration-500 ${stage <= 1 ? 'min-h-[230px] md:min-h-[250px]' : stage === 2 ? 'min-h-[280px] md:min-h-[300px]' : 'min-h-[300px] md:min-h-[340px]'}`}
+        >
           <div className="absolute left-4 top-3 z-10 rounded-full bg-white/95 px-3 py-2 text-xs font-bold text-nook-greenDark soft-card">
             {STAGE_LABELS[stage]}・第 {stage} / {garden.wateringsToBloom} 階段
           </div>
@@ -122,9 +272,21 @@ export const FamilyGarden: React.FC<FamilyGardenProps> = ({
               🦋 協力開花
             </div>
           )}
-          <div className={`w-full max-w-[330px] transition-[transform,filter] duration-200 ${isWatering ? 'scale-[1.025] brightness-105' : ''}`}>
-            <GardenPlant speciesId={species.id} stage={stage} />
-          </div>
+          <button
+            type="button"
+            onClick={handlePetPlant}
+            aria-label={`摸摸看${species.commonName}`}
+            className="w-full max-w-[330px] rounded-2xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-nook-greenDark"
+          >
+            <div className={`transition-[filter] duration-200 ${isWatering ? 'brightness-105' : ''} ${isPetting ? 'garden-wiggle' : ''}`}>
+              <GardenPlant speciesId={species.id} stage={stage} sceneId={scene.id} />
+            </div>
+          </button>
+          <p className="absolute bottom-3 left-4 z-10 rounded-full bg-white/85 px-2.5 py-1 text-xs font-bold text-nook-brown/75">
+            <span aria-hidden="true">{scene.emoji}</span> {scene.label}
+          </p>
+          {isWatering && <WateringEffect />}
+          {isCelebrating && <BloomEffect color={species.flowerColor} accent={species.flowerAccent} />}
         </div>
 
         <div className="flex min-w-0 flex-col px-4 py-4 md:px-5 md:py-5">
@@ -241,7 +403,7 @@ export const FamilyGarden: React.FC<FamilyGardenProps> = ({
       </div>
 
       {showAlbum && (
-        <div className="px-4 pb-4 md:px-5 md:pb-5">
+        <div ref={albumRef} className="scroll-mt-16 px-4 pb-4 md:px-5 md:pb-5 lg:scroll-mt-4">
           <GardenAlbum
             garden={garden}
             canStartNextPlant={bloomed}
