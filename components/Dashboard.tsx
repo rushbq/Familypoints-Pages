@@ -459,16 +459,19 @@ export const Dashboard: React.FC<DashboardProps> = ({
             </div>
             <span className="sr-only">{currentUser.name}，{cloudEmail}</span>
           </div>
-          <div className="grid grid-cols-2 gap-1">
-            <button
-              type="button"
-              onClick={onCloudLogout}
-              className="flex min-h-10 items-center justify-center rounded-xl text-nook-brown/70 transition-colors hover:bg-white hover:text-nook-brown focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-nook-greenDark"
-              aria-label="切換雲端帳號"
-              title="切換雲端帳號"
-            >
-              <Icons.LogOut size={18} />
-            </button>
+          <div className={`grid gap-1 ${isParent ? 'grid-cols-2' : 'grid-cols-1'}`}>
+            {/* 雲端帳號僅家長可見，避免小孩誤按登出 */}
+            {isParent && (
+              <button
+                type="button"
+                onClick={onCloudLogout}
+                className="flex min-h-10 items-center justify-center rounded-xl text-nook-brown/70 transition-colors hover:bg-white hover:text-nook-brown focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-nook-greenDark"
+                aria-label="切換雲端帳號"
+                title="切換雲端帳號"
+              >
+                <Icons.LogOut size={18} />
+              </button>
+            )}
             <button
               type="button"
               onClick={onLogout}
@@ -494,21 +497,23 @@ export const Dashboard: React.FC<DashboardProps> = ({
               </div>
             </div>
             <div className="flex items-center gap-2">
-              {/* 雲端帳號按鈕 */}
-              <button
-                type="button"
-                onClick={() => setShowCloudInfo(!showCloudInfo)}
-                className="w-8 h-8 bg-nook-blue/15 rounded-full flex items-center justify-center text-sm"
-                title="雲端帳號"
-              >
-                ☁️
-              </button>
+              {/* 雲端帳號按鈕：僅家長可見，避免小孩誤按 */}
+              {isParent && (
+                <button
+                  type="button"
+                  onClick={() => setShowCloudInfo(!showCloudInfo)}
+                  className="w-8 h-8 bg-nook-blue/15 rounded-full flex items-center justify-center text-sm"
+                  title="雲端帳號"
+                >
+                  ☁️
+                </button>
+              )}
               <div className="w-8 h-8 bg-nook-beige rounded-full flex items-center justify-center border border-nook-brown/10 text-base">{currentUser.avatar}</div>
             </div>
         </header>
 
         {/* 手機版雲端帳號下拉面板 */}
-        {showCloudInfo && (
+        {isParent && showCloudInfo && (
           <div className="lg:hidden bg-white border-b border-nook-brown/5 px-4 py-2.5 animate-pop z-20 relative">
             <p className="text-xs font-bold text-nook-brown/75">☁️ 雲端帳號</p>
             <p className="text-sm font-bold text-nook-brown break-all mb-3">{cloudEmail}</p>
