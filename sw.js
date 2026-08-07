@@ -1,4 +1,4 @@
-const BUILD_VERSION = '2026-07-22T14:29:19.337Z';
+const BUILD_VERSION = '2026-08-07T02:24:16.647Z';
 const APP_BASE_PATH = '/Familypoints-Pages/';
 const CACHE_PREFIX = 'family-points-shell-';
 const SHELL_CACHE = `${CACHE_PREFIX}${BUILD_VERSION}`;
