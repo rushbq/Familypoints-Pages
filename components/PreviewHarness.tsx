@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import {
   AppState,
+  BeyBossAttempt,
   DiscountCard,
   GoalReward,
   RewardCard,
@@ -23,9 +24,12 @@ import {
 import {
   addBeyScrap,
   assembleBey,
+  awardSpecificPart,
   drawBeyPart,
+  grantBeyPart,
   removeBeyBuild,
 } from '../services/beyUtils';
+import { challengeBoss, getWeekKey, setLineup } from '../services/beyBossUtils';
 
 /**
  * 開發預覽用的 Dashboard 外殼（僅 import.meta.env.DEV）。
@@ -87,6 +91,26 @@ export const PreviewHarness: React.FC<{ role: string }> = ({ role }) => {
     });
   };
 
+  const onChallengeBoss = () => {
+    const timestamp = Date.now();
+    let outcome: BeyBossAttempt | null = null;
+    setData((prev) => {
+      const result = challengeBoss(prev.beyBoss, prev.beyForge, getWeekKey(), timestamp.toString(), timestamp);
+      if (!result.attempt) return prev;
+      outcome = result.attempt;
+      let beyForge = prev.beyForge;
+      prev.users.filter((u) => u.role === UserRole.CHILD).forEach((child, index) => {
+        if (result.rewardPartId) {
+          beyForge = awardSpecificPart(beyForge, child.id, result.rewardPartId, `${timestamp}_b${index}`, timestamp);
+        } else if (result.grantRare) {
+          beyForge = grantBeyPart(beyForge, child.id, 'BOSS', `${timestamp}_br${index}`, timestamp).forge;
+        }
+      });
+      return { ...prev, beyBoss: result.state, beyForge };
+    });
+    return outcome;
+  };
+
   return (
     <Dashboard
       currentUser={currentUser}
@@ -122,6 +146,10 @@ export const PreviewHarness: React.FC<{ role: string }> = ({ role }) => {
         }));
       }}
       onDisassembleBey={(buildId: string) => setData((p) => ({ ...p, beyForge: removeBeyBuild(p.beyForge, buildId) }))}
+      onSetBossLineup={(childId: string, buildId: string | null) =>
+        setData((p) => ({ ...p, beyBoss: setLineup(p.beyBoss, getWeekKey(), childId, buildId) }))
+      }
+      onChallengeBoss={onChallengeBoss}
       cloudEmail="preview@example.com"
       onCloudLogout={() => window.alert('（預覽模式）切換帳號')}
     />

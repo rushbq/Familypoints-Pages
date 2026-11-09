@@ -3,6 +3,7 @@ import { onAuthStateChanged, signOut, User as FirebaseUser } from 'firebase/auth
 import { saveState, SaveResult, subscribeState } from './services/storageService';
 import {
   AppState,
+  BeyBossAttempt,
   DiscountCard,
   GoalReward,
   GoalRewardStatus,
@@ -29,10 +30,16 @@ import {
 import {
   addBeyScrap,
   assembleBey,
+  awardSpecificPart,
   drawBeyPart,
   grantBeyPart,
   removeBeyBuild,
 } from './services/beyUtils';
+import {
+  challengeBoss,
+  getWeekKey,
+  setLineup,
+} from './services/beyBossUtils';
 
 /**
  * 應用程式主元件
@@ -237,6 +244,45 @@ const App: React.FC = () => {
     setData((prev) => (prev ? { ...prev, beyForge: removeBeyBuild(prev.beyForge, buildId) } : prev));
   };
 
+  /** 孩子為本週魔王派出（或收回）一顆陀螺。 */
+  const handleSetBossLineup = (childId: string, buildId: string | null) => {
+    if (!currentUser || currentUser.role !== UserRole.CHILD || currentUser.id !== childId) return;
+    setData((prev) => (prev ? {
+      ...prev,
+      beyBoss: setLineup(prev.beyBoss, getWeekKey(), childId, buildId),
+    } : prev));
+  };
+
+  /**
+   * 挑戰本週魔王。回傳這次的三回合結果讓畫面揭曉；
+   * 打贏完整版時兩個孩子各拿一個專屬零件，打贏減弱版則各拿一個一般稀有零件。
+   */
+  const handleChallengeBoss = () => {
+    const timestamp = Date.now();
+    let outcome: BeyBossAttempt | null = null;
+
+    setData((prev) => {
+      if (!prev) return prev;
+      const result = challengeBoss(prev.beyBoss, prev.beyForge, getWeekKey(), timestamp.toString(), timestamp);
+      if (!result.attempt) return prev;
+      outcome = result.attempt;
+
+      let beyForge = prev.beyForge;
+      const children = prev.users.filter((user) => user.role === UserRole.CHILD);
+      children.forEach((child, index) => {
+        if (result.rewardPartId) {
+          beyForge = awardSpecificPart(beyForge, child.id, result.rewardPartId, `${timestamp}_boss${index}`, timestamp);
+        } else if (result.grantRare) {
+          beyForge = grantBeyPart(beyForge, child.id, 'BOSS', `${timestamp}_bossr${index}`, timestamp).forge;
+        }
+      });
+
+      return { ...prev, beyBoss: result.state, beyForge };
+    });
+
+    return outcome;
+  };
+
   /**
    * 目標被標記為達成時掉一個稀有零件。
    * 用前後比對偵測，SettingsPanel 不需要知道鍛造系統的存在。
@@ -420,6 +466,8 @@ const App: React.FC = () => {
         onDrawBeyPart={handleDrawBeyPart}
         onAssembleBey={handleAssembleBey}
         onDisassembleBey={handleDisassembleBey}
+        onSetBossLineup={handleSetBossLineup}
+        onChallengeBoss={handleChallengeBoss}
         cloudEmail={cloudUser.email || '已登入雲端帳號'}
         onCloudLogout={handleCloudLogout}
       />

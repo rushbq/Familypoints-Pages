@@ -221,7 +221,10 @@ export const grantBeyPart = (
   timestamp: number,
   random: () => number = Math.random,
 ): { forge: BeyForgeState; partId: string | null } => {
-  const missing = BEY_PARTS.filter((part) => !ownsPart(forge, childId, part.id));
+  // 魔王專屬零件只能靠打贏魔王取得，不進里程碑池。
+  const missing = BEY_PARTS.filter((part) => (
+    part.rarity !== 'BOSS' && !ownsPart(forge, childId, part.id)
+  ));
   const rarePool = missing.filter((part) => part.rarity === 'RARE');
   const pool = rarePool.length > 0 ? rarePool : missing;
   if (pool.length === 0) return { forge, partId: null };
@@ -237,6 +240,21 @@ export const grantBeyPart = (
 };
 
 /** 組裝一顆陀螺。三個零件都必須是這個孩子擁有的。 */
+/** 直接給予指定零件（魔王獎勵用）。已擁有則不重複給。 */
+export const awardSpecificPart = (
+  forge: BeyForgeState,
+  childId: string,
+  partId: string,
+  partInstanceId: string,
+  timestamp: number,
+): BeyForgeState => {
+  if (!getBeyPart(partId) || ownsPart(forge, childId, partId)) return forge;
+  return {
+    ...forge,
+    parts: [...forge.parts, { id: partInstanceId, childId, partId, obtainedAt: timestamp, source: 'BOSS' }],
+  };
+};
+
 export const assembleBey = (
   forge: BeyForgeState,
   childId: string,

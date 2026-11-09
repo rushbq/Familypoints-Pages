@@ -43,6 +43,10 @@ const BLUE: BeyColorSet = { main: '#1C93E5', deep: '#0F5E96' };
 const RED: BeyColorSet = { main: '#FF4D4D', deep: '#A32B2B' };
 const VIOLET: BeyColorSet = { main: '#B57BFF', deep: '#6F3FB8' };
 const SILVER: BeyColorSet = { main: '#D7E3F7', deep: '#7D8BA6' };
+const CRIMSON: BeyColorSet = { main: '#FF2F6D', deep: '#8E0F33' };
+const ABYSS: BeyColorSet = { main: '#7B6CFF', deep: '#3A2E8C' };
+const EMBER: BeyColorSet = { main: '#FFB300', deep: '#A86B00' };
+const FROST: BeyColorSet = { main: '#8FE9FF', deep: '#2A7F99' };
 
 /** 刃環：決定攻擊力與陀螺的主要外型。 */
 const BLADES: BeyPartDef[] = [
@@ -80,8 +84,30 @@ const BITS: BeyPartDef[] = [
   { id: 'bit_needle_yellow', slot: 'BIT', name: '黃金針軸', rarity: 'RARE', attack: 3, defense: 3, stamina: 4, color: YELLOW, bitStyle: 'needle' },
 ];
 
-/** 全部 24 個零件，共 10 × 7 × 7 = 490 種組合。 */
-export const BEY_PARTS: BeyPartDef[] = [...BLADES, ...RATCHETS, ...BITS];
+/**
+ * 魔王專屬零件：12 件，一隻魔王對應一件。
+ * 刻意排除在鋼料抽取與里程碑掉落之外（見 beyUtils 的 drawBeyPart / grantBeyPart），
+ * 否則「專屬」就不成立。
+ */
+const BOSS_PARTS: BeyPartDef[] = [
+  { id: 'blade_boss_crimson', slot: 'BLADE', name: '血月裂刃', rarity: 'BOSS', attack: 5, defense: 3, stamina: 2, color: CRIMSON, shape: 'claw', bladeCount: 3 },
+  { id: 'blade_boss_abyss', slot: 'BLADE', name: '深淵翼刃', rarity: 'BOSS', attack: 4, defense: 5, stamina: 2, color: ABYSS, shape: 'wing', bladeCount: 4 },
+  { id: 'blade_boss_ember', slot: 'BLADE', name: '餘燼鑽刃', rarity: 'BOSS', attack: 5, defense: 2, stamina: 4, color: EMBER, shape: 'drill', bladeCount: 5 },
+  { id: 'blade_boss_frost', slot: 'BLADE', name: '霜牙鋸刃', rarity: 'BOSS', attack: 4, defense: 4, stamina: 3, color: FROST, shape: 'saw', bladeCount: 6 },
+
+  { id: 'ratchet_boss_crimson', slot: 'RATCHET', name: '血契齒環', rarity: 'BOSS', attack: 4, defense: 4, stamina: 3, color: CRIMSON, ratchetStyle: 'spoke' },
+  { id: 'ratchet_boss_abyss', slot: 'RATCHET', name: '虛空三環', rarity: 'BOSS', attack: 2, defense: 5, stamina: 5, color: ABYSS, ratchetStyle: 'double' },
+  { id: 'ratchet_boss_ember', slot: 'RATCHET', name: '熔核重環', rarity: 'BOSS', attack: 5, defense: 4, stamina: 2, color: EMBER, ratchetStyle: 'solid' },
+  { id: 'ratchet_boss_frost', slot: 'RATCHET', name: '凍結輕環', rarity: 'BOSS', attack: 3, defense: 3, stamina: 5, color: FROST, ratchetStyle: 'dashed' },
+
+  { id: 'bit_boss_crimson', slot: 'BIT', name: '貫穿血軸', rarity: 'BOSS', attack: 5, defense: 2, stamina: 4, color: CRIMSON, bitStyle: 'flat' },
+  { id: 'bit_boss_abyss', slot: 'BIT', name: '無盡深軸', rarity: 'BOSS', attack: 2, defense: 4, stamina: 5, color: ABYSS, bitStyle: 'needle' },
+  { id: 'bit_boss_ember', slot: 'BIT', name: '炎心滾球', rarity: 'BOSS', attack: 4, defense: 5, stamina: 3, color: EMBER, bitStyle: 'ball' },
+  { id: 'bit_boss_frost', slot: 'BIT', name: '絕對零軸', rarity: 'BOSS', attack: 3, defense: 4, stamina: 5, color: FROST, bitStyle: 'point' },
+];
+
+/** 全部 36 個零件，共 14 × 11 × 11 = 1694 種組合。 */
+export const BEY_PARTS: BeyPartDef[] = [...BLADES, ...RATCHETS, ...BITS, ...BOSS_PARTS];
 
 const PART_MAP = new Map(BEY_PARTS.map((part) => [part.id, part]));
 
@@ -101,4 +127,5 @@ export const BEY_SOURCE_LABELS: Record<string, string> = {
   GOAL: '目標達成',
   STAMP: '集點滿卡',
   REWARD_CARD: '獎勵卡',
+  BOSS: '擊敗魔王',
 };

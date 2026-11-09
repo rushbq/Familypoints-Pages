@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import {
   AppState,
+  BeyBossAttempt,
   DiscountCard,
   GoalReward,
   RewardCard,
@@ -29,6 +30,7 @@ import { ConfirmationModal } from './ui/ConfirmationModal';
 import { BeyTop } from './BeyTop';
 import { FamilyGarden } from './FamilyGarden';
 import { BeyForge } from './BeyForge';
+import { BeyBoss } from './BeyBoss';
 import {
   formatGoalDateRange,
   getActiveRewardCards,
@@ -63,6 +65,8 @@ interface DashboardProps {
   onDrawBeyPart: (childId: string) => { partId: string | null; isDuplicate: boolean };
   onAssembleBey: (childId: string, name: string, bladeId: string, ratchetId: string, bitId: string) => void;
   onDisassembleBey: (buildId: string) => void;
+  onSetBossLineup: (childId: string, buildId: string | null) => void;
+  onChallengeBoss: () => BeyBossAttempt | null;
   cloudEmail: string;
   onCloudLogout: () => void;
 }
@@ -87,6 +91,8 @@ export const Dashboard: React.FC<DashboardProps> = ({
   onDrawBeyPart,
   onAssembleBey,
   onDisassembleBey,
+  onSetBossLineup,
+  onChallengeBoss,
   cloudEmail,
   onCloudLogout,
 }) => {
@@ -211,7 +217,17 @@ export const Dashboard: React.FC<DashboardProps> = ({
               </div>
 
               {collectionTab === 'forge' ? (
-                <div id="collection-forge" role="tabpanel" className="animate-pop">
+                <div id="collection-forge" role="tabpanel" className="animate-pop space-y-3">
+                  {/* 魔王戰的前提就是有陀螺，和工房放在同一頁，
+                      「打輸 → 看哪一項輸 → 下面就是鍛造台」在同一個畫面裡走得完 */}
+                  <BeyBoss
+                    currentUser={currentUser}
+                    users={data.users}
+                    forge={data.beyForge}
+                    boss={data.beyBoss}
+                    onSetLineup={onSetBossLineup}
+                    onChallenge={onChallengeBoss}
+                  />
                   <BeyForge
                     currentUser={currentUser}
                     users={data.users}

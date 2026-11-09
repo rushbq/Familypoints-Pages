@@ -238,6 +238,7 @@ export interface AppState {
   stampCards: StampCard[];  // 集點卡
   familyGarden: FamilyGardenState;// 家庭共育花園
   beyForge: BeyForgeState;  // 陀螺鍛造（個人收集）
+  beyBoss: BeyBossState;    // 週魔王戰（兩人合作）
 }
 
 /* ===== 陀螺鍛造（BEY FORGE） ===== */
@@ -245,11 +246,15 @@ export interface AppState {
 /** 陀螺的三個部位。 */
 export type BeyPartSlot = 'BLADE' | 'RATCHET' | 'BIT';
 
-/** 零件稀有度：普通由日常鋼料抽出，稀有只從里程碑取得。 */
-export type BeyRarity = 'COMMON' | 'RARE';
+/**
+ * 零件稀有度。
+ * COMMON 由日常鋼料抽出，RARE 只從里程碑取得，
+ * BOSS 只能打贏週魔王拿到——它被刻意排除在所有抽取與里程碑掉落之外。
+ */
+export type BeyRarity = 'COMMON' | 'RARE' | 'BOSS';
 
 /** 取得來源，用於零件庫的來源標記。 */
-export type BeyPartSource = 'SCRAP' | 'GOAL' | 'STAMP' | 'REWARD_CARD';
+export type BeyPartSource = 'SCRAP' | 'GOAL' | 'STAMP' | 'REWARD_CARD' | 'BOSS';
 
 /** 擁有一個零件的紀錄（零件本身的定義在 services/beyData.ts）。 */
 export interface BeyOwnedPart {
@@ -289,4 +294,49 @@ export interface BeyForgeState {
   childProgress: BeyChildProgress[];
   parts: BeyOwnedPart[];
   builds: BeyBuild[];
+}
+
+/* ===== 週魔王戰（BOSS BATTLE） ===== */
+
+/** 一位孩子為本週派出的陀螺。 */
+export interface BeyBossLineupEntry {
+  childId: string;
+  buildId: string;
+}
+
+/** 一回合的結果；三回合依序比攻擊、防禦、持久。 */
+export interface BeyBossRound {
+  stat: 'attack' | 'defense' | 'stamina';
+  teamValue: number;
+  bossValue: number;
+  won: boolean;
+  /** 數值較低卻贏下來（或較高卻輸掉）的爆冷回合。 */
+  upset: boolean;
+}
+
+/** 一次挑戰。每個週末日各限一次。 */
+export interface BeyBossAttempt {
+  id: string;
+  attemptedAt: number;
+  /** YYYY-MM-DD，用來判斷今天是否已經打過。 */
+  dateKey: string;
+  /** 只有一人派出時打的是減弱版，獎勵較小。 */
+  weakened: boolean;
+  rounds: BeyBossRound[];
+  won: boolean;
+}
+
+/** 某一週的魔王戰紀錄。 */
+export interface BeyBossEntry {
+  /** YYYY-Www，由日期推導，無伺服器也能兩台裝置一致。 */
+  weekKey: string;
+  bossId: string;
+  lineup: BeyBossLineupEntry[];
+  attempts: BeyBossAttempt[];
+  defeatedAt?: number | null;
+}
+
+export interface BeyBossState {
+  version: 1;
+  entries: BeyBossEntry[];
 }

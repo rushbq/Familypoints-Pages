@@ -16,6 +16,7 @@ import {
 import { inferScoreItemCategory, normalizeScoreItem, normalizeScoreRecord } from './familyUtils';
 import { createInitialFamilyGarden } from './gardenUtils';
 import { createInitialBeyForge } from './beyUtils';
+import { createInitialBeyBoss } from './beyBossUtils';
 
 /**
  * FamilyPointsDB - 使用 Dexie.js 封裝 IndexedDB
@@ -147,6 +148,7 @@ export const getDefaultState = () => {
     stampCards: [] as StampCard[],
     familyGarden: createInitialFamilyGarden(users),
     beyForge: createInitialBeyForge(users),
+    beyBoss: createInitialBeyBoss(),
   };
 };
 

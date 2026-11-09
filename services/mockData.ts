@@ -9,6 +9,7 @@ import {
 } from '../types';
 import { createInitialFamilyGarden } from './gardenUtils';
 import { createInitialBeyForge } from './beyUtils';
+import { createInitialBeyBoss, getWeekKey, getBossForWeek } from './beyBossUtils';
 
 /**
  * 開發預覽用的假資料（僅在 import.meta.env.DEV 下透過 PreviewHarness 使用）。
@@ -62,6 +63,19 @@ export const getMockState = (): AppState => {
     },
   ];
 
+  // 預覽用：哥哥已派出陀螺，弟弟還沒，剛好看得到「只有一人出戰」的減弱版狀態。
+  const beyBoss = createInitialBeyBoss();
+  const weekKey = getWeekKey();
+  beyBoss.entries = [
+    {
+      weekKey,
+      bossId: getBossForWeek(weekKey).id,
+      lineup: [{ childId: 'child_1', buildId: 'bb_1' }],
+      attempts: [],
+      defeatedAt: null,
+    },
+  ];
+
   return {
   users,
   scoreItems: [
@@ -107,5 +121,6 @@ export const getMockState = (): AppState => {
   ],
   familyGarden,
   beyForge,
+  beyBoss,
   };
 };
