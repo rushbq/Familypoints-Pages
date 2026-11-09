@@ -1,11 +1,16 @@
 declare const __APP_VERSION__: string;
 
-const VERSION_CHECK_INTERVAL_MS = 5 * 60 * 1000;
+const VERSION_CHECK_INTERVAL_MS = 30 * 60 * 1000;
 const RELOAD_RETRY_DELAY_MS = 30 * 1000;
-const MIN_VERSION_CHECK_INTERVAL_MS = 60 * 1000;
+const MIN_VERSION_CHECK_INTERVAL_MS = 5 * 60 * 1000;
 const RELOAD_GUARD_KEY = 'family-points-version-reload';
 const SERVICE_WORKER_PATH = `${import.meta.env.BASE_URL}sw.js`;
-const GITHUB_VERSION_API_URL = 'https://api.github.com/repos/rushbq/Familypoints-Pages/contents/version.json?ref=gh-pages';
+/**
+ * 版本號只從 raw 取，不走 api.github.com：
+ * API 未登入時每小時只有 60 次額度，兩支手機輪流開就可能打滿，額度用完會退回
+ * 403。raw 是 CDN、沒有額度限制，代價是 max-age=300，最多晚 5 分鐘才看到新版本
+ * ——反正這裡是半小時才查一次，而且真的急著更新時手動重新整理最快。
+ */
 const REMOTE_VERSION_MANIFEST_URL = 'https://raw.githubusercontent.com/rushbq/Familypoints-Pages/gh-pages/version.json';
 
 let lastVersionCheckAt = 0;
@@ -23,7 +28,6 @@ const withCacheBuster = (source: string) => {
 
 const fetchVersionManifest = async () => {
   const sources = [
-    GITHUB_VERSION_API_URL,
     REMOTE_VERSION_MANIFEST_URL,
     `${import.meta.env.BASE_URL}version.json`,
   ];
@@ -31,16 +35,11 @@ const fetchVersionManifest = async () => {
   for (const source of sources) {
     try {
       // 不要帶 Cache-Control：它不在 CORS 安全標頭清單裡，會讓跨網域請求先送
-      // preflight，而 api.github.com 不允許這個標頭、raw.githubusercontent.com
-      // 根本不回應 OPTIONS，兩個來源都會被擋掉。快取已經由 cache: 'no-store'
-      // 和網址上的 ?t= 時間戳記處理掉了。
+      // preflight，而 raw.githubusercontent.com 根本不回應 OPTIONS，整個請求
+      // 會被擋掉。快取已經由 cache: 'no-store' 和網址上的 ?t= 時間戳記處理掉了。
       const response = await fetch(withCacheBuster(source), {
         cache: 'no-store',
-        headers: {
-          Accept: source === GITHUB_VERSION_API_URL
-            ? 'application/vnd.github.raw+json'
-            : 'application/json',
-        },
+        headers: { Accept: 'application/json' },
       });
       if (!response.ok) continue;
 
