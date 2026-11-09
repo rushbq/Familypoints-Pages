@@ -97,7 +97,7 @@ export const RoleSelector: React.FC<RoleSelectorProps> = ({ users, onSelectUser,
                     aria-hidden="true"
                   />
                   <span className="relative" aria-hidden="true">
-                    <BeyTop color={team} size={72} speed="slow" />
+                    <BeyTop color={team} size={72} speed="launch" />
                   </span>
                   <span className="relative mt-3 flex items-center gap-1.5 text-lg font-black text-bey-ink">
                     <span aria-hidden="true">{user.avatar}</span>

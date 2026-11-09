@@ -70,6 +70,9 @@ Weights are a hierarchy, not decoration. The app previously set almost everythin
 - Minimum text size is `text-[10px]`, and only for Latin Orbitron labels; Chinese does not go below `text-xs`.
 - Dividers on dark panels use `border-bey-steel`. A tinted border like `border-bey-cyanDark/10` is invisible here.
 - `components/BeyTop.tsx` is the original spinning-top SVG (concentric blade ring + gear + core). Pass `bladeId`/`ratchetId`/`bitId` to draw a specific build, or just `color` for a plain team-colored top. All Beyblade-style art must stay original — no official logos, characters, or product renders.
+- **Rotation is an event, not decoration.** `BeyTop`'s `speed` defaults to `idle`: a top on display (nav logo, avatar, score card, the MY BEYS shelf, the boss on a weekday) stays still. `fast` is only for something happening right now — forging, assembling, a battle — and `launch` is the one-shot spin-up-and-settle used on entry screens (login, role picker). Six perpetually turning rings read as six loading spinners, and they drown out the animations that carry meaning.
+- The blade ring is radially symmetric, so rotation would read as flicker rather than motion. Blade index 0 carries a white highlight overlay as the **marker blade** — keep it when editing `renderBlades`, or spinning tops go back to shimmering.
+- Each `BeyTop` instance seeds its own random: spinning ones get a jittered duration and negative delay so they never phase-lock, and idle ones **with parts** rest at a random angle so a shelf of tops looks like separate objects. Tops without parts are brand marks and stay at angle 0.
 
 ### Collection modules
 

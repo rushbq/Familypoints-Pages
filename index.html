@@ -143,12 +143,114 @@
       @keyframes beySpin { to { transform: rotate(360deg); } }
       .bey-spin { animation: beySpin 2.6s linear infinite; transform-origin: 50% 50%; }
       .bey-spin-fast { animation: beySpin 0.9s linear infinite; transform-origin: 50% 50%; }
+      /* 發射：像拉繩彈出去，衝一下之後自己慢下來停住。
+         等速 linear 是機械，有加速度才像物體。終點是 360 的倍數，所以停在原角度。 */
+      @keyframes beyLaunch { to { transform: rotate(1080deg); } }
+      .bey-launch {
+        animation: beyLaunch 2.4s cubic-bezier(0.08, 0.62, 0.2, 1) both;
+        transform-origin: 50% 50%;
+      }
       /* 陀螺在場上游走時的輕微晃動。 */
       @keyframes beyWobble {
         0%, 100% { transform: translate(0, 0) rotate(-2deg); }
         50% { transform: translate(2px, -3px) rotate(2deg); }
       }
       .bey-wobble { animation: beyWobble 3.2s ease-in-out infinite; }
+
+      /* ===== 鍛造與對戰動畫 ===== */
+
+      /* 揭曉與撞擊的白閃 */
+      @keyframes beyFlash {
+        0% { opacity: 0; }
+        30% { opacity: 0.8; }
+        100% { opacity: 0; }
+      }
+      .bey-flash { animation: beyFlash 0.34s ease-out both; }
+
+      /* 命中時整塊震一下；爆冷用 hard 版本震得更久 */
+      @keyframes beyImpact {
+        0%, 100% { transform: translate(0, 0); }
+        20% { transform: translate(-5px, 2px); }
+        40% { transform: translate(4px, -3px); }
+        60% { transform: translate(-3px, 1px); }
+        80% { transform: translate(2px, 0); }
+      }
+      .bey-impact { animation: beyImpact 0.38s ease-in-out both; }
+      .bey-impact-hard { animation: beyImpact 0.4s ease-in-out 2 both; }
+
+      /* 稀有零件、組裝完成、撞擊時擴散出去的環 */
+      @keyframes beyShockwave {
+        0% { transform: scale(0.35); opacity: 0.9; }
+        100% { transform: scale(2.1); opacity: 0; }
+      }
+      .bey-shockwave { animation: beyShockwave 0.72s ease-out both; }
+
+      /* 鍛造爐蓄力：爐心由暗轉亮 */
+      @keyframes beyCharge {
+        0% { transform: scale(0.88); opacity: 0.4; }
+        70% { transform: scale(1.08); opacity: 1; }
+        100% { transform: scale(1.02); opacity: 1; }
+      }
+      .bey-charge { animation: beyCharge 0.7s ease-in both; }
+
+      /* 零件飛入組裝台 */
+      @keyframes beyPartFlyIn {
+        0% { transform: translateX(26px) scale(0.8); opacity: 0; }
+        70% { transform: translateX(0) scale(1.06); opacity: 1; }
+        100% { transform: translateX(0) scale(1); opacity: 1; }
+      }
+      .bey-part-fly { animation: beyPartFlyIn 0.42s cubic-bezier(0.22, 1, 0.36, 1) both; }
+
+      /* 組裝完成：陀螺縮放登場 */
+      @keyframes beyAssembleIn {
+        0% { transform: scale(0.45); opacity: 0; }
+        60% { transform: scale(1.12); opacity: 1; }
+        100% { transform: scale(1); opacity: 1; }
+      }
+      .bey-assemble-in { animation: beyAssembleIn 0.5s cubic-bezier(0.22, 1, 0.36, 1) both; }
+
+      /* 重複零件退鋼料：數字往上飄走，不給慶祝 */
+      @keyframes beyFloatUp {
+        0% { transform: translateY(6px); opacity: 0; }
+        25% { transform: translateY(0); opacity: 1; }
+        100% { transform: translateY(-26px); opacity: 0; }
+      }
+      .bey-float-up { animation: beyFloatUp 1.1s ease-out both; }
+
+      /* 開戰出場：兩軍從左右滑入 */
+      @keyframes beyEnterLeft {
+        0% { transform: translateX(-56px); opacity: 0; }
+        100% { transform: translateX(0); opacity: 1; }
+      }
+      @keyframes beyEnterRight {
+        0% { transform: translateX(56px); opacity: 0; }
+        100% { transform: translateX(0); opacity: 1; }
+      }
+      .bey-enter-left { animation: beyEnterLeft 0.6s cubic-bezier(0.22, 1, 0.36, 1) both; }
+      .bey-enter-right { animation: beyEnterRight 0.6s cubic-bezier(0.22, 1, 0.36, 1) both; }
+
+      /* 回合落敗的一方被震退 */
+      @keyframes beyRecoilLeft {
+        0%, 100% { transform: translateX(0) rotate(0deg); }
+        35% { transform: translateX(-14px) rotate(-10deg); }
+      }
+      @keyframes beyRecoilRight {
+        0%, 100% { transform: translateX(0) rotate(0deg); }
+        35% { transform: translateX(14px) rotate(10deg); }
+      }
+      .bey-recoil-left { animation: beyRecoilLeft 0.44s ease-out both; }
+      .bey-recoil-right { animation: beyRecoilRight 0.44s ease-out both; }
+
+      /* 收尾：敗方傾倒停轉 */
+      @keyframes beyTopple {
+        0% { transform: rotate(0deg) translateY(0); opacity: 1; }
+        45% { transform: rotate(-38deg) translateY(6px); opacity: 1; }
+        100% { transform: rotate(-74deg) translateY(16px); opacity: 0.3; }
+      }
+      .bey-topple {
+        animation: beyTopple 0.9s cubic-bezier(0.45, 0, 0.75, 0.45) both;
+        transform-origin: 50% 85%;
+      }
 
       /* 花朵輕微搖擺（花園沿用） */
       @keyframes sway {

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useRef } from 'react';
 import {
   BeyBitStyle,
   BeyBladeShape,
@@ -19,8 +19,11 @@ interface BeyTopProps {
   ratchetId?: string;
   bitId?: string;
   size?: number;
-  /** 旋轉速度；idle 代表停轉。 */
-  speed?: 'idle' | 'slow' | 'fast';
+  /**
+   * 旋轉狀態。預設 idle：陀螺平常是擺著的，轉動代表「現在有事發生」。
+   * launch 是拉繩彈出去的一次性加速後停住，用在登場畫面。
+   */
+  speed?: 'idle' | 'launch' | 'slow' | 'fast';
   className?: string;
 }
 
@@ -50,12 +53,11 @@ const renderBlades = (shape: BeyBladeShape, count: number, color: BeyColorSet) =
   return Array.from({ length: count }, (_, index) => {
     const angle = (360 / count) * index;
     return (
-      <path
-        key={angle}
-        d={path}
-        fill={index % 2 === 0 ? color.main : color.deep}
-        transform={`rotate(${angle} 50 50)`}
-      />
+      <g key={angle} transform={`rotate(${angle} 50 50)`}>
+        <path d={path} fill={index % 2 === 0 ? color.main : color.deep} />
+        {/* 標記刃：偶數片刀刃左右對稱，少了這道高光，轉動只會看成邊緣閃爍 */}
+        {index === 0 && <path d={path} fill="#FFFFFF" opacity="0.4" />}
+      </g>
     );
   });
 };
@@ -142,7 +144,7 @@ export const BeyTop: React.FC<BeyTopProps> = ({
   ratchetId,
   bitId,
   size = 72,
-  speed = 'slow',
+  speed = 'idle',
   className = '',
 }) => {
   const fallback = colorSet ?? TEAM_PALETTE[color];
@@ -154,13 +156,49 @@ export const BeyTop: React.FC<BeyTopProps> = ({
   const ratchetColor = ratchet?.color ?? { main: STEEL, deep: STEEL };
   const bitColor = bit?.color ?? fallback;
 
-  const spinClass = speed === 'fast' ? 'bey-spin-fast' : speed === 'slow' ? 'bey-spin' : '';
+  // 同一個畫面上好幾顆陀螺若同時起跑、同週期，會黏成一片運動場而不是各自的物件。
+  // 每個實例自己抽一個亂數，用來錯開相位、週期，以及停著時的靜止角度。
+  const seed = useRef(Math.random()).current;
+
+  const spinClass = speed === 'fast' ? 'bey-spin-fast'
+    : speed === 'slow' ? 'bey-spin'
+    : speed === 'launch' ? 'bey-launch'
+    : '';
+
+  const spinStyle: React.CSSProperties | undefined = (() => {
+    if (speed === 'slow' || speed === 'fast') {
+      const base = speed === 'slow' ? 2.3 : 0.8;
+      const spread = speed === 'slow' ? 0.8 : 0.25;
+      const duration = base + seed * spread;
+      return { animationDuration: `${duration.toFixed(2)}s`, animationDelay: `-${(seed * duration).toFixed(2)}s` };
+    }
+    // 同一畫面上的幾顆不要同一刻彈出去
+    if (speed === 'launch') {
+      return { animationDelay: `${(seed * 0.3).toFixed(2)}s` };
+    }
+    // 停著的時候，有零件的陀螺各停在不同角度，六顆才像六個物件而不是六份拷貝。
+    // 沒有零件的是品牌標記（登入頁、導覽列），角度要固定。
+    if (speed === 'idle' && blade) {
+      return { transform: `rotate(${Math.round(seed * 360)}deg)`, transformOrigin: '50% 50%' };
+    }
+    return undefined;
+  })();
+
+  // 高速旋轉時加一點偏擺，才像受力中的陀螺而不是等速的齒輪
+  const wobbleClass = speed === 'fast' ? 'bey-wobble' : '';
   const label = blade ? `${blade.name}陀螺` : '對戰陀螺';
 
   return (
-    <svg width={size} height={size} viewBox="0 0 100 100" role="img" aria-label={label} className={className}>
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 100 100"
+      role="img"
+      aria-label={label}
+      className={`${wobbleClass} ${className}`.trim()}
+    >
       {/* 旋轉層：刀刃環與齒輪 */}
-      <g className={spinClass}>
+      <g className={spinClass} style={spinStyle}>
         <circle cx="50" cy="50" r="40" fill="none" stroke={bladeColor.main} strokeWidth="4" />
         <circle cx="50" cy="50" r="40" fill={bladeColor.main} opacity="0.08" />
         {renderBlades(blade?.shape ?? 'spear', blade?.bladeCount ?? 4, bladeColor)}

@@ -16,6 +16,7 @@ import { GardenAlbum } from './GardenAlbum';
 import { GardenPlant } from './GardenPlant';
 import { getGardenScene } from './GardenScene';
 import { Icons } from './Icons';
+import { prefersReducedMotion } from '../services/motion';
 
 interface FamilyGardenProps {
   currentUser: User;
@@ -59,9 +60,6 @@ const BLOOM_PETALS = [
   { left: '72%', delay: 0.28, drift: 20 },
   { left: '86%', delay: 0.44, drift: -22 },
 ];
-
-const prefersReducedMotion = (): boolean =>
-  window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false;
 
 /** 澆水過程：灑水壺傾倒、水滴落下、土面濺起水花、冒出小星星 */
 const WateringEffect: React.FC = () => (

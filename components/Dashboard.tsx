@@ -490,7 +490,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
           aria-label="回到首頁"
           title="BEY ARENA・回到首頁"
         >
-           <BeyTop color="cyan" size={36} speed="slow" />
+           <BeyTop color="cyan" size={36} speed="idle" />
            <span className="sr-only">BEY ARENA，回到首頁</span>
         </button>
         
@@ -558,7 +558,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
         {/* 手機版頂部導覽 */}
         <header className="sticky top-0 bg-bey-deep/95 backdrop-blur z-30 px-4 py-2 flex justify-between items-center lg:hidden border-b border-bey-steel">
             <div className="flex items-center gap-2">
-              <BeyTop color="cyan" size={30} speed="slow" />
+              <BeyTop color="cyan" size={30} speed="idle" />
               <div>
                 <h1 className="font-display text-base font-black italic text-bey-ink leading-none">BEY ARENA</h1>
                 <span className="font-display text-[10px] font-bold tracking-[0.22em] text-bey-cyan">FAMILY LEAGUE</span>
@@ -822,7 +822,7 @@ const ChildHomeSummary = ({
 
       <div className="relative flex items-start gap-3 px-4 pb-3 pt-4 md:items-center md:px-5 md:pb-4 md:pt-5">
         <div className="flex-shrink-0" aria-hidden="true">
-          <BeyTop color={teamColor} size={56} speed="slow" />
+          <BeyTop color={teamColor} size={56} speed="idle" />
         </div>
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1">
@@ -1233,7 +1233,7 @@ const ScoreCard = ({ user, score, onAddPoints, onDeductPoints, onRedeem, canMana
 
       <div className="relative flex items-center gap-2.5 mb-2.5">
         <div className="flex-shrink-0" aria-hidden="true">
-          <BeyTop color={colorTheme} size={44} speed="slow" />
+          <BeyTop color={colorTheme} size={44} speed="idle" />
         </div>
         <div className="min-w-0">
           <h3 className="text-sm md:text-base font-bold text-bey-ink leading-tight truncate">

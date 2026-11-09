@@ -30,7 +30,7 @@ export const CloudLogin: React.FC = () => {
       <div className="w-full max-w-sm bg-bey-panel soft-card clip-notch p-5 md:p-6 relative z-10 animate-pop">
         <div className="flex items-center gap-3 mb-5">
           <div className="w-14 h-14 flex items-center justify-center flex-shrink-0">
-            <BeyTop color="cyan" size={52} speed="slow" />
+            <BeyTop color="cyan" size={52} speed="launch" />
           </div>
           <div>
             <p className="font-display text-[10px] font-bold tracking-[0.3em] text-bey-cyan">BLADER LOGIN</p>

@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { BeyForgeState, BeyPartSlot, User, UserRole } from '../types';
 import {
   BEY_PARTS,
@@ -8,6 +8,7 @@ import {
   getBeyPart,
 } from '../services/beyData';
 import {
+  DUPLICATE_SCRAP_REFUND,
   getAvailableBeyDraws,
   getBeyBuilds,
   getBeyChildProgress,
@@ -20,6 +21,7 @@ import {
 import { BeyTop } from './BeyTop';
 import { Button } from './ui/Button';
 import { Icons } from './Icons';
+import { prefersReducedMotion } from '../services/motion';
 
 interface BeyForgeProps {
   currentUser: User;
@@ -34,6 +36,11 @@ interface BeyForgeProps {
 
 const SLOTS: BeyPartSlot[] = ['BLADE', 'RATCHET', 'BIT'];
 
+/** 爐火蓄力到揭曉零件的時間。 */
+const FORGE_CHARGE_MS = 700;
+/** 組裝完成卡停留多久後收掉。 */
+const ASSEMBLE_SHOW_MS = 3200;
+
 /** 三圍的顯示設定；上限是三個零件各 5 分。 */
 const STAT_ROWS = [
   { key: 'attack' as const, label: '攻擊', color: 'bg-bey-red' },
@@ -42,15 +49,33 @@ const STAT_ROWS = [
 ];
 const STAT_MAX = 15;
 
-const StatBars: React.FC<{ attack: number; defense: number; stamina: number }> = ({ attack, defense, stamina }) => {
+const StatBars: React.FC<{
+  attack: number;
+  defense: number;
+  stamina: number;
+  /** 組裝完成時讓三條從 0 長到最終值。 */
+  grow?: boolean;
+}> = ({ attack, defense, stamina, grow = false }) => {
   const values = { attack, defense, stamina };
+  // 先畫成 0 再於下一格畫面交給 CSS transition，才看得到長出來的過程
+  const [grown, setGrown] = useState(!grow);
+
+  useEffect(() => {
+    if (!grow) return undefined;
+    const frameId = window.requestAnimationFrame(() => setGrown(true));
+    return () => window.cancelAnimationFrame(frameId);
+  }, [grow]);
+
   return (
     <div className="space-y-1.5">
       {STAT_ROWS.map((row) => (
         <div key={row.key} className="flex items-center gap-2">
           <span className="w-8 flex-shrink-0 text-[11px] font-normal text-bey-dim">{row.label}</span>
           <div className="h-2 flex-1 overflow-hidden rounded-full border border-bey-steel bg-bey-void/70">
-            <div className={`h-full rounded-full ${row.color}`} style={{ width: `${(values[row.key] / STAT_MAX) * 100}%` }} />
+            <div
+              className={`h-full rounded-full ${row.color} ${grow ? 'transition-[width] delay-[760ms] duration-700 ease-out' : ''}`}
+              style={{ width: grown ? `${(values[row.key] / STAT_MAX) * 100}%` : '0%' }}
+            />
           </div>
           <span className="w-5 flex-shrink-0 text-right text-[11px] font-bold tabular-nums text-bey-ink">{values[row.key]}</span>
         </div>
@@ -76,7 +101,25 @@ const ChildForgePanel: React.FC<{
   });
   const [buildName, setBuildName] = useState('');
   const [drawResult, setDrawResult] = useState<{ partId: string; isDuplicate: boolean } | null>(null);
+  const [isForging, setIsForging] = useState(false);
+  /** 剛組裝好的陀螺，只為了播一次動畫，不是資料來源。 */
+  const [forged, setForged] = useState<{
+    name: string;
+    bladeId: string;
+    ratchetId: string;
+    bitId: string;
+  } | null>(null);
   const [showForge, setShowForge] = useState(false);
+  const timeoutsRef = useRef<number[]>([]);
+
+  const schedule = (callback: () => void, delayMs: number) => {
+    timeoutsRef.current.push(window.setTimeout(callback, delayMs));
+  };
+
+  useEffect(() => () => {
+    timeoutsRef.current.forEach((timeoutId) => window.clearTimeout(timeoutId));
+    timeoutsRef.current = [];
+  }, []);
 
   const progress = getBeyChildProgress(forge, child.id);
   const draws = getAvailableBeyDraws(forge, child.id);
@@ -99,26 +142,61 @@ const ChildForgePanel: React.FC<{
   const accent = teamColor === 'purple' ? 'text-bey-purple' : 'text-bey-orange';
   const accentBorder = teamColor === 'purple' ? 'border-t-bey-purple' : 'border-t-bey-orange';
 
+  // 鋼料在點下去的那一刻就扣掉、零件也已入庫；動畫只延後「看到」，
+  // 這樣播放中關掉 App 也不會白白損失一次鍛造。
   const handleDraw = () => {
+    if (isForging) return;
     const result = onDrawPart(child.id);
-    if (result.partId) setDrawResult({ partId: result.partId, isDuplicate: result.isDuplicate });
+    if (!result.partId) return;
+    const revealed = { partId: result.partId, isDuplicate: result.isDuplicate };
+
+    if (prefersReducedMotion()) {
+      setDrawResult(revealed);
+      return;
+    }
+
+    setDrawResult(null);
+    setIsForging(true);
+    schedule(() => {
+      setIsForging(false);
+      setDrawResult(revealed);
+    }, FORGE_CHARGE_MS);
   };
 
   const handleAssemble = () => {
     if (!canAssemble) return;
-    onAssemble(child.id, buildName, selection.BLADE!, selection.RATCHET!, selection.BIT!);
+    const parts = { bladeId: selection.BLADE!, ratchetId: selection.RATCHET!, bitId: selection.BIT! };
+    onAssemble(child.id, buildName, parts.bladeId, parts.ratchetId, parts.bitId);
     setSelection({ BLADE: null, RATCHET: null, BIT: null });
-    setBuildName('');
     setShowForge(false);
+
+    if (!prefersReducedMotion()) {
+      // 名字的預設值要跟 assembleBey 一致，動畫上顯示的才是實際存下來的名字
+      setDrawResult(null);
+      setForged({ name: buildName.trim() || '無名陀螺', ...parts });
+      schedule(() => setForged(null), ASSEMBLE_SHOW_MS);
+    }
+    setBuildName('');
   };
 
   const drawnPart = drawResult ? getBeyPart(drawResult.partId) : null;
+  // 重複零件不給慶祝：不彈出、不閃光，只把退回的鋼料飄向進度條
+  const celebrate = Boolean(drawnPart) && !drawResult?.isDuplicate;
+  const isRarePart = celebrate && drawnPart?.rarity !== 'COMMON';
+  const forgedParts = forged
+    ? [forged.bladeId, forged.ratchetId, forged.bitId]
+      .map((partId) => getBeyPart(partId))
+      .filter((part): part is BeyPartDef => Boolean(part))
+    : [];
+  const forgedStats = forged
+    ? getBuildStats(forged.bladeId, forged.ratchetId, forged.bitId)
+    : { attack: 0, defense: 0, stamina: 0, total: 0 };
 
   return (
     <div className={`relative overflow-hidden bg-bey-panel soft-card clip-notch border-t-[3px] ${accentBorder} p-3 md:p-4`}>
       {/* 標題與鋼料進度 */}
       <div className="mb-3 flex items-center gap-2.5">
-        <BeyTop color={teamColor} size={40} speed="slow" />
+        <BeyTop color={teamColor} size={40} speed="idle" />
         <div className="min-w-0 flex-1">
           <h4 className="truncate text-sm font-bold text-bey-ink">
             <span aria-hidden="true">{child.avatar}</span> {child.name} 的工房
@@ -162,23 +240,65 @@ const ChildForgePanel: React.FC<{
         </Button>
       )}
 
+      {/* 鍛造中：爐心蓄力，看不出抽到什麼 */}
+      {isForging && (
+        <div
+          className="relative mt-3 flex items-center justify-center overflow-hidden rounded-xl border border-bey-cyan/40 bg-bey-void/70 p-4"
+          aria-hidden="true"
+        >
+          <div className="pointer-events-none absolute inset-0 speed-lines opacity-60" />
+          <div className="bey-charge relative flex items-center justify-center">
+            <span className="absolute h-14 w-14 rounded-full bg-bey-cyan/25 blur-md" />
+            <BeyTop size={52} color="cyan" speed="fast" className="relative opacity-70" />
+          </div>
+          <p className="relative ml-3 font-display text-[11px] font-bold tracking-[0.22em] text-bey-cyan">
+            FORGING…
+          </p>
+        </div>
+      )}
+
       {/* 抽取結果 */}
       {drawnPart && (
-        <div className="mt-3 flex items-center gap-3 rounded-xl border border-bey-steel bg-bey-void/50 p-2.5 animate-pop">
-          <BeyTop
-            size={44}
-            speed="fast"
-            bladeId={drawnPart.slot === 'BLADE' ? drawnPart.id : undefined}
-            ratchetId={drawnPart.slot === 'RATCHET' ? drawnPart.id : undefined}
-            bitId={drawnPart.slot === 'BIT' ? drawnPart.id : undefined}
-          />
+        <div
+          className={`relative mt-3 flex items-center gap-3 overflow-hidden rounded-xl border bg-bey-void/50 p-2.5 ${
+            isRarePart ? 'border-bey-yellow/60' : 'border-bey-steel'
+          } ${celebrate ? 'animate-pop' : ''}`}
+        >
+          {celebrate && (
+            <span className="bey-flash pointer-events-none absolute inset-0 bg-white" aria-hidden="true" />
+          )}
+          <div className="relative flex-shrink-0">
+            <BeyTop
+              size={44}
+              speed="fast"
+              bladeId={drawnPart.slot === 'BLADE' ? drawnPart.id : undefined}
+              ratchetId={drawnPart.slot === 'RATCHET' ? drawnPart.id : undefined}
+              bitId={drawnPart.slot === 'BIT' ? drawnPart.id : undefined}
+            />
+            {isRarePart && (
+              <span
+                className="bey-shockwave pointer-events-none absolute inset-0 rounded-full border-2 border-bey-yellow"
+                aria-hidden="true"
+              />
+            )}
+          </div>
           <div className="min-w-0 flex-1">
             <p className="text-sm font-bold text-bey-ink">{drawnPart.name}</p>
             <p className="text-[11px] font-normal text-bey-dim">
               {BEY_SLOT_LABELS[drawnPart.slot]}
-              {drawResult?.isDuplicate ? '・重複了，換到 +10 鋼料' : '・新零件入庫！'}
+              {drawResult?.isDuplicate
+                ? `・重複了，換到 +${DUPLICATE_SCRAP_REFUND} 鋼料`
+                : isRarePart ? '・稀有零件入庫！' : '・新零件入庫！'}
             </p>
           </div>
+          {drawResult?.isDuplicate && (
+            <span
+              className="bey-float-up pointer-events-none absolute left-14 top-2 text-[11px] font-bold text-bey-cyan"
+              aria-hidden="true"
+            >
+              +{DUPLICATE_SCRAP_REFUND}
+            </span>
+          )}
           <button
             type="button"
             onClick={() => setDrawResult(null)}
@@ -187,6 +307,51 @@ const ChildForgePanel: React.FC<{
           >
             <Icons.X size={16} />
           </button>
+        </div>
+      )}
+
+      {/* 組裝完成：三個零件依序飛入，到位後整台登場 */}
+      {forged && (
+        <div className="relative mt-3 overflow-hidden rounded-xl border border-bey-cyan/50 bg-bey-void/50 p-2.5">
+          <span
+            className="bey-flash pointer-events-none absolute inset-0 bg-white"
+            style={{ animationDelay: '0.48s' }}
+            aria-hidden="true"
+          />
+          <div className="relative flex items-center gap-3">
+            <div className="relative flex-shrink-0">
+              {/* 等三個零件都飛到位，整台才登場 */}
+              <span className="bey-assemble-in block" style={{ animationDelay: '0.46s' }}>
+                <BeyTop
+                  size={72}
+                  speed="fast"
+                  bladeId={forged.bladeId}
+                  ratchetId={forged.ratchetId}
+                  bitId={forged.bitId}
+                />
+              </span>
+              <span
+                className="bey-shockwave pointer-events-none absolute inset-0 rounded-full border-2 border-bey-cyan"
+                style={{ animationDelay: '0.86s' }}
+                aria-hidden="true"
+              />
+            </div>
+            <div className="min-w-0 flex-1">
+              <p className="truncate text-sm font-bold text-bey-ink">{forged.name} 組裝完成！</p>
+              <div className="mb-1.5 mt-1 flex flex-wrap gap-1">
+                {forgedParts.map((part, index) => (
+                  <span
+                    key={part.id}
+                    className="bey-part-fly inline-flex rounded-md bg-bey-cyan/15 px-1.5 py-0.5 text-[10px] font-bold text-bey-cyan"
+                    style={{ animationDelay: `${index * 0.16}s` }}
+                  >
+                    {part.name}
+                  </span>
+                ))}
+              </div>
+              <StatBars {...forgedStats} grow />
+            </div>
+          </div>
         </div>
       )}
 
@@ -307,7 +472,7 @@ const ChildForgePanel: React.FC<{
               const stats = getBuildStats(build.bladeId, build.ratchetId, build.bitId);
               return (
                 <div key={build.id} className="flex items-center gap-2.5 rounded-xl border border-bey-steel bg-bey-void/40 p-2.5">
-                  <BeyTop size={46} speed="slow" bladeId={build.bladeId} ratchetId={build.ratchetId} bitId={build.bitId} />
+                  <BeyTop size={46} speed="idle" bladeId={build.bladeId} ratchetId={build.ratchetId} bitId={build.bitId} />
                   <div className="min-w-0 flex-1">
                     <p className="truncate text-sm font-bold text-bey-ink">{build.name}</p>
                     <p className="text-[10px] font-normal text-bey-dim">

@@ -200,6 +200,25 @@ export const resolveBattle = (
   return { rounds, won: rounds.filter((round) => round.won).length >= 2 };
 };
 
+/**
+ * 先贏（或先輸）兩回合就定勝負，第三回合不影響結果。
+ * 演出與明細都只取到定勝負的那一回合為止，免得看起來還有變數。
+ */
+export const getDecidedRounds = (rounds: BeyBossRound[]): BeyBossRound[] => {
+  const decided: BeyBossRound[] = [];
+  let wins = 0;
+  let losses = 0;
+
+  for (const round of rounds) {
+    decided.push(round);
+    if (round.won) wins += 1;
+    else losses += 1;
+    if (wins >= 2 || losses >= 2) break;
+  }
+
+  return decided;
+};
+
 export interface ChallengeResult {
   state: BeyBossState;
   attempt: BeyBossAttempt | null;
