@@ -249,7 +249,7 @@ export const FamilyGarden: React.FC<FamilyGardenProps> = ({
           onClick={() => setShowAlbum((visible) => !visible)}
           aria-expanded={showAlbum}
           aria-label="植物圖鑑"
-          className="inline-flex min-h-10 flex-shrink-0 items-center gap-2 rounded-xl px-3 text-xs font-bold text-bey-cyan hover:bg-bey-cyan/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-bey-cyanDark"
+          className="inline-flex min-h-11 min-w-11 flex-shrink-0 items-center justify-center gap-2 rounded-xl px-3 text-xs font-bold text-bey-cyan hover:bg-bey-cyan/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-bey-cyanDark"
         >
           <Icons.BookOpen size={16} />
           <span className="hidden sm:inline">植物圖鑑</span>

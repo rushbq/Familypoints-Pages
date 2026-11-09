@@ -70,14 +70,14 @@ const StatBars: React.FC<{
     <div className="space-y-1.5">
       {STAT_ROWS.map((row) => (
         <div key={row.key} className="flex items-center gap-2">
-          <span className="w-8 flex-shrink-0 text-[11px] font-normal text-bey-dim">{row.label}</span>
+          <span className="w-8 flex-shrink-0 text-xs font-normal text-bey-dim">{row.label}</span>
           <div className="h-2 flex-1 overflow-hidden rounded-full border border-bey-steel bg-bey-void/70">
             <div
               className={`h-full rounded-full ${row.color} ${grow ? 'transition-[width] delay-[760ms] duration-700 ease-out' : ''}`}
               style={{ width: grown ? `${(values[row.key] / STAT_MAX) * 100}%` : '0%' }}
             />
           </div>
-          <span className="w-5 flex-shrink-0 text-right text-[11px] font-bold tabular-nums text-bey-ink">{values[row.key]}</span>
+          <span className="w-5 flex-shrink-0 text-right text-xs font-bold tabular-nums text-bey-ink">{values[row.key]}</span>
         </div>
       ))}
     </div>
@@ -110,6 +110,9 @@ const ChildForgePanel: React.FC<{
     bitId: string;
   } | null>(null);
   const [showForge, setShowForge] = useState(false);
+  // 零件庫預設收合：未取得的零件是一整片同樣的「？？？」，
+  // 攤開來佔掉最多版面，資訊量卻等於零。
+  const [showParts, setShowParts] = useState(false);
   const timeoutsRef = useRef<number[]>([]);
 
   const schedule = (callback: () => void, delayMs: number) => {
@@ -213,7 +216,7 @@ const ChildForgePanel: React.FC<{
       </div>
 
       <div className="mb-3">
-        <div className="mb-1 flex items-center justify-between text-[11px] font-bold">
+        <div className="mb-1 flex items-center justify-between text-xs font-bold">
           <span className="text-bey-dim">⚙️ 鋼料 {progress.earnedScrap}</span>
           <span className={accent}>{draws > 0 ? `可鍛造 ${draws} 次` : `還差 ${until} 鋼料`}</span>
         </div>
@@ -234,7 +237,7 @@ const ChildForgePanel: React.FC<{
 
       {canOperate && (
         <Button
-          variant="success"
+          variant="primary"
           size="sm"
           className="w-full"
           disabled={draws <= 0}
@@ -289,7 +292,7 @@ const ChildForgePanel: React.FC<{
           </div>
           <div className="min-w-0 flex-1">
             <p className="text-sm font-bold text-bey-ink">{drawnPart.name}</p>
-            <p className="text-[11px] font-normal text-bey-dim">
+            <p className="text-xs font-normal text-bey-dim">
               {BEY_SLOT_LABELS[drawnPart.slot]}
               {drawResult?.isDuplicate
                 ? `・重複了，換到 +${DUPLICATE_SCRAP_REFUND} 鋼料`
@@ -298,7 +301,7 @@ const ChildForgePanel: React.FC<{
           </div>
           {drawResult?.isDuplicate && (
             <span
-              className="bey-float-up pointer-events-none absolute left-14 top-2 text-[11px] font-bold text-bey-cyan"
+              className="bey-float-up pointer-events-none absolute left-14 top-2 text-xs font-bold text-bey-cyan"
               aria-hidden="true"
             >
               +{DUPLICATE_SCRAP_REFUND}
@@ -347,7 +350,7 @@ const ChildForgePanel: React.FC<{
                 {forgedParts.map((part, index) => (
                   <span
                     key={part.id}
-                    className="bey-part-fly inline-flex rounded-md bg-bey-cyan/15 px-1.5 py-0.5 text-[10px] font-bold text-bey-cyan"
+                    className="bey-part-fly inline-flex rounded-md bg-bey-cyan/15 px-1.5 py-0.5 text-xs font-bold text-bey-cyan"
                     style={{ animationDelay: `${index * 0.16}s` }}
                   >
                     {part.name}
@@ -360,8 +363,34 @@ const ChildForgePanel: React.FC<{
         </div>
       )}
 
-      {/* 零件庫：未取得顯示剪影 */}
-      <div className="mt-3 space-y-2">
+      {/* 零件庫：預設只給一行進度，點開才看剪影 */}
+      <div className="mt-3 border-t border-bey-steel pt-3">
+        <button
+          type="button"
+          onClick={() => setShowParts(!showParts)}
+          className="flex min-h-11 w-full items-center justify-between gap-2 text-left"
+          aria-expanded={showParts}
+        >
+          <span className="flex min-w-0 flex-wrap items-center gap-x-2.5 gap-y-1 text-xs font-bold text-bey-dim">
+            {SLOTS.map((slot) => {
+              const all = BEY_PARTS.filter((part) => part.slot === slot);
+              const got = all.filter((part) => ownedParts.some((item) => item.partId === part.id)).length;
+              return (
+                <span key={slot} className={got > 0 ? 'text-bey-ink' : undefined}>
+                  {BEY_SLOT_LABELS[slot]} {got}/{all.length}
+                </span>
+              );
+            })}
+          </span>
+          <Icons.ChevronDown
+            size={16}
+            className={`flex-shrink-0 text-bey-dim transition-transform ${showParts ? 'rotate-180' : ''}`}
+          />
+        </button>
+      </div>
+
+      {showParts && (
+      <div className="mt-2 space-y-2 animate-pop">
         {SLOTS.map((slot) => (
           <div key={slot}>
             <p className="mb-1 font-display text-[10px] font-bold tracking-[0.18em] text-bey-dim">
@@ -374,7 +403,7 @@ const ChildForgePanel: React.FC<{
                   <span
                     key={part.id}
                     title={owned ? `${part.name}（${BEY_SOURCE_LABELS[owned.source] ?? ''}）` : '尚未取得'}
-                    className={`inline-flex items-center rounded-md px-1.5 py-0.5 text-[10px] font-bold ${
+                    className={`inline-flex items-center rounded-md px-1.5 py-0.5 text-xs font-bold ${
                       owned
                         ? part.rarity === 'RARE'
                           ? 'bg-bey-yellow/20 text-bey-yellow'
@@ -390,6 +419,7 @@ const ChildForgePanel: React.FC<{
           </div>
         ))}
       </div>
+      )}
 
       {/* 鍛造台 */}
       {canOperate && (
@@ -397,7 +427,7 @@ const ChildForgePanel: React.FC<{
           <button
             type="button"
             onClick={() => setShowForge(!showForge)}
-            className="flex w-full items-center justify-between text-left"
+            className="flex min-h-11 w-full items-center justify-between text-left"
             aria-expanded={showForge}
           >
             <span className="font-display text-[10px] font-bold tracking-[0.2em] text-bey-dim">FORGE</span>
@@ -424,9 +454,9 @@ const ChildForgePanel: React.FC<{
 
               {SLOTS.map((slot) => (
                 <div key={slot} className="mb-2">
-                  <p className="mb-1 text-[11px] font-normal text-bey-dim">{BEY_SLOT_LABELS[slot]}</p>
+                  <p className="mb-1 text-xs font-normal text-bey-dim">{BEY_SLOT_LABELS[slot]}</p>
                   {ownedBySlot[slot].length === 0 ? (
-                    <p className="text-[11px] font-normal text-bey-dim/60">還沒有{BEY_SLOT_LABELS[slot]}，先去鍛造吧</p>
+                    <p className="text-xs font-normal text-bey-dim/60">還沒有{BEY_SLOT_LABELS[slot]}，先去鍛造吧</p>
                   ) : (
                     <div className="flex flex-wrap gap-1.5">
                       {ownedBySlot[slot].map((part: BeyPartDef) => (
@@ -437,7 +467,7 @@ const ChildForgePanel: React.FC<{
                             ...prev,
                             [slot]: prev[slot] === part.id ? null : part.id,
                           }))}
-                          className={`rounded-lg border px-2 py-1 text-[11px] font-bold transition-colors ${
+                          className={`min-h-11 rounded-lg border px-3 py-1.5 text-xs font-bold transition-colors ${
                             selection[slot] === part.id
                               ? 'border-bey-cyan bg-bey-cyan/20 text-bey-cyan'
                               : 'border-bey-steel bg-bey-paper text-bey-dim hover:text-bey-ink'
@@ -480,7 +510,7 @@ const ChildForgePanel: React.FC<{
                   <BeyTop size={46} speed="idle" bladeId={build.bladeId} ratchetId={build.ratchetId} bitId={build.bitId} />
                   <div className="min-w-0 flex-1">
                     <p className="truncate text-sm font-bold text-bey-ink">{build.name}</p>
-                    <p className="text-[10px] font-normal text-bey-dim">
+                    <p className="text-xs font-normal text-bey-dim">
                       攻 {stats.attack}・防 {stats.defense}・久 {stats.stamina}
                     </p>
                   </div>
@@ -489,7 +519,7 @@ const ChildForgePanel: React.FC<{
                     <button
                       type="button"
                       onClick={() => onDisassemble(build.id)}
-                      className="flex-shrink-0 rounded-lg px-1.5 py-1 text-bey-dim hover:text-bey-red"
+                      className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-lg text-bey-dim hover:text-bey-red"
                       aria-label={`拆掉 ${build.name}`}
                       title="拆掉（零件會留著）"
                     >
@@ -528,13 +558,13 @@ export const BeyForge: React.FC<BeyForgeProps> = ({
   return (
     <section aria-label="陀螺鍛造" className="space-y-3">
       <div className="flex items-center justify-between gap-2 px-1">
-        <p className="min-w-0 text-[11px] font-normal text-bey-dim">
+        <p className="min-w-0 text-xs font-normal text-bey-dim">
           家長加分會累積鋼料，集滿就能鍛造零件。
         </p>
         <button
           type="button"
           onClick={onShowRules}
-          className="flex min-h-8 flex-shrink-0 items-center gap-1 rounded-lg border border-bey-steel px-2.5 text-[11px] font-bold text-bey-dim transition-colors hover:border-bey-cyan/50 hover:text-bey-ink"
+          className="flex min-h-11 flex-shrink-0 items-center gap-1 rounded-lg border border-bey-steel px-3 text-xs font-bold text-bey-dim transition-colors hover:border-bey-cyan/50 hover:text-bey-ink"
         >
           <Icons.BookOpen size={13} /> 玩法說明
         </button>

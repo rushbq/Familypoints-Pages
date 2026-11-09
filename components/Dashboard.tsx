@@ -118,6 +118,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
   const visibleGoals = data.goalRewards.filter((goal) => visibleChildIds.has(goal.childId));
   const activeGoalReminders = visibleGoals.filter((goal) => isGoalWithinActiveWindow(goal, today));
   const pendingGoalReminders = visibleGoals.filter((goal) => isGoalPendingDecision(goal, today));
+  const hasGoalReminders = activeGoalReminders.length > 0 || pendingGoalReminders.length > 0;
 
   // 隊色輪替。青色是系統主色（作用中、確認、焦點），不拿來當隊色，
   // 否則孩子的識別會和「這是可以按的東西」混在一起。
@@ -125,6 +126,9 @@ export const Dashboard: React.FC<DashboardProps> = ({
 
   // --- 狀態：日期篩選器 (預設 7 天) ---
   const [daysFilter, setDaysFilter] = useState(7);
+
+  // --- 狀態：日誌的孩子篩選（'all' 或 childId），只有家長看得到兩個孩子 ---
+  const [childFilter, setChildFilter] = useState<string>('all');
 
   // --- 狀態：控制 ActionLogger (加扣分) 視窗 ---
   const [loggingAction, setIsLoggingAction] = useState<{childId: string, type: 'POSITIVE' | 'NEGATIVE'} | null>(null);
@@ -138,8 +142,13 @@ export const Dashboard: React.FC<DashboardProps> = ({
   // --- 狀態：玩法說明；規則很長，放 modal 不佔版面 ---
   const [showBeyRules, setShowBeyRules] = useState(false);
 
-  // --- 狀態：手機版雲端帳號展開 ---
-  const [showCloudInfo, setShowCloudInfo] = useState(false);
+  // --- 狀態：家長首頁的收集區預設收合 ---
+  // 工房／花園是孩子的事，家長首頁的任務是記分、判定目標、發卡。
+  // 攤開來家長得滑過兩個孩子的整個零件庫才看得到收藏卡。
+  const [showCollection, setShowCollection] = useState(false);
+
+  // --- 狀態：手機版帳號選單（切換角色／雲端帳號）---
+  const [showAccountMenu, setShowAccountMenu] = useState(false);
 
   // --- 狀態：獎勵卡兌換確認 ---
   const [rewardCardToRedeem, setRewardCardToRedeem] = useState<RewardCard | null>(null);
@@ -177,17 +186,26 @@ export const Dashboard: React.FC<DashboardProps> = ({
               />
             )}
 
-            {isParent && (
-              <ParentGoalReminderSection
-                goals={activeGoalReminders}
-                pendingGoals={pendingGoalReminders}
-                users={data.users}
-                discountCards={data.discountCards}
+            {/* 小孩專屬區塊：目標、卡片、本週進步都是「分數怎麼來的」，
+                要排在收集區前面。工房和花園是獎勵，不是這個 App 的主線。 */}
+            {!isParent && (
+              <ChildOverviewSection
+                currentUser={currentUser}
+                records={data.records}
+                scoreItems={data.scoreItems}
+                goalRewards={activeGoalReminders.filter((goal) => goal.childId === currentUser.id)}
+                rewardCards={data.rewardCards}
+                stampCards={data.stampCards}
               />
             )}
 
+            {/* 寬螢幕把目標提醒移到右側欄，計分卡才不會被拉成 600px 寬、
+                按鈕變成 500px 的長條。 */}
             {isParent && (
-              <div className={`grid gap-3 md:gap-4 ${visibleChildren.length === 1 ? 'grid-cols-1 max-w-xl mx-auto' : 'grid-cols-2'}`}>
+              <div className={`grid items-start gap-3 md:gap-4 ${
+                hasGoalReminders ? 'xl:grid-cols-[minmax(0,1fr)_21rem]' : ''
+              }`}>
+              <div className={`grid gap-3 md:gap-4 ${visibleChildren.length === 1 ? 'grid-cols-1 max-w-xl' : 'grid-cols-2'}`}>
                 {childScores.map((cs, idx) => (
                   <ScoreCard
                     key={cs.user.id}
@@ -202,10 +220,56 @@ export const Dashboard: React.FC<DashboardProps> = ({
                   />
                 ))}
               </div>
+
+              <ParentGoalReminderSection
+                goals={activeGoalReminders}
+                pendingGoals={pendingGoalReminders}
+                users={data.users}
+                discountCards={data.discountCards}
+              />
+              </div>
+            )}
+
+            {/* 家長專屬：獎勵卡與集點卡。放在收集區前面，家長的東西才連在一起。 */}
+            {isParent && (
+              <div className={`grid gap-3 md:gap-4 ${visibleChildren.length === 1 ? 'grid-cols-1 max-w-xl mx-auto' : 'grid-cols-1 md:grid-cols-2'}`}>
+                {childScores.map((cs) => (
+                  <FamilyCardsSection
+                    key={cs.user.id}
+                    childId={cs.user.id}
+                    childName={cs.user.name}
+                    rewardCards={data.rewardCards}
+                    stampCards={data.stampCards}
+                    isParent={isParent}
+                    onRedeemRewardCard={handleRedeemRewardCard}
+                  />
+                ))}
+              </div>
             )}
 
             {/* 兩條收集線改為頁簽，一次只顯示一個，陀螺工房為預設 */}
             <section aria-label="收集模組">
+              {isParent && (
+                <button
+                  type="button"
+                  onClick={() => setShowCollection((v) => !v)}
+                  aria-expanded={showCollection}
+                  className="mb-3 flex min-h-11 w-full items-center gap-2 rounded-xl border border-bey-steel bg-bey-panel px-3 text-left transition-colors hover:border-bey-cyan/40"
+                >
+                  <span className="text-base" aria-hidden="true">🌀</span>
+                  <span className="min-w-0 flex-1">
+                    <span className="block text-sm font-bold text-bey-ink">孩子的收集區</span>
+                    <span className="block text-xs font-normal text-bey-dim">陀螺工房・鈞佑花園・每週魔王</span>
+                  </span>
+                  <Icons.ChevronDown
+                    size={18}
+                    className={`flex-shrink-0 text-bey-dim transition-transform ${showCollection ? 'rotate-180' : ''}`}
+                  />
+                </button>
+              )}
+
+              {(!isParent || showCollection) && (
+              <>
               <div className="mb-3 flex gap-2" role="tablist" aria-label="切換收集模組">
                 <CollectionTab
                   active={collectionTab === 'forge'}
@@ -257,38 +321,11 @@ export const Dashboard: React.FC<DashboardProps> = ({
                   />
                 </div>
               )}
+              </>
+              )}
             </section>
 
-             {/* 家長專屬：獎勵卡與集點卡 */}
-             {isParent && (
-               <div className={`grid gap-3 md:gap-4 ${visibleChildren.length === 1 ? 'grid-cols-1 max-w-xl mx-auto' : 'grid-cols-2'}`}>
-                 {childScores.map((cs) => (
-                   <FamilyCardsSection
-                     key={cs.user.id}
-                     childId={cs.user.id}
-                     childName={cs.user.name}
-                     rewardCards={data.rewardCards}
-                     stampCards={data.stampCards}
-                     isParent={isParent}
-                     onRedeemRewardCard={handleRedeemRewardCard}
-                   />
-                 ))}
-               </div>
-             )}
-
              {/* 最近紀錄已移至「日誌」頁，首頁不再重複顯示 */}
-
-             {/* 小孩專屬區塊 */}
-             {!isParent && (
-                <ChildOverviewSection
-                  currentUser={currentUser}
-                  records={data.records}
-                  scoreItems={data.scoreItems}
-                  goalRewards={activeGoalReminders.filter((goal) => goal.childId === currentUser.id)}
-                  rewardCards={data.rewardCards}
-                  stampCards={data.stampCards}
-                />
-             )}
           </div>
         );
       case 'log': {
@@ -299,32 +336,58 @@ export const Dashboard: React.FC<DashboardProps> = ({
         // 小孩只能看到自己的紀錄
         if (!isParent) {
           filteredRecords = filteredRecords.filter(r => r.childId === currentUser.id);
+        } else if (childFilter !== 'all') {
+          filteredRecords = filteredRecords.filter(r => r.childId === childFilter);
         }
 
         return (
            <Card variant="paper" className="min-h-[320px]">
-             <div className="mb-2.5 flex items-center justify-between gap-2 border-b border-bey-steel pb-2.5">
+             <div className="mb-2.5 border-b border-bey-steel pb-2.5">
                 <div className="flex items-center gap-2">
                   <Icons.BookOpen className="text-bey-cyan" size={18} />
                   <div>
                     <h2 className="text-base font-black text-bey-ink md:text-lg">戰績日誌</h2>
-                    <p className="text-[10px] font-normal text-bey-dim">每筆加扣分依時間排列</p>
+                    <p className="text-xs font-normal text-bey-dim">依日期分組，每天一段</p>
                   </div>
                 </div>
-                
-                {/* 顯示範圍選擇器 */}
-                <div className="relative rounded-xl bg-bey-void/50 p-1">
-                   <select 
-                     value={daysFilter} 
-                     onChange={(e) => setDaysFilter(Number(e.target.value))}
-                     className="appearance-none rounded-lg border border-bey-steel bg-bey-paper py-1.5 pl-2.5 pr-8 text-xs font-bold text-bey-ink outline-none focus:border-bey-cyan [color-scheme:dark]"
-                   >
-                     <option value={7}>最近 7 天</option>
-                     <option value={14}>最近 14 天</option>
-                     <option value={30}>最近 30 天</option>
-                     <option value={9999}>全部紀錄</option>
-                   </select>
-                   <Icons.ChevronDown size={14} className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-bey-dim" />
+
+                <div className="mt-2.5 flex flex-wrap items-center gap-2">
+                  {/* 孩子篩選：家長才看得到兩個孩子，需要分開看 */}
+                  {isParent && allChildren.length > 1 && (
+                    <div className="flex gap-1" role="group" aria-label="篩選孩子">
+                      {[{ id: 'all', name: '全部' }, ...allChildren].map((option) => (
+                        <button
+                          key={option.id}
+                          type="button"
+                          onClick={() => setChildFilter(option.id)}
+                          aria-pressed={childFilter === option.id}
+                          className={`min-h-11 rounded-full border px-3 text-xs font-bold transition-colors ${
+                            childFilter === option.id
+                              ? 'border-bey-cyan bg-bey-cyan text-bey-void'
+                              : 'border-bey-steel bg-bey-paper text-bey-dim hover:text-bey-ink'
+                          }`}
+                        >
+                          {option.name}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* 顯示範圍選擇器 */}
+                  <div className="relative ml-auto">
+                     <select
+                       value={daysFilter}
+                       onChange={(e) => setDaysFilter(Number(e.target.value))}
+                       aria-label="顯示範圍"
+                       className="h-11 appearance-none rounded-xl border border-bey-steel bg-bey-paper pl-3 pr-8 text-xs font-bold text-bey-ink outline-none focus:border-bey-cyan [color-scheme:dark]"
+                     >
+                       <option value={7}>最近 7 天</option>
+                       <option value={14}>最近 14 天</option>
+                       <option value={30}>最近 30 天</option>
+                       <option value={9999}>全部紀錄</option>
+                     </select>
+                     <Icons.ChevronDown size={14} className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-bey-dim" />
+                  </div>
                 </div>
              </div>
 
@@ -528,13 +591,14 @@ export const Dashboard: React.FC<DashboardProps> = ({
             </div>
             <span className="sr-only">{currentUser.name}，{cloudEmail}</span>
           </div>
-          <div className={`grid gap-1 ${isParent ? 'grid-cols-2' : 'grid-cols-1'}`}>
+          {/* 側欄只有 80px 寬，兩欄會把每顆鈕擠成 30px；直向排各自佔滿 */}
+          <div className="grid grid-cols-1 gap-1">
             {/* 雲端帳號僅家長可見，避免小孩誤按登出 */}
             {isParent && (
               <button
                 type="button"
                 onClick={onCloudLogout}
-                className="flex min-h-10 items-center justify-center rounded-xl text-bey-dim transition-colors hover:bg-bey-paper hover:text-bey-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-bey-cyanDark"
+                className="flex min-h-11 items-center justify-center rounded-xl text-bey-dim transition-colors hover:bg-bey-paper hover:text-bey-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-bey-cyanDark"
                 aria-label="切換雲端帳號"
                 title="切換雲端帳號"
               >
@@ -544,7 +608,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
             <button
               type="button"
               onClick={onLogout}
-              className="flex min-h-10 items-center justify-center rounded-xl text-bey-dim transition-colors hover:bg-bey-paper hover:text-bey-cyan focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-bey-cyanDark"
+              className="flex min-h-11 items-center justify-center rounded-xl text-bey-dim transition-colors hover:bg-bey-paper hover:text-bey-cyan focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-bey-cyanDark"
               aria-label="切換家庭角色"
               title="切換家庭角色"
             >
@@ -565,35 +629,45 @@ export const Dashboard: React.FC<DashboardProps> = ({
                 <span className="font-display text-[10px] font-bold tracking-[0.22em] text-bey-cyan">FAMILY LEAGUE</span>
               </div>
             </div>
-            <div className="flex items-center gap-2">
-              {/* 雲端帳號按鈕：僅家長可見，避免小孩誤按 */}
-              {isParent && (
-                <button
-                  type="button"
-                  onClick={() => setShowCloudInfo(!showCloudInfo)}
-                  className="w-8 h-8 bg-bey-blue/20 rounded-full flex items-center justify-center text-sm"
-                  title="雲端帳號"
-                >
-                  ☁️
-                </button>
-              )}
-              <div className="w-8 h-8 bg-bey-paper rounded-full flex items-center justify-center border border-bey-steel text-base">{currentUser.avatar}</div>
-            </div>
-        </header>
-
-        {/* 手機版雲端帳號下拉面板 */}
-        {isParent && showCloudInfo && (
-          <div className="lg:hidden bg-bey-panel border-b border-bey-steel px-4 py-2.5 animate-pop z-20 relative">
-            <p className="text-xs font-normal text-bey-dim">☁️ 雲端帳號</p>
-            <p className="text-sm font-bold text-bey-ink break-all mb-3">{cloudEmail}</p>
+            {/* 帳號選單：切換角色是「動作」，不該和首頁／日誌並排在底部頁簽裡 */}
             <button
               type="button"
-              onClick={onCloudLogout}
-              className="w-full flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl bg-bey-red/10 text-bey-red text-sm font-bold hover:bg-bey-red/20 transition-colors"
+              onClick={() => setShowAccountMenu(!showAccountMenu)}
+              aria-expanded={showAccountMenu}
+              aria-label={`${currentUser.name}・帳號選單`}
+              className="flex h-11 w-11 items-center justify-center rounded-full border border-bey-steel bg-bey-paper text-base transition-colors hover:border-bey-cyan/40"
             >
-              <Icons.LogOut size={16} />
-              登出雲端帳號
+              <span aria-hidden="true">{currentUser.avatar}</span>
             </button>
+        </header>
+
+        {/* 手機版帳號下拉面板 */}
+        {showAccountMenu && (
+          <div className="lg:hidden bg-bey-panel border-b border-bey-steel px-4 py-3 animate-pop z-20 relative space-y-3">
+            <button
+              type="button"
+              onClick={() => { setShowAccountMenu(false); onLogout(); }}
+              className="flex min-h-11 w-full items-center justify-center gap-2 rounded-xl bg-bey-paper px-3 text-sm font-bold text-bey-ink transition-colors hover:bg-bey-deep"
+            >
+              <Icons.User size={16} />
+              切換家庭角色
+            </button>
+
+            {/* 雲端帳號僅家長可見，避免小孩誤按登出 */}
+            {isParent && (
+              <div className="border-t border-bey-steel pt-3">
+                <p className="text-xs font-normal text-bey-dim">☁️ 雲端帳號</p>
+                <p className="text-sm font-bold text-bey-ink break-all mb-2">{cloudEmail}</p>
+                <button
+                  type="button"
+                  onClick={onCloudLogout}
+                  className="flex min-h-11 w-full items-center justify-center gap-2 rounded-xl bg-bey-red/10 px-3 text-sm font-bold text-bey-red transition-colors hover:bg-bey-red/20"
+                >
+                  <Icons.LogOut size={16} />
+                  登出雲端帳號
+                </button>
+              </div>
+            )}
           </div>
         )}
 
@@ -625,12 +699,6 @@ export const Dashboard: React.FC<DashboardProps> = ({
               label="設定"
             />
           )}
-          <MobileNavItem
-            active={false}
-            onClick={onLogout}
-            icon={<Icons.User size={22} />}
-            label="切換角色"
-          />
         </div>
       </nav>
 
@@ -681,6 +749,8 @@ export const Dashboard: React.FC<DashboardProps> = ({
 };
 
 // --- 桌面版側欄按鈕元件 ---
+// 實心色塊只給作用中的那一顆：顏色在這個系統裡代表「現在在這裡」，
+// 三顆都上色的話 active 就只剩一圈看不見的 ring。
 const NavItem = ({ active, onClick, icon, label, bgColor, badge = 0 }: { active: boolean, onClick: () => void, icon: React.ReactNode, label: string, bgColor: string, badge?: number }) => (
   <button
     type="button"
@@ -689,18 +759,22 @@ const NavItem = ({ active, onClick, icon, label, bgColor, badge = 0 }: { active:
     aria-label={label}
     title={label}
     className={`group relative flex w-full justify-center rounded-xl p-2 transition-colors duration-200 ${
-      active
-        ? 'bg-bey-paper text-bey-ink ring-1 ring-bey-cyan/40'
-        : 'text-bey-dim hover:bg-bey-panel hover:text-bey-ink'
+      active ? 'bg-bey-paper' : 'hover:bg-bey-panel'
     }`}
   >
-    <div className={`flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl text-bey-void ${bgColor}`}>
+    <div
+      className={`flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl transition-colors ${
+        active
+          ? `${bgColor} text-bey-void`
+          : 'bg-bey-paper/60 text-bey-dim group-hover:bg-bey-paper group-hover:text-bey-ink'
+      }`}
+    >
       {icon}
     </div>
     <span className="sr-only">{label}</span>
     
     {badge > 0 && (
-        <div className="absolute right-2 top-1 flex h-5 w-5 items-center justify-center rounded-full border-2 border-bey-deep bg-bey-red text-xs font-bold text-white">
+        <div className="absolute right-2 top-1 flex h-5 w-5 items-center justify-center rounded-full border-2 border-bey-deep bg-bey-red text-xs font-bold text-bey-void">
             {badge}
         </div>
     )}
@@ -808,6 +882,7 @@ const ChildHomeSummary = ({
   const isHome = teamColor === 'purple';
   const accentText = isHome ? 'text-bey-purple' : 'text-bey-orange';
   const accentGlow = isHome ? 'glow-purple' : 'glow-orange';
+  const accentFill = isHome ? 'bg-bey-purple' : 'bg-bey-orange';
   const nextReward = rewardItems
     .filter((reward) => reward.points > score)
     .sort((a, b) => a.points - b.points)[0];
@@ -821,56 +896,71 @@ const ChildHomeSummary = ({
       <div className="pointer-events-none absolute inset-0 arena-rings opacity-70" aria-hidden="true" />
       <div className="pointer-events-none absolute inset-0 speed-lines opacity-40" aria-hidden="true" />
 
-      <div className="relative flex items-start gap-3 px-4 pb-3 pt-4 md:items-center md:px-5 md:pb-4 md:pt-5">
+      {/* 身分條：名字是說明，不是主角，所以壓在分數上面當標頭 */}
+      <div className="relative flex items-center gap-2.5 px-4 pb-1 pt-3.5 md:px-5">
         <div className="flex-shrink-0" aria-hidden="true">
-          <BeyTop color={teamColor} size={56} speed="idle" />
+          <BeyTop color={teamColor} size={40} speed="idle" />
         </div>
-        <div className="min-w-0 flex-1">
-          <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1">
-            <div>
-              <p className={`font-display text-[10px] font-bold tracking-[0.3em] ${accentText}`}>BLADER STATUS</p>
-              <h2 className="text-lg font-black leading-tight text-bey-ink">
-                <span aria-hidden="true">{currentUser.avatar}</span> {currentUser.name}
-              </h2>
-              <p className="mt-1 text-xs font-normal text-bey-dim">{getEncouragement(score)}</p>
-            </div>
-            <div className="flex items-baseline gap-1">
-              <span className={`text-4xl font-bold italic leading-none tabular-nums ${accentText} ${accentGlow}`}>{score}</span>
-              <span className="font-display text-[10px] font-bold tracking-widest text-bey-dim">PTS</span>
-            </div>
-          </div>
+        <div className="min-w-0">
+          <p className={`font-display text-[10px] font-bold tracking-[0.3em] ${accentText}`}>BLADER STATUS</p>
+          <h2 className="truncate text-base font-bold leading-tight text-bey-ink">
+            <span aria-hidden="true">{currentUser.avatar}</span> {currentUser.name}
+          </h2>
         </div>
       </div>
 
-      <div className="relative border-t border-bey-steel px-4 py-3 md:flex md:items-center md:gap-4 md:px-5">
-        <div className="min-w-0 flex-1">
-          <div className="flex items-center justify-between gap-3 text-xs font-bold">
-            <span className="truncate text-bey-ink">
-              {nextReward
-                ? `下一個：${nextReward.icon || '🎁'} ${nextRewardLabel}`
-                : affordableRewardCount > 0
-                  ? `已有 ${affordableRewardCount} 個獎勵可以兌換`
-                  : '繼續累積，就能兌換第一個獎勵'}
+      {/* 積分：整個畫面最大的東西就該是它，這是一個積分 App */}
+      <div className="relative px-4 pb-4 pt-1 text-center md:px-5">
+        <div className="flex items-baseline justify-center gap-2">
+          <span className={`text-6xl font-bold italic leading-none tabular-nums md:text-7xl ${accentText} ${accentGlow}`}>
+            {score}
+          </span>
+          <span className="font-display text-xs font-bold tracking-widest text-bey-dim">PTS</span>
+        </div>
+        <p className="mt-2 text-xs font-normal text-bey-dim">{getEncouragement(score)}</p>
+      </div>
+
+      {/* 下一個獎勵的進度 */}
+      <div className="relative border-t border-bey-steel px-4 py-3 md:px-5">
+        <div className="flex items-center justify-between gap-3 text-xs font-bold">
+          <span className="truncate text-bey-ink">
+            {nextReward
+              ? `下一個：${nextReward.icon || '🎁'} ${nextRewardLabel}`
+              : affordableRewardCount > 0
+                ? `已有 ${affordableRewardCount} 個獎勵可以兌換`
+                : '繼續累積，就能兌換第一個獎勵'}
+          </span>
+          {nextReward && (
+            <span className="flex-shrink-0 tabular-nums text-bey-dim">
+              {score} / {nextReward.points}
             </span>
-            {nextReward && <span className="flex-shrink-0 text-bey-orange">還差 {nextReward.points - score} 分</span>}
-          </div>
-          <div
-            className="mt-2 h-2 overflow-hidden rounded-full bg-bey-void/70 border border-bey-steel"
-            role="progressbar"
-            aria-label="下一個獎勵的積分進度"
-            aria-valuemin={0}
-            aria-valuemax={nextReward?.points ?? Math.max(score, 1)}
-            aria-valuenow={Math.min(score, nextReward?.points ?? score)}
-          >
-            <div className="h-full rounded-full bg-gradient-to-r from-bey-cyan to-bey-lime" style={{ width: `${rewardProgress}%` }} />
-          </div>
+          )}
         </div>
-        <div className="mt-3 flex items-center gap-2 md:mt-0">
-          <span className="text-xs font-bold text-bey-lime">5 折卡 {availableDiscountCardCount} 張</span>
-          <Button size="sm" variant="reward" onClick={onRedeem} icon={<Icons.Gift size={15} />}>
-            兌換獎勵
-          </Button>
+        {/* 軌道做厚一點、邊框留著：0 分時整條進度條不能消失不見 */}
+        <div
+          className="mt-2 h-2.5 overflow-hidden rounded-full border border-bey-steel bg-bey-void"
+          role="progressbar"
+          aria-label="下一個獎勵的積分進度"
+          aria-valuemin={0}
+          aria-valuemax={nextReward?.points ?? Math.max(score, 1)}
+          aria-valuenow={Math.min(score, nextReward?.points ?? score)}
+        >
+          <div className={`h-full rounded-full ${accentFill}`} style={{ width: `${rewardProgress}%` }} />
         </div>
+        {nextReward && (
+          <p className="mt-1.5 text-xs font-normal text-bey-dim">
+            還差 <span className="font-bold text-bey-ink">{nextReward.points - score}</span> 分
+          </p>
+        )}
+      </div>
+
+      <div className="relative flex items-center justify-between gap-2 border-t border-bey-steel px-4 py-2.5 md:px-5">
+        <span className={`text-xs font-bold ${availableDiscountCardCount > 0 ? 'text-bey-ink' : 'text-bey-dim'}`}>
+          🎟️ 5 折卡 {availableDiscountCardCount} 張
+        </span>
+        <Button size="sm" variant="reward" onClick={onRedeem} icon={<Icons.Gift size={15} />}>
+          兌換獎勵
+        </Button>
       </div>
     </section>
   );
@@ -905,20 +995,22 @@ const ParentGoalReminderSection = ({
         }`}
       >
         <div className="flex flex-wrap items-center gap-1.5 mb-1.5">
-          <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-bey-blue/10 text-bey-blue">
+          <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-bey-paper text-bey-dim">
             {child?.name ?? '未指定孩子'}
           </span>
-          <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-bey-yellow/25 text-bey-orange">
+          <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${
+            tone === 'pending' ? 'bg-bey-red/15 text-bey-red' : 'bg-bey-cyan/15 text-bey-cyan'
+          }`}>
             {tone === 'pending' ? '待判定' : '進行中'}
           </span>
           {hasIssuedCard && (
-            <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-bey-lime/20 text-bey-lime">
+            <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-bey-lime/20 text-bey-lime">
               已發卡
             </span>
           )}
         </div>
         <p className="font-bold text-sm text-bey-ink leading-snug">{goal.targetText}</p>
-        <p className="text-[10px] font-normal text-bey-dim mt-1">{formatGoalDateRange(goal)}</p>
+        <p className="text-xs font-normal text-bey-dim mt-1">{formatGoalDateRange(goal)}</p>
       </div>
     );
   };
@@ -928,7 +1020,7 @@ const ParentGoalReminderSection = ({
       <div className="flex items-center mb-3 gap-2">
         <div className="w-8 h-8 bg-bey-orange/15 rounded-lg text-bey-orange flex items-center justify-center"><Icons.Calendar size={17} /></div>
         <h3 className="text-base font-black text-bey-ink">目標提醒</h3>
-        <div className="ml-auto flex gap-1.5 text-[10px] font-bold">
+        <div className="ml-auto flex gap-1.5 text-xs font-bold">
           {pendingGoals.length > 0 && <span className="px-2 py-1 rounded-full bg-bey-red/10 text-bey-red">待判定 {pendingGoals.length}</span>}
           {goals.length > 0 && <span className="px-2 py-1 rounded-full bg-bey-cyan/10 text-bey-cyan">進行中 {goals.length}</span>}
         </div>
@@ -1014,16 +1106,16 @@ const ChildOverviewSection = ({ currentUser, records, scoreItems, goalRewards, r
             <h3 className="text-sm font-bold text-bey-ink md:text-base">這週的進步</h3>
           </div>
           <div className="grid grid-cols-3 gap-2">
-            <div className="rounded-xl bg-bey-cyan/10 p-2 text-center">
-              <div className="text-xl font-black text-bey-cyan">{weekPositive.length}</div>
+            <div className="rounded-xl bg-bey-lime/10 p-2 text-center">
+              <div className="text-xl font-black text-bey-lime">{weekPositive.length}</div>
               <div className="text-xs font-normal text-bey-dim">加分</div>
             </div>
             <div className="rounded-xl bg-bey-red/10 p-2 text-center">
               <div className="text-xl font-black text-bey-red">{weekNegative.length}</div>
               <div className="text-xs font-normal text-bey-dim">扣分</div>
             </div>
-            <div className={`${weekNet >= 0 ? 'bg-bey-blue/10' : 'bg-bey-orange/10'} rounded-xl p-2 text-center`}>
-              <div className={`text-xl font-black ${weekNet >= 0 ? 'text-bey-blue' : 'text-bey-orange'}`}>
+            <div className={`${weekNet >= 0 ? 'bg-bey-lime/10' : 'bg-bey-red/10'} rounded-xl p-2 text-center`}>
+              <div className={`text-xl font-black ${weekNet >= 0 ? 'text-bey-lime' : 'text-bey-red'}`}>
                 {weekNet >= 0 ? '+' : ''}{weekNet}
               </div>
               <div className="text-xs font-normal text-bey-dim">淨得分</div>
@@ -1036,7 +1128,7 @@ const ChildOverviewSection = ({ currentUser, records, scoreItems, goalRewards, r
         <button
           type="button"
           onClick={() => setShowGuide((v) => !v)}
-          className="w-full flex items-center gap-2"
+          className="flex min-h-11 w-full items-center gap-2"
           aria-expanded={showGuide}
         >
           <div className="w-7 h-7 bg-bey-cyan/15 rounded-lg text-bey-cyan flex items-center justify-center"><Icons.BookOpen size={15} /></div>
@@ -1106,13 +1198,14 @@ const FamilyCardsSection = ({
                 {isParent ? (
                     <button
                       type="button"
-                      className="mt-2 min-h-8 w-full rounded-lg bg-bey-yellow px-2 text-xs font-bold text-bey-void hover:brightness-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-bey-yellow"
+                      className="mt-2 min-h-11 w-full rounded-lg bg-bey-yellow px-2 text-xs font-bold text-bey-void hover:brightness-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-bey-yellow"
                       onClick={() => onRedeemRewardCard?.(card)}
                     >
                       兌換這份獎勵
                     </button>
                   ) : (
-                    <span className="mt-2 block rounded-lg bg-bey-paper px-2 py-1.5 text-center text-xs font-bold text-bey-yellow">
+                    <span className="mt-2 flex items-center justify-center gap-1 text-xs font-normal text-bey-dim">
+                      <Icons.Lock size={12} aria-hidden="true" />
                       請爸媽協助兌換
                     </span>
                   )}
@@ -1148,7 +1241,7 @@ const StampCardRow = ({ card }: { card: StampCard }) => {
           <p className="text-xs font-bold text-bey-ink leading-tight break-words">{card.title}</p>
           <p className="truncate text-xs font-normal text-bey-dim">{card.rewardIcon || '🎁'} {card.rewardLabel}</p>
         </div>
-        <span className={`flex-shrink-0 rounded-full px-2 py-0.5 text-xs font-bold ${complete ? 'bg-bey-orange text-white' : 'bg-bey-paper text-bey-dim'}`}>
+        <span className={`flex-shrink-0 rounded-full px-2 py-0.5 text-xs font-bold ${complete ? 'bg-bey-orange text-bey-void' : 'bg-bey-paper text-bey-dim'}`}>
           {filled}/{card.targetStamps}
         </span>
       </div>
@@ -1240,8 +1333,8 @@ const ScoreCard = ({ user, score, onAddPoints, onDeductPoints, onRedeem, canMana
           <h3 className="text-sm md:text-base font-bold text-bey-ink leading-tight truncate">
             <span aria-hidden="true">{user.avatar}</span> {user.name}
           </h3>
-          <span className="text-xs font-bold text-bey-lime">
-            5 折卡 {availableDiscountCardCount} 張
+          <span className={`text-xs font-bold ${availableDiscountCardCount > 0 ? 'text-bey-ink' : 'text-bey-dim'}`}>
+            🎟️ 5 折卡 {availableDiscountCardCount} 張
           </span>
         </div>
       </div>
@@ -1251,21 +1344,30 @@ const ScoreCard = ({ user, score, onAddPoints, onDeductPoints, onRedeem, canMana
         <span className="font-display text-[10px] font-bold tracking-widest text-bey-dim">PTS</span>
       </div>
 
-      <div className={`relative grid gap-1.5 ${canManageScoreActions ? 'grid-cols-2' : 'grid-cols-1'}`}>
+      {/* 日常操作九成是加分，所以加分獨佔一列當主角；
+          扣分降成外框紅字，少用、也不該和加分一樣大聲。 */}
+      {/* 兩張卡並排時每張只有約 155px，三顆鈕擠一排會把文字折成三行，
+          所以手機直接直向堆疊，md 以上才排成兩欄。 */}
+      <div className="relative grid grid-cols-1 gap-1.5 md:grid-cols-2">
         {canManageScoreActions && (
-          <>
-            <Button size="sm" className="col-span-1 px-2" variant="success" onClick={onAddPoints}>
-              ＋ 加分
-            </Button>
-            <Button size="sm" className="col-span-1 px-2" variant="danger" onClick={onDeductPoints}>
-              − 扣分
-            </Button>
-          </>
+          <Button variant="success" className="md:col-span-2" onClick={onAddPoints}>
+            ＋ 加分
+          </Button>
+        )}
+        {canManageScoreActions && (
+          <Button
+            size="sm"
+            variant="outline"
+            className="px-2 text-bey-red hover:border-bey-red/50 hover:text-bey-red"
+            onClick={onDeductPoints}
+          >
+            − 扣分
+          </Button>
         )}
         <Button
           size="sm"
           variant="reward"
-          className={`${canManageScoreActions ? 'col-span-2' : 'col-span-1'} px-3 text-xs`}
+          className={`px-3 text-xs ${canManageScoreActions ? '' : 'md:col-span-2'}`}
           onClick={onRedeem}
           icon={<Icons.Gift size={14} />}
         >

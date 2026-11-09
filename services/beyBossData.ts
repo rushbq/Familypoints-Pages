@@ -14,8 +14,10 @@ export interface BeyBossDef {
   rewardPartId: string;
 }
 
-const CRIMSON: BeyColorSet = { main: '#FF2F6D', deep: '#8E0F33' };
-const ABYSS: BeyColorSet = { main: '#7B6CFF', deep: '#3A2E8C' };
+// main 同時用在魔王的 SVG 和「WEEKLY BOSS」標籤上，所以要撐得住
+// bey-panel 上 4.5:1；原本的 #FF2F6D 是 4.48、#7B6CFF 是 4.14，都差一點。
+const CRIMSON: BeyColorSet = { main: '#FF5C8A', deep: '#8E0F33' };
+const ABYSS: BeyColorSet = { main: '#9B8FFF', deep: '#3A2E8C' };
 const EMBER: BeyColorSet = { main: '#FFB300', deep: '#A86B00' };
 const FROST: BeyColorSet = { main: '#8FE9FF', deep: '#2A7F99' };
 

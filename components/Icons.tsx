@@ -45,6 +45,7 @@ import {
   Award,
   Camera,
   ImageOff,
+  Lock,
   Sparkles
 } from 'lucide-react';
 
@@ -95,5 +96,6 @@ export const Icons = {
   Award,
   Camera,
   ImageOff,
+  Lock,
   Sparkles
 };

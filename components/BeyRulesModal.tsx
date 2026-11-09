@@ -15,7 +15,7 @@ interface BeyRulesModalProps {
 /** 一條規則：左邊編號、右邊白話說明。 */
 const Rule: React.FC<{ n: number; title: string; children: React.ReactNode }> = ({ n, title, children }) => (
   <li className="flex gap-2.5">
-    <span className="mt-0.5 flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full bg-bey-cyan/20 text-[11px] font-bold text-bey-cyan">
+    <span className="mt-0.5 flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full bg-bey-cyan/20 text-xs font-bold text-bey-cyan">
       {n}
     </span>
     <div className="min-w-0">
@@ -52,7 +52,7 @@ export const BeyRulesModal: React.FC<BeyRulesModalProps> = ({ isOpen, onClose })
           <button
             type="button"
             onClick={onClose}
-            className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg text-bey-dim hover:text-bey-ink"
+            className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-lg text-bey-dim hover:text-bey-ink"
             aria-label="關閉說明"
           >
             <Icons.X size={18} />

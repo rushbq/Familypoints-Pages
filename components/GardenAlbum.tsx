@@ -158,7 +158,7 @@ export const GardenAlbum: React.FC<GardenAlbumProps> = ({
             value={searchQuery}
             onChange={(event) => setSearchQuery(event.target.value)}
             placeholder="搜尋植物名稱"
-            className="min-h-10 w-full rounded-xl border border-bey-ink/10 bg-bey-paper py-2 pl-9 pr-3 text-sm font-bold text-bey-ink outline-none placeholder:text-bey-dim focus:border-bey-cyanDark focus:ring-2 focus:ring-bey-cyan/20"
+            className="min-h-11 w-full rounded-xl border border-bey-ink/10 bg-bey-paper py-2 pl-9 pr-3 text-sm font-bold text-bey-ink outline-none placeholder:text-bey-dim focus:border-bey-cyanDark focus:ring-2 focus:ring-bey-cyan/20"
           />
         </label>
         <label className="relative flex-shrink-0">
@@ -166,7 +166,7 @@ export const GardenAlbum: React.FC<GardenAlbumProps> = ({
           <select
             value={collectionFilter}
             onChange={(event) => setCollectionFilter(event.target.value as typeof collectionFilter)}
-            className="min-h-10 appearance-none rounded-xl border border-bey-ink/10 bg-bey-paper py-2 pl-3 pr-8 text-xs font-bold text-bey-ink outline-none focus:border-bey-cyanDark focus:ring-2 focus:ring-bey-cyan/20"
+            className="min-h-11 appearance-none rounded-xl border border-bey-ink/10 bg-bey-paper py-2 pl-3 pr-8 text-xs font-bold text-bey-ink outline-none focus:border-bey-cyanDark focus:ring-2 focus:ring-bey-cyan/20"
           >
             <option value="all">全部</option>
             <option value="collected">已收集</option>
@@ -189,12 +189,12 @@ export const GardenAlbum: React.FC<GardenAlbumProps> = ({
               onClick={() => setSelectedSpeciesId(species.id)}
               className={`min-h-14 rounded-xl px-3 py-2 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-bey-cyanDark ${
                 selected
-                  ? 'bg-bey-cyanDark text-white'
+                  ? 'bg-bey-cyanDark text-bey-void'
                   : 'bg-bey-deep/75 text-bey-ink hover:bg-bey-cyan/15'
               }`}
             >
               <span className="block text-xs font-bold">{species.commonName}</span>
-              <span className={`block text-xs font-bold ${selected ? 'text-white' : 'text-bey-dim'}`}>
+              <span className={`block text-xs font-bold ${selected ? 'text-bey-void' : 'text-bey-dim'}`}>
                 {count > 0 ? `開花 ${count} 次` : '尚未收集'}
               </span>
             </button>
@@ -220,7 +220,7 @@ export const GardenAlbum: React.FC<GardenAlbumProps> = ({
             <button
               type="button"
               onClick={() => setPhotoSpecies(selectedSpecies)}
-              className="mt-1 flex min-h-10 w-full items-center justify-center gap-1.5 rounded-xl bg-bey-paper px-3 text-xs font-bold text-bey-cyan soft-card transition-transform hover:bg-bey-cyan/10 active:translate-y-[2px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-bey-cyanDark"
+              className="mt-1 flex min-h-11 w-full items-center justify-center gap-1.5 rounded-xl bg-bey-paper px-3 text-xs font-bold text-bey-cyan soft-card transition-transform hover:bg-bey-cyan/10 active:translate-y-[2px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-bey-cyanDark"
             >
               <Icons.Camera size={15} />
               看真實照片
@@ -274,7 +274,7 @@ export const GardenAlbum: React.FC<GardenAlbumProps> = ({
                 target="_blank"
                 rel="noreferrer"
                 aria-label={`查看 ${selectedSpecies.commonName} 的 Kew Science 資料來源`}
-                className="ml-auto inline-flex min-h-8 items-center rounded-lg px-2 text-xs font-normal text-bey-dim hover:bg-bey-paper hover:text-bey-cyan focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-bey-cyanDark"
+                className="ml-auto inline-flex min-h-11 items-center rounded-lg px-2 text-xs font-normal text-bey-dim hover:bg-bey-paper hover:text-bey-cyan focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-bey-cyanDark"
               >
                 Kew Science ↗
               </a>

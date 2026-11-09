@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { ScoreCategory, ScoreItem, ScoreType } from '../types';
 import { Icons } from './Icons';
 import { Button } from './ui/Button';
-import { SCORE_CATEGORY_OPTIONS, getScoreCategoryChipClassName } from '../services/familyUtils';
+import { SCORE_CATEGORY_OPTIONS } from '../services/familyUtils';
 
 interface ActionLoggerProps {
   isOpen: boolean;
@@ -19,7 +19,7 @@ export const ActionLogger: React.FC<ActionLoggerProps> = ({ isOpen, onClose, onS
   const [selectedItemId, setSelectedItemId] = useState<string | null>(null);
   const [note, setNote] = useState('');
   const [customPoints, setCustomPoints] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState<ScoreCategory>(ScoreCategory.ACADEMIC);
+  const [selectedCategory, setSelectedCategory] = useState<ScoreCategory>(ScoreCategory.DAILY);
 
   useEffect(() => {
     setSelectedItemId(null);
@@ -31,8 +31,18 @@ export const ActionLogger: React.FC<ActionLoggerProps> = ({ isOpen, onClose, onS
     setSelectedItemId(null);
     setNote('');
     setCustomPoints('');
-    setSelectedCategory(ScoreCategory.ACADEMIC);
+    setSelectedCategory(ScoreCategory.DAILY);
   }, [isOpen, type]);
+
+  // Esc 關閉，和 BeyRulesModal／GardenAlbum 同一套行為。
+  useEffect(() => {
+    if (!isOpen) return;
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') onClose();
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isOpen, onClose]);
 
   if (!isOpen) return null;
 
@@ -58,12 +68,21 @@ export const ActionLogger: React.FC<ActionLoggerProps> = ({ isOpen, onClose, onS
   const isPositive = type === 'POSITIVE';
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 bg-bey-void/80 animate-pop">
+    <div
+      role="dialog"
+      aria-modal="true"
+      aria-label={`${isPositive ? '優良事項（加分）' : '違規記錄（扣分）'}：${targetChildName}`}
+      className="fixed inset-0 z-50 flex items-center justify-center p-3 bg-bey-void/80 animate-pop"
+      onClick={onClose}
+    >
       {/* Container looks like the Nook Stop Machine screen */}
-      <div className="bg-bey-paper rounded-2xl w-full max-w-3xl soft-card overflow-hidden flex flex-col max-h-[94vh] relative">
+      <div
+        className="bg-bey-paper rounded-2xl w-full max-w-3xl soft-card overflow-hidden flex flex-col max-h-[94vh] relative"
+        onClick={(event) => event.stopPropagation()}
+      >
         
         {/* Header */}
-        <div className={`px-4 py-3 flex justify-between items-center ${isPositive ? 'bg-bey-cyan text-bey-void' : 'bg-bey-red text-white'}`}>
+        <div className={`px-4 py-3 flex justify-between items-center ${isPositive ? 'bg-bey-lime text-bey-void' : 'bg-bey-red text-bey-void'}`}>
           <div className="flex items-center gap-2.5">
              <div className="bg-bey-paper/20 p-2 rounded-full">
                 {isPositive ? <Icons.Smile size={20} /> : <Icons.Frown size={20} />}
@@ -75,7 +94,7 @@ export const ActionLogger: React.FC<ActionLoggerProps> = ({ isOpen, onClose, onS
                 <p className="font-bold opacity-80 text-xs">對象：{targetChildName}</p>
              </div>
           </div>
-          <button onClick={onClose} className="bg-bey-paper/20 hover:bg-bey-paper/35 p-2 rounded-lg transition-colors">
+          <button onClick={onClose} aria-label="關閉" className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-lg bg-bey-paper/20 transition-colors hover:bg-bey-paper/35">
             <Icons.X size={20} strokeWidth={3} />
           </button>
         </div>
@@ -95,9 +114,10 @@ export const ActionLogger: React.FC<ActionLoggerProps> = ({ isOpen, onClose, onS
                     key={option.value}
                     type="button"
                     onClick={() => setSelectedCategory(option.value)}
-                    className={`px-3 py-1.5 rounded-full border text-xs font-bold transition-colors ${
+                    aria-pressed={isActive}
+                    className={`min-h-11 rounded-full border px-4 text-xs font-bold transition-colors ${
                       isActive
-                        ? getScoreCategoryChipClassName(option.value)
+                        ? 'bg-bey-cyan text-bey-void border-bey-cyan'
                         : 'bg-bey-paper text-bey-dim border-bey-steel hover:text-bey-ink hover:border-bey-ink/20'
                     }`}
                   >
@@ -116,13 +136,13 @@ export const ActionLogger: React.FC<ActionLoggerProps> = ({ isOpen, onClose, onS
                 className={`relative group flex flex-col items-center justify-between p-2.5 rounded-xl border-b-[3px] transition-all duration-150 active:border-b-0 active:translate-y-[3px] min-h-[7rem] ${
                   selectedItemId === item.id
                     ? isPositive 
-                        ? 'bg-bey-paper border-bey-cyan ring-2 ring-bey-cyan/25'
+                        ? 'bg-bey-paper border-bey-lime ring-2 ring-bey-lime/25'
                         : 'bg-bey-paper border-bey-red ring-2 ring-bey-red/25'
                     : 'bg-bey-paper border-bey-ink/10 hover:border-bey-ink/20'
                 }`}
               >
                 {/* Points Badge */}
-                <div className={`absolute top-1.5 right-1.5 px-2 py-0.5 rounded-full font-bold text-[10px] ${isPositive ? 'bg-bey-cyan text-bey-void' : 'bg-bey-red text-white'}`}>
+                <div className={`absolute top-1.5 right-1.5 px-2 py-0.5 rounded-full font-bold text-xs ${isPositive ? 'bg-bey-lime text-bey-void' : 'bg-bey-red text-bey-void'}`}>
                     {isPositive ? '+' : '-'}{item.points}
                 </div>
 
@@ -135,7 +155,7 @@ export const ActionLogger: React.FC<ActionLoggerProps> = ({ isOpen, onClose, onS
                 </span>
 
                 {selectedItemId === item.id && (
-                    <div className="absolute bottom-1 left-1 text-bey-cyan text-[10px] font-bold">
+                    <div className={`absolute bottom-1 left-1 text-xs font-bold ${isPositive ? 'text-bey-lime' : 'text-bey-red'}`}>
                         ✓
                     </div>
                 )}
@@ -148,7 +168,7 @@ export const ActionLogger: React.FC<ActionLoggerProps> = ({ isOpen, onClose, onS
               className={`relative group flex flex-col items-center justify-between p-2.5 rounded-xl border-b-[3px] transition-all duration-150 active:border-b-0 active:translate-y-[3px] min-h-[7rem] border-dashed ${
                 isCustom
                   ? isPositive
-                      ? 'bg-bey-paper border-bey-cyan ring-2 ring-bey-cyan/25'
+                      ? 'bg-bey-paper border-bey-lime ring-2 ring-bey-lime/25'
                       : 'bg-bey-paper border-bey-red ring-2 ring-bey-red/25'
                   : 'bg-bey-paper/60 border-bey-ink/20 hover:border-bey-ink/30'
               }`}
@@ -160,7 +180,7 @@ export const ActionLogger: React.FC<ActionLoggerProps> = ({ isOpen, onClose, onS
                   其它
               </span>
               {isCustom && (
-                  <div className="absolute bottom-1 left-1 text-bey-cyan text-[10px] font-bold">
+                  <div className={`absolute bottom-1 left-1 text-xs font-bold ${isPositive ? 'text-bey-lime' : 'text-bey-red'}`}>
                       ✓
                   </div>
               )}

@@ -585,7 +585,7 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
                       type="button"
                       onClick={() => setActiveTab(tab.key)}
                       aria-current={selected ? 'page' : undefined}
-                      className={`flex min-h-10 w-full items-center gap-2 rounded-xl px-3 text-left text-sm font-bold transition-colors ${selected ? 'bg-bey-cyan/15 text-bey-cyan' : 'text-bey-dim hover:bg-bey-deep hover:text-bey-ink'}`}
+                      className={`flex min-h-11 w-full items-center gap-2 rounded-xl px-3 text-left text-sm font-bold transition-colors ${selected ? 'bg-bey-cyan/15 text-bey-cyan' : 'text-bey-dim hover:bg-bey-deep hover:text-bey-ink'}`}
                     >
                       <TabIcon size={17} />
                       <span>{tab.label}</span>
@@ -600,7 +600,7 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
 
       <div className="min-w-0 space-y-4">
         <div className="sticky top-14 z-20 rounded-2xl bg-bey-paper p-2 soft-card lg:hidden">
-          <div className="flex gap-1 overflow-x-auto no-scrollbar" aria-label="設定項目">
+          <div className="flex flex-wrap gap-1" aria-label="設定項目">
             {SETTINGS_GROUPS.flatMap((group) => group.tabs).map((tab) => {
               const TabIcon = tab.Icon;
               const selected = activeTab === tab.key;
@@ -610,7 +610,7 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
                   type="button"
                   onClick={() => setActiveTab(tab.key)}
                   aria-current={selected ? 'page' : undefined}
-                  className={`inline-flex min-h-10 flex-shrink-0 items-center gap-1.5 rounded-xl px-3 text-xs font-bold transition-colors ${selected ? 'bg-bey-cyan text-bey-void' : 'text-bey-dim hover:bg-bey-panel hover:text-bey-ink'}`}
+                  className={`inline-flex min-h-11 flex-shrink-0 items-center gap-1.5 rounded-xl px-3 text-xs font-bold transition-colors ${selected ? 'bg-bey-cyan text-bey-void' : 'text-bey-dim hover:bg-bey-panel hover:text-bey-ink'}`}
                 >
                   <TabIcon size={15} />
                   {tab.label}
@@ -646,7 +646,7 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
                     type="date"
                     value={newGoal.startDate}
                     onChange={(e) => setNewGoal({ ...newGoal, startDate: e.target.value })}
-                    className="compact-date-input block min-h-10 min-w-0 w-full max-w-full rounded-xl border border-bey-steel bg-bey-paper px-2 py-2 text-sm font-bold text-bey-ink outline-none focus:border-bey-orange focus:ring-2 focus:ring-bey-yellow/30"
+                    className="compact-date-input block min-h-11 min-w-0 w-full max-w-full rounded-xl border border-bey-steel bg-bey-paper px-2 py-2 text-sm font-bold text-bey-ink outline-none focus:border-bey-orange focus:ring-2 focus:ring-bey-yellow/30"
                   />
                 </div>
                 <div className="min-w-0">
@@ -655,7 +655,7 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
                     type="date"
                     value={newGoal.endDate}
                     onChange={(e) => setNewGoal({ ...newGoal, endDate: e.target.value })}
-                    className="compact-date-input block min-h-10 min-w-0 w-full max-w-full rounded-xl border border-bey-steel bg-bey-paper px-2 py-2 text-sm font-bold text-bey-ink outline-none focus:border-bey-orange focus:ring-2 focus:ring-bey-yellow/30"
+                    className="compact-date-input block min-h-11 min-w-0 w-full max-w-full rounded-xl border border-bey-steel bg-bey-paper px-2 py-2 text-sm font-bold text-bey-ink outline-none focus:border-bey-orange focus:ring-2 focus:ring-bey-yellow/30"
                   />
                 </div>
               </div>
@@ -671,7 +671,7 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
                   />
                 </div>
                 <div className="flex justify-end">
-                  <Button onClick={handleAddGoalReward} className="bg-bey-orange text-white border-bey-orangeDark hover:bg-bey-orange/90 min-w-[11rem]" icon={<Icons.Plus size={20} />}>
+                  <Button onClick={handleAddGoalReward} className="bg-bey-orange text-bey-void border-bey-orangeDark hover:bg-bey-orange/90 min-w-[11rem]" icon={<Icons.Plus size={20} />}>
                       新增目標
                   </Button>
                 </div>
@@ -690,7 +690,12 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
                     <Button size="sm" variant="primary" onClick={() => handleResolveGoalReward(goal, GoalRewardStatus.ACHIEVED)}>
                       標記達成
                     </Button>
-                    <Button size="sm" variant="danger" onClick={() => handleResolveGoalReward(goal, GoalRewardStatus.NOT_ACHIEVED)}>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="text-bey-red hover:border-bey-red/50 hover:text-bey-red"
+                      onClick={() => handleResolveGoalReward(goal, GoalRewardStatus.NOT_ACHIEVED)}
+                    >
                       標記未達成
                     </Button>
                     <Button size="sm" variant="ghost" onClick={() => handleDeleteGoalReward(goal.id)}>
@@ -710,7 +715,12 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
                     <Button size="sm" variant="primary" onClick={() => handleResolveGoalReward(goal, GoalRewardStatus.ACHIEVED)}>
                       標記達成
                     </Button>
-                    <Button size="sm" variant="danger" onClick={() => handleResolveGoalReward(goal, GoalRewardStatus.NOT_ACHIEVED)}>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="text-bey-red hover:border-bey-red/50 hover:text-bey-red"
+                      onClick={() => handleResolveGoalReward(goal, GoalRewardStatus.NOT_ACHIEVED)}
+                    >
                       標記未達成
                     </Button>
                     <Button size="sm" variant="ghost" onClick={() => handleDeleteGoalReward(goal.id)}>
@@ -756,14 +766,14 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
                     active
                       ? type === ScoreType.POSITIVE
                         ? 'bg-bey-cyan text-bey-void shadow-sm'
-                        : 'bg-bey-red text-white shadow-sm'
+                        : 'bg-bey-red text-bey-void shadow-sm'
                       : 'text-bey-dim hover:bg-bey-deep'
                   }`}
                 >
                   <Icon size={18} />
                   <span className="text-left leading-tight">
                     <span className="block text-sm font-bold">{label}</span>
-                    <span className={`block text-xs font-bold ${active ? 'text-white' : 'text-bey-dim'}`}>{hint}</span>
+                    <span className={`block text-xs font-bold ${active ? 'text-bey-void' : 'text-bey-dim'}`}>{hint}</span>
                   </span>
                 </button>
               );
@@ -830,7 +840,7 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
 
             <Button
               onClick={handleAddScoreItem}
-              className={`mt-3 w-full ${scoreType === ScoreType.POSITIVE ? 'bg-bey-cyan text-bey-void border-bey-cyanDark' : 'bg-bey-red text-white border-[#A32B2B]'}`}
+              className={`mt-3 w-full ${scoreType === ScoreType.POSITIVE ? 'bg-bey-cyan text-bey-void border-bey-cyanDark' : 'bg-bey-red text-bey-void border-[#A32B2B]'}`}
               icon={<Icons.Plus size={18} />}
             >
               新增{scoreType === ScoreType.POSITIVE ? '加分' : '扣分'}項目
@@ -985,14 +995,14 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
                 <button
                   type="button"
                   onClick={() => setNewRewardCard({ ...newRewardCard, rewardType: 'ITEM' })}
-                  className={`px-4 py-2 rounded-full font-black border transition-all ${newRewardCard.rewardType === 'ITEM' ? 'bg-bey-yellow text-bey-void border-[#A89709]' : 'bg-bey-paper text-bey-dim border-bey-steel hover:border-bey-steel'}`}
+                  className={`min-h-11 px-4 py-2 rounded-full font-black border transition-all ${newRewardCard.rewardType === 'ITEM' ? 'bg-bey-yellow text-bey-void border-[#A89709]' : 'bg-bey-paper text-bey-dim border-bey-steel hover:border-bey-steel'}`}
                 >
                   現有獎勵（免扣分）
                 </button>
                 <button
                   type="button"
                   onClick={() => setNewRewardCard({ ...newRewardCard, rewardType: 'CUSTOM' })}
-                  className={`px-4 py-2 rounded-full font-black border transition-all ${newRewardCard.rewardType === 'CUSTOM' ? 'bg-bey-yellow text-bey-void border-[#A89709]' : 'bg-bey-paper text-bey-dim border-bey-steel hover:border-bey-steel'}`}
+                  className={`min-h-11 px-4 py-2 rounded-full font-black border transition-all ${newRewardCard.rewardType === 'CUSTOM' ? 'bg-bey-yellow text-bey-void border-[#A89709]' : 'bg-bey-paper text-bey-dim border-bey-steel hover:border-bey-steel'}`}
                 >
                   自訂內容
                 </button>
@@ -1061,7 +1071,7 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
                     <button
                       type="button"
                       onClick={() => handleDeleteRewardCard(card.id)}
-                      className="text-bey-dim hover:text-bey-red hover:bg-bey-red/10 p-2.5 rounded-xl transition-colors flex-shrink-0"
+                      className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-xl text-bey-dim transition-colors hover:bg-bey-red/10 hover:text-bey-red"
                     >
                       <Icons.Trash2 size={18} />
                     </button>
@@ -1126,7 +1136,7 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
                       type="button"
                       key={n}
                       onClick={() => setNewStampCard({ ...newStampCard, targetStamps: n })}
-                      className={`px-5 py-3 rounded-xl font-black border transition-all ${newStampCard.targetStamps === n ? 'bg-bey-orange text-white border-bey-orangeDark' : 'bg-bey-paper text-bey-dim border-bey-steel hover:border-bey-steel'}`}
+                      className={`min-h-11 px-5 py-3 rounded-xl font-black border transition-all ${newStampCard.targetStamps === n ? 'bg-bey-orange text-bey-void border-bey-orangeDark' : 'bg-bey-paper text-bey-dim border-bey-steel hover:border-bey-steel'}`}
                     >
                       {n} 點
                     </button>
@@ -1162,7 +1172,7 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
             />
 
             <div className="flex justify-end">
-              <Button onClick={handleAddStampCard} className="bg-bey-orange text-white border-bey-orangeDark hover:brightness-105 min-w-[11rem]" icon={<Icons.Plus size={20} />}>
+              <Button onClick={handleAddStampCard} className="bg-bey-orange text-bey-void border-bey-orangeDark hover:brightness-105 min-w-[11rem]" icon={<Icons.Plus size={20} />}>
                 建立集點卡
               </Button>
             </div>
@@ -1180,7 +1190,7 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
                       <button
                         type="button"
                         onClick={() => handleDeleteStampCard(card.id)}
-                        className="text-bey-dim hover:text-bey-red hover:bg-bey-red/10 p-2 rounded-xl transition-colors"
+                        className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-xl text-bey-dim transition-colors hover:bg-bey-red/10 hover:text-bey-red"
                       >
                         <Icons.Trash2 size={16} />
                       </button>
@@ -1192,7 +1202,7 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
                       {Array.from({ length: card.targetStamps }).map((_, idx) => (
                         <span
                           key={idx}
-                          className={`w-7 h-7 rounded-full flex items-center justify-center text-sm border ${idx < filled ? 'bg-bey-orange text-white border-bey-orangeDark' : 'bg-bey-paper text-bey-dim border-bey-steel'}`}
+                          className={`w-7 h-7 rounded-full flex items-center justify-center text-sm border ${idx < filled ? 'bg-bey-orange text-bey-void border-bey-orangeDark' : 'bg-bey-paper text-bey-dim border-bey-steel'}`}
                         >
                           {idx < filled ? '★' : '☆'}
                         </span>
@@ -1201,14 +1211,14 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
 
                     <div className="flex flex-wrap items-center gap-2">
                       <span className="text-xs font-bold px-3 py-1.5 rounded-full bg-bey-deep text-bey-dim">{filled}/{card.targetStamps}</span>
-                      <Button size="sm" variant="outline" onClick={() => handleAdjustStamp(card, -1)} disabled={card.stamps <= 0}>
+                      <Button size="sm" variant="outline" className="min-w-11" onClick={() => handleAdjustStamp(card, -1)} disabled={card.stamps <= 0}>
                         −1
                       </Button>
-                      <Button size="sm" variant="secondary" onClick={() => handleAdjustStamp(card, 1)} disabled={card.stamps >= card.targetStamps}>
+                      <Button size="sm" variant="secondary" className="min-w-11" onClick={() => handleAdjustStamp(card, 1)} disabled={card.stamps >= card.targetStamps}>
                         蓋章 +1
                       </Button>
                       {complete && (
-                        <Button size="sm" className="bg-bey-orange text-white border-bey-orangeDark hover:brightness-105" onClick={() => handleRedeemStampCard(card)} icon={<Icons.Gift size={16} />}>
+                        <Button size="sm" className="bg-bey-orange text-bey-void border-bey-orangeDark hover:brightness-105" onClick={() => handleRedeemStampCard(card)} icon={<Icons.Gift size={16} />}>
                           兌換禮物
                         </Button>
                       )}
@@ -1383,7 +1393,7 @@ const ItemRow: React.FC<ItemRowProps> = ({ label, points, icon, type, category, 
           e.stopPropagation();
           onDelete();
       }} 
-      className="text-bey-dim hover:text-bey-red hover:bg-bey-red/10 p-2 rounded-lg transition-colors"
+      className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-lg text-bey-dim transition-colors hover:bg-bey-red/10 hover:text-bey-red"
     >
       <Icons.Trash2 size={17} />
     </button>

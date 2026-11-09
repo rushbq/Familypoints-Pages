@@ -45,7 +45,7 @@ const StatCompare: React.FC<{
       const ahead = team[key] >= bossStats[key];
       return (
         <div key={key} className="rounded-lg border border-bey-steel bg-bey-void/40 px-2 py-1.5 text-center">
-          <p className="text-[10px] font-normal text-bey-dim">{ROUND_LABELS[key]}</p>
+          <p className="text-xs font-normal text-bey-dim">{ROUND_LABELS[key]}</p>
           <p className="text-sm font-bold tabular-nums">
             <span className={ahead ? 'text-bey-lime' : 'text-bey-red'}>{team[key]}</span>
             <span className="mx-1 text-bey-dim">/</span>
@@ -160,12 +160,12 @@ export const BeyBoss: React.FC<BeyBossProps> = ({
               {def.name}
               {availability === 'DEFEATED' && <span className="ml-2 text-xs font-bold text-bey-lime">已擊敗 ✓</span>}
             </h3>
-            <p className="text-[11px] font-normal text-bey-dim">{statusLine}</p>
+            <p className="text-xs font-normal text-bey-dim">{statusLine}</p>
           </div>
           <button
             type="button"
             onClick={onShowRules}
-            className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full border border-bey-steel text-[11px] font-bold text-bey-dim transition-colors hover:border-bey-cyan/50 hover:text-bey-ink"
+            className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-full border border-bey-steel text-sm font-bold text-bey-dim transition-colors hover:border-bey-cyan/50 hover:text-bey-ink"
             aria-label="玩法說明"
             title="玩法說明"
           >
@@ -174,7 +174,7 @@ export const BeyBoss: React.FC<BeyBossProps> = ({
           <button
             type="button"
             onClick={() => setExpanded(!expanded)}
-            className="flex-shrink-0 rounded-lg p-1 text-bey-dim hover:text-bey-ink"
+            className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-lg text-bey-dim hover:text-bey-ink"
             aria-expanded={expanded}
             aria-label={expanded ? '收合魔王戰' : '展開魔王戰'}
           >
@@ -205,7 +205,7 @@ export const BeyBoss: React.FC<BeyBossProps> = ({
                     </p>
 
                     {builds.length === 0 ? (
-                      <p className="text-[11px] font-normal text-bey-dim">還沒有組裝好的陀螺</p>
+                      <p className="text-xs font-normal text-bey-dim">還沒有組裝好的陀螺</p>
                     ) : canEdit ? (
                       <div className="flex flex-wrap gap-1.5">
                         {builds.map((build) => {
@@ -215,7 +215,7 @@ export const BeyBoss: React.FC<BeyBossProps> = ({
                               key={build.id}
                               type="button"
                               onClick={() => onSetLineup(child.id, picked === build.id ? null : build.id)}
-                              className={`rounded-lg border px-2 py-1 text-[11px] font-bold transition-colors ${
+                              className={`min-h-11 rounded-lg border px-3 py-1.5 text-xs font-bold transition-colors ${
                                 picked === build.id
                                   ? 'border-bey-cyan bg-bey-cyan/20 text-bey-cyan'
                                   : 'border-bey-steel bg-bey-paper text-bey-dim hover:text-bey-ink'
@@ -227,7 +227,7 @@ export const BeyBoss: React.FC<BeyBossProps> = ({
                         })}
                       </div>
                     ) : (
-                      <p className="text-[11px] font-normal text-bey-dim">
+                      <p className="text-xs font-normal text-bey-dim">
                         {picked
                           ? builds.find((build) => build.id === picked)?.name ?? '已派出'
                           : '尚未派出'}
@@ -261,7 +261,7 @@ export const BeyBoss: React.FC<BeyBossProps> = ({
                 </p>
                 <div className="space-y-1">
                   {getDecidedRounds(result.rounds).map((round, index) => (
-                    <div key={round.stat} className="flex items-center gap-2 text-[11px]">
+                    <div key={round.stat} className="flex items-center gap-2 text-xs">
                       <span className="w-12 flex-shrink-0 font-normal text-bey-dim">
                         第 {index + 1} 回合
                       </span>
@@ -272,14 +272,14 @@ export const BeyBoss: React.FC<BeyBossProps> = ({
                       <span className={`font-bold ${round.won ? 'text-bey-lime' : 'text-bey-red'}`}>
                         {round.won ? '勝' : '敗'}
                       </span>
-                      {round.upset && <span className="text-[10px] font-bold text-bey-yellow">爆冷</span>}
+                      {round.upset && <span className="text-xs font-bold text-bey-yellow">爆冷</span>}
                     </div>
                   ))}
                 </div>
                 <button
                   type="button"
                   onClick={() => setResult(null)}
-                  className="mt-2 w-full rounded-lg py-1 text-[11px] font-bold text-bey-dim hover:text-bey-ink"
+                  className="mt-2 min-h-11 w-full rounded-lg py-1 text-xs font-bold text-bey-dim hover:text-bey-ink"
                 >
                   關閉
                 </button>

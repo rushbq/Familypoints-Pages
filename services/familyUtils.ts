@@ -13,24 +13,27 @@ import {
   StampCardStatus,
 } from '../types';
 
+// 分類是「這筆屬於哪一類」的標籤，不是狀態，所以不吃強調色。
+// 原本 活動=orange（隊色）、日常=cyan（系統作用中色）會和隊伍識別與
+// 「這是可以按的東西」互相混淆，改成中性鋼灰 chip，靠文字區分。
 export const SCORE_CATEGORY_OPTIONS = [
   {
     value: ScoreCategory.ACADEMIC,
     label: '學業',
-    chipClassName: 'bg-bey-blue/15 text-bey-blue border-bey-blue/30',
-    panelClassName: 'bg-bey-blue/10 border-bey-blue/25',
+    chipClassName: 'bg-bey-paper text-bey-dim border-bey-steel',
+    panelClassName: 'bg-bey-deep/40 border-bey-steel',
   },
   {
     value: ScoreCategory.ACTIVITY,
     label: '活動',
-    chipClassName: 'bg-bey-orange/15 text-bey-orange border-bey-orange/30',
-    panelClassName: 'bg-bey-orange/10 border-bey-orange/25',
+    chipClassName: 'bg-bey-paper text-bey-dim border-bey-steel',
+    panelClassName: 'bg-bey-deep/40 border-bey-steel',
   },
   {
     value: ScoreCategory.DAILY,
     label: '日常',
-    chipClassName: 'bg-bey-cyan/15 text-bey-cyan border-bey-cyan/30',
-    panelClassName: 'bg-bey-cyan/10 border-bey-cyan/25',
+    chipClassName: 'bg-bey-paper text-bey-dim border-bey-steel',
+    panelClassName: 'bg-bey-deep/40 border-bey-steel',
   },
 ] as const;
 
@@ -44,14 +47,14 @@ export const getScoreCategoryLabel = (category?: ScoreCategory | null): string =
 export const getScoreCategoryChipClassName = (category?: ScoreCategory | null): string => {
   return (
     SCORE_CATEGORY_OPTIONS.find((option) => option.value === category)?.chipClassName ??
-    'bg-bey-cyan/15 text-bey-cyan border-bey-cyan/30'
+    'bg-bey-paper text-bey-dim border-bey-steel'
   );
 };
 
 export const getScoreCategoryPanelClassName = (category?: ScoreCategory | null): string => {
   return (
     SCORE_CATEGORY_OPTIONS.find((option) => option.value === category)?.panelClassName ??
-    'bg-bey-cyan/10 border-bey-cyan/25'
+    'bg-bey-deep/40 border-bey-steel'
   );
 };
 

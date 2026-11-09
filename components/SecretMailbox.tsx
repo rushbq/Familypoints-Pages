@@ -51,7 +51,7 @@ export const SecretMailbox: React.FC<SecretMailboxProps> = ({
 
                 <div className="mb-8">
                    <h2 className="text-3xl font-black text-bey-ink mb-2 flex items-center gap-3">
-                      <span className="bg-bey-blue text-white rounded-full p-2"><Icons.Send /></span>
+                      <span className="bg-bey-blue text-bey-void rounded-full p-2"><Icons.Send /></span>
                       寄給爸媽的信
                    </h2>
                    <p className="text-bey-dim font-normal ml-12">有什麼心裡話，都可以在這裡說...</p>
@@ -86,7 +86,7 @@ export const SecretMailbox: React.FC<SecretMailboxProps> = ({
     <div className="space-y-6">
        <div className="flex items-center justify-between mb-8">
          <div className="flex items-center gap-4">
-            <div className="bg-bey-cyan p-4 rounded-2xl text-white border-b-4 border-bey-cyanDark shadow-sm transform -rotate-3"><Icons.Mail size={32} /></div>
+            <div className="bg-bey-cyan p-4 rounded-2xl text-bey-void border-b-4 border-bey-cyanDark shadow-sm transform -rotate-3"><Icons.Mail size={32} /></div>
             <div>
                 <h2 className="text-3xl font-black text-bey-ink">郵筒</h2>
                 <p className="font-normal text-bey-dim">收到 {messages.length} 封來自孩子的信</p>
@@ -113,7 +113,7 @@ export const SecretMailbox: React.FC<SecretMailboxProps> = ({
              >
                 {/* New Badge */}
                 {!msg.isRead && (
-                    <div className="absolute -top-4 -right-4 bg-bey-red text-white w-20 h-20 rounded-full flex items-center justify-center font-black rotate-12 shadow-md border-4 border-bey-steel animate-bounce z-20">
+                    <div className="absolute -top-4 -right-4 bg-bey-red text-bey-void w-20 h-20 rounded-full flex items-center justify-center font-black rotate-12 shadow-md border-4 border-bey-steel animate-bounce z-20">
                         NEW!
                     </div>
                 )}
@@ -147,7 +147,7 @@ export const SecretMailbox: React.FC<SecretMailboxProps> = ({
 
                {!msg.isRead && (
                  <div className="mt-6 flex justify-end">
-                    <div className="text-sm font-bold text-white bg-bey-blue px-4 py-2 rounded-full shadow-sm flex items-center">
+                    <div className="text-sm font-bold text-bey-void bg-bey-blue px-4 py-2 rounded-full shadow-sm flex items-center">
                         <Icons.CheckCircle size={16} className="mr-2" /> 
                         標示為已讀
                     </div>

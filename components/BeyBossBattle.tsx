@@ -67,14 +67,14 @@ const RoundRow: React.FC<{ round: BeyBossRound; index: number; animate: boolean 
 
   return (
     <div className="flex items-center gap-2 rounded-lg border border-bey-steel bg-bey-void/50 px-2.5 py-1.5 animate-pop">
-      <span className="w-12 flex-shrink-0 text-[11px] font-normal text-bey-dim">第 {index + 1} 回合</span>
+      <span className="w-12 flex-shrink-0 text-xs font-normal text-bey-dim">第 {index + 1} 回合</span>
       <span className="w-8 flex-shrink-0 text-xs font-bold text-bey-ink">{ROUND_LABELS[round.stat]}</span>
       <span className="flex-1 text-xs font-bold tabular-nums text-bey-dim">
         <span className="text-bey-ink">{teamValue}</span>
         <span className="mx-1">vs</span>
         <span className="text-bey-ink">{bossValue}</span>
       </span>
-      {round.upset && <span className="flex-shrink-0 text-[10px] font-bold text-bey-yellow">爆冷！</span>}
+      {round.upset && <span className="flex-shrink-0 text-xs font-bold text-bey-yellow">爆冷！</span>}
       <span className={`w-5 flex-shrink-0 text-right text-xs font-bold ${round.won ? 'text-bey-lime' : 'text-bey-red'}`}>
         {round.won ? '勝' : '敗'}
       </span>
@@ -150,7 +150,7 @@ export const BeyBossBattle: React.FC<BeyBossBattleProps> = ({
             <button
               type="button"
               onClick={handleSkip}
-              className="rounded-lg border border-bey-steel px-2.5 py-1 text-[11px] font-bold text-bey-dim transition-colors hover:text-bey-ink"
+              className="rounded-lg border border-bey-steel px-2.5 py-1 text-xs font-bold text-bey-dim transition-colors hover:text-bey-ink"
             >
               跳過
             </button>
@@ -185,7 +185,7 @@ export const BeyBossBattle: React.FC<BeyBossBattleProps> = ({
                   />
                 ))}
               </div>
-              <p className="truncate text-center text-[11px] font-bold text-bey-ink">
+              <p className="truncate text-center text-xs font-bold text-bey-ink">
                 {sides.map((side) => side.childName).join('＋')}
               </p>
             </div>
@@ -204,7 +204,7 @@ export const BeyBossBattle: React.FC<BeyBossBattleProps> = ({
                   className={bossToppled ? 'bey-topple' : ''}
                 />
               </div>
-              <p className="truncate text-center text-[11px] font-bold" style={{ color: boss.color.main }}>
+              <p className="truncate text-center text-xs font-bold" style={{ color: boss.color.main }}>
                 {boss.name}
                 {attempt.weakened && <span className="ml-1 font-normal text-bey-dim">減弱版</span>}
               </p>

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Button } from './Button';
 
 interface ConfirmationModalProps {
@@ -29,15 +29,31 @@ export const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
   isAlert = false,
   variant = 'primary'
 }) => {
+  // Esc 等同取消；alert 模式沒有取消概念，Esc 就是關掉。
+  useEffect(() => {
+    if (!isOpen) return;
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') onClose();
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isOpen, onClose]);
+
   if (!isOpen) return null;
 
   return (
     // z-index 設為 100 以確保蓋過其他 Modal (如 RewardRedeemer)
-    <div 
+    <div
+      role="dialog"
+      aria-modal="true"
+      aria-label={title}
       className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-bey-void/80 animate-pop"
-      onClick={(e) => e.stopPropagation()}
+      onClick={onClose}
     >
-       <div className="bg-bey-panel rounded-2xl p-5 w-full max-w-sm soft-card flex flex-col items-center text-center relative">
+       <div
+         className="bg-bey-panel rounded-2xl p-5 w-full max-w-sm soft-card flex flex-col items-center text-center relative"
+         onClick={(e) => e.stopPropagation()}
+       >
           
           {/* 標題 */}
           <h3 className="text-lg font-black text-bey-ink mb-2">{title}</h3>

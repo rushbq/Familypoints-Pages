@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { User, UserRole } from '../types';
 import { Button } from './ui/Button';
 import { Icons } from './Icons';
@@ -58,6 +58,16 @@ export const RoleSelector: React.FC<RoleSelectorProps> = ({ users, onSelectUser,
   const handleBackspace = () => {
     setPin(prev => prev.slice(0, -1));
   };
+
+  // Esc 關閉密碼視窗，和其他 modal 一致。
+  useEffect(() => {
+    if (!showPinModal) return;
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setShowPinModal(false);
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [showPinModal]);
 
   const childUsers = users.filter((user) => user.role === UserRole.CHILD);
   const parentUsers = users.filter((user) => user.role === UserRole.PARENT);
@@ -143,7 +153,7 @@ export const RoleSelector: React.FC<RoleSelectorProps> = ({ users, onSelectUser,
           <button
             type="button"
             onClick={onCloudLogout}
-            className="min-h-10 flex-shrink-0 rounded-xl px-3 text-xs font-normal text-bey-dim transition-colors hover:bg-bey-paper hover:text-bey-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-bey-cyanDark"
+            className="min-h-11 flex-shrink-0 rounded-xl px-3 text-xs font-normal text-bey-dim transition-colors hover:bg-bey-paper hover:text-bey-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-bey-cyanDark"
           >
             切換帳號
           </button>
@@ -152,8 +162,17 @@ export const RoleSelector: React.FC<RoleSelectorProps> = ({ users, onSelectUser,
       
       {/* --- 家長密碼輸入視窗 (Modal) --- */}
       {showPinModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-bey-void/80 p-4" role="dialog" aria-modal="true" aria-labelledby="parent-pin-title">
-          <div className="w-full max-w-xs rounded-2xl bg-bey-panel p-5 soft-card animate-pop">
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-bey-void/80 p-4"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="parent-pin-title"
+          onClick={() => setShowPinModal(false)}
+        >
+          <div
+            className="w-full max-w-xs rounded-2xl bg-bey-panel p-5 soft-card animate-pop"
+            onClick={(event) => event.stopPropagation()}
+          >
             <div className="text-center mb-4">
               <div className="mx-auto mb-2 flex h-10 w-10 items-center justify-center rounded-full bg-bey-yellow/15 text-bey-yellow"><Icons.Shield size={20} /></div>
               <h3 id="parent-pin-title" className="mb-1 text-lg font-black text-bey-ink">家長密碼</h3>

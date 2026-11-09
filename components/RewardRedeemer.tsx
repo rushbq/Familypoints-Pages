@@ -56,6 +56,18 @@ export const RewardRedeemer: React.FC<RewardRedeemerProps> = ({
     }
   }, [currentScore, hasDiscountCards, items, selectedItemId, useDiscountCard]);
 
+  // Esc 關閉；確認視窗開著時先收確認視窗，不要一次關掉整個兌換流程。
+  useEffect(() => {
+    if (!isOpen) return;
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key !== 'Escape') return;
+      if (showConfirm) setShowConfirm(false);
+      else onClose();
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isOpen, showConfirm, onClose]);
+
   if (!isOpen) return null;
 
   const handleRedeemClick = () => {
@@ -78,9 +90,18 @@ export const RewardRedeemer: React.FC<RewardRedeemerProps> = ({
 
   return (
     <>
-      <div className="fixed inset-0 z-50 flex items-center justify-center p-3 bg-bey-void/80 animate-pop">
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-label={`獎勵兌換中心：${targetChildName}`}
+        className="fixed inset-0 z-50 flex items-center justify-center p-3 bg-bey-void/80 animate-pop"
+        onClick={onClose}
+      >
         {/* 視窗容器 - 使用紫色調代表商店/兌換 */}
-        <div className="bg-bey-paper rounded-2xl w-full max-w-3xl soft-card overflow-hidden flex flex-col max-h-[94vh] relative">
+        <div
+          className="bg-bey-paper rounded-2xl w-full max-w-3xl soft-card overflow-hidden flex flex-col max-h-[94vh] relative"
+          onClick={(event) => event.stopPropagation()}
+        >
           
           {/* 標題區塊 */}
           <div className="px-4 py-3 flex justify-between items-center bg-bey-orange text-bey-void">
@@ -97,7 +118,7 @@ export const RewardRedeemer: React.FC<RewardRedeemerProps> = ({
                   </p>
               </div>
             </div>
-            <button onClick={onClose} className="bg-bey-paper/20 hover:bg-bey-paper/35 p-2 rounded-lg transition-colors">
+            <button onClick={onClose} aria-label="關閉" className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-lg bg-bey-paper/20 transition-colors hover:bg-bey-paper/35">
               <Icons.X size={20} strokeWidth={3} />
             </button>
           </div>
@@ -108,7 +129,7 @@ export const RewardRedeemer: React.FC<RewardRedeemerProps> = ({
               <div className="flex items-center justify-between gap-3">
                 <div>
                   <p className="font-black text-bey-ink text-sm">5 折卡</p>
-                  <p className="text-[10px] font-normal text-bey-dim">
+                  <p className="text-xs font-normal text-bey-dim">
                     本次兌換半價，奇數無條件進位
                   </p>
                 </div>
@@ -148,7 +169,7 @@ export const RewardRedeemer: React.FC<RewardRedeemerProps> = ({
                       }`}
                   >
                     {/* 價格標籤 */}
-                    <div className="absolute top-1.5 right-1.5 px-2 py-0.5 rounded-full text-white font-bold text-[10px] bg-bey-orange">
+                    <div className="absolute top-1.5 right-1.5 px-2 py-0.5 rounded-full text-bey-void font-bold text-xs bg-bey-orange">
                         {finalCost} pt
                     </div>
 
@@ -163,7 +184,7 @@ export const RewardRedeemer: React.FC<RewardRedeemerProps> = ({
                           {item.label}
                       </span>
                       {useDiscountCard && hasDiscountCards && (
-                        <span className="text-[10px] font-normal text-bey-dim mt-0.5 block text-center">
+                        <span className="text-xs font-normal text-bey-dim mt-0.5 block text-center">
                           原價 {item.points} pt
                         </span>
                       )}
@@ -171,7 +192,7 @@ export const RewardRedeemer: React.FC<RewardRedeemerProps> = ({
 
                     {/* 選中標記 */}
                     {selectedItemId === item.id && (
-                        <div className="absolute bottom-1 left-1 text-bey-orange text-[10px] font-bold">
+                        <div className="absolute bottom-1 left-1 text-bey-orange text-xs font-bold">
                             ✓
                         </div>
                     )}
