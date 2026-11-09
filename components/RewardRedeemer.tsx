@@ -78,14 +78,14 @@ export const RewardRedeemer: React.FC<RewardRedeemerProps> = ({
 
   return (
     <>
-      <div className="fixed inset-0 z-50 flex items-center justify-center p-3 bg-nook-brown/65 animate-pop">
+      <div className="fixed inset-0 z-50 flex items-center justify-center p-3 bg-bey-void/80 animate-pop">
         {/* 視窗容器 - 使用紫色調代表商店/兌換 */}
-        <div className="bg-white rounded-2xl w-full max-w-3xl soft-card overflow-hidden flex flex-col max-h-[94vh] relative">
+        <div className="bg-bey-paper rounded-2xl w-full max-w-3xl soft-card overflow-hidden flex flex-col max-h-[94vh] relative">
           
           {/* 標題區塊 */}
-          <div className="px-4 py-3 flex justify-between items-center bg-[#9377D8] text-white">
+          <div className="px-4 py-3 flex justify-between items-center bg-bey-orange text-bey-void">
             <div className="flex items-center gap-2.5">
-              <div className="bg-white/20 p-2 rounded-full">
+              <div className="bg-bey-paper/20 p-2 rounded-full">
                   <Icons.Gift size={20} />
               </div>
               <div>
@@ -93,22 +93,22 @@ export const RewardRedeemer: React.FC<RewardRedeemerProps> = ({
                       獎勵兌換中心
                   </h2>
                   <p className="font-bold opacity-85 text-xs">
-                      {targetChildName}｜<span className="text-yellow-200">{currentScore} 分</span>｜5 折卡 {availableDiscountCards.length} 張
+                      {targetChildName}｜<span className="text-bey-yellow">{currentScore} 分</span>｜5 折卡 {availableDiscountCards.length} 張
                   </p>
               </div>
             </div>
-            <button onClick={onClose} className="bg-white/20 hover:bg-white/35 p-2 rounded-lg transition-colors">
+            <button onClick={onClose} className="bg-bey-paper/20 hover:bg-bey-paper/35 p-2 rounded-lg transition-colors">
               <Icons.X size={20} strokeWidth={3} />
             </button>
           </div>
 
           {/* 獎勵列表內容區 */}
-          <div className="p-4 overflow-y-auto flex-1 bg-nook-cream">
-            <div className="mb-3 p-3 rounded-xl bg-white">
+          <div className="p-4 overflow-y-auto flex-1 bg-bey-panel">
+            <div className="mb-3 p-3 rounded-xl bg-bey-paper">
               <div className="flex items-center justify-between gap-3">
                 <div>
-                  <p className="font-black text-nook-brown text-sm">5 折卡</p>
-                  <p className="text-[10px] font-bold text-nook-brown/55">
+                  <p className="font-black text-bey-ink text-sm">5 折卡</p>
+                  <p className="text-[10px] font-bold text-bey-ink/55">
                     本次兌換半價，奇數無條件進位
                   </p>
                 </div>
@@ -118,10 +118,10 @@ export const RewardRedeemer: React.FC<RewardRedeemerProps> = ({
                   onClick={() => hasDiscountCards && setUseDiscountCard((prev) => !prev)}
                   className={`px-3 py-2 rounded-lg border text-xs font-black transition-colors ${
                     useDiscountCard && hasDiscountCards
-                      ? 'bg-[#9377D8] text-white border-[#7556BA]'
+                      ? 'bg-bey-orange text-bey-void border-bey-orangeDark'
                       : hasDiscountCards
-                        ? 'bg-white text-nook-brown border-nook-brown/10 hover:border-nook-brown/30'
-                        : 'bg-nook-brown/5 text-nook-brown/30 border-transparent cursor-not-allowed'
+                        ? 'bg-bey-paper text-bey-ink border-bey-steel hover:border-bey-ink/30'
+                        : 'bg-bey-ink/5 text-bey-ink/30 border-transparent cursor-not-allowed'
                   }`}
                 >
                   {hasDiscountCards ? (useDiscountCard ? '已套用 5 折' : '使用 5 折卡') : '沒有 5 折卡'}
@@ -140,15 +140,15 @@ export const RewardRedeemer: React.FC<RewardRedeemerProps> = ({
                     onClick={() => canAfford && setSelectedItemId(item.id)}
                     disabled={!canAfford}
                     className={`relative group flex flex-col items-center justify-between p-2.5 rounded-xl border-b-[3px] transition-all duration-150 min-h-[8rem]
-                      ${!canAfford ? 'opacity-50 cursor-not-allowed bg-gray-100 border-gray-300 grayscale' : ''}
+                      ${!canAfford ? 'opacity-50 cursor-not-allowed bg-bey-void/40 border-bey-steel grayscale' : ''}
                       ${
                         selectedItemId === item.id
-                          ? 'bg-white border-[#9377D8] ring-2 ring-[#9377D8]/25'
-                          : canAfford ? 'bg-white border-nook-brown/10 hover:border-nook-brown/20 active:border-b-0 active:translate-y-[3px]' : ''
+                          ? 'bg-bey-paper border-bey-orange ring-2 ring-bey-orange/40'
+                          : canAfford ? 'bg-bey-paper border-bey-steel hover:border-bey-ink/20 active:border-b-0 active:translate-y-[3px]' : ''
                       }`}
                   >
                     {/* 價格標籤 */}
-                    <div className="absolute top-1.5 right-1.5 px-2 py-0.5 rounded-full text-white font-black text-[10px] bg-nook-orange">
+                    <div className="absolute top-1.5 right-1.5 px-2 py-0.5 rounded-full text-white font-black text-[10px] bg-bey-orange">
                         {finalCost} pt
                     </div>
 
@@ -159,11 +159,11 @@ export const RewardRedeemer: React.FC<RewardRedeemerProps> = ({
                     
                     {/* 名稱 */}
                     <div className="w-full mt-1">
-                      <span className="font-bold text-nook-brown text-center leading-tight w-full break-words text-xs block">
+                      <span className="font-bold text-bey-ink text-center leading-tight w-full break-words text-xs block">
                           {item.label}
                       </span>
                       {useDiscountCard && hasDiscountCards && (
-                        <span className="text-[9px] font-bold text-nook-brown/40 mt-0.5 block text-center">
+                        <span className="text-[9px] font-bold text-bey-ink/40 mt-0.5 block text-center">
                           原價 {item.points} pt
                         </span>
                       )}
@@ -171,7 +171,7 @@ export const RewardRedeemer: React.FC<RewardRedeemerProps> = ({
 
                     {/* 選中標記 */}
                     {selectedItemId === item.id && (
-                        <div className="absolute bottom-1 left-1 text-[#7556BA] text-[9px] font-black">
+                        <div className="absolute bottom-1 left-1 text-bey-orange text-[9px] font-black">
                             ✓
                         </div>
                     )}
@@ -181,19 +181,19 @@ export const RewardRedeemer: React.FC<RewardRedeemerProps> = ({
             </div>
             
             {items.length === 0 && (
-              <div className="text-center text-nook-brown/40 text-sm font-bold py-6">
+              <div className="text-center text-bey-ink/40 text-sm font-bold py-6">
                   目前沒有可兌換的獎勵喔！請家長新增。
               </div>
             )}
           </div>
 
           {/* 底部按鈕區 */}
-          <div className="p-3 border-t border-nook-brown/5 flex gap-2 bg-white relative z-10">
+          <div className="p-3 border-t border-bey-ink/5 flex gap-2 bg-bey-paper relative z-10">
             <Button variant="ghost" className="flex-1" onClick={onClose}>再存一點</Button>
             <Button 
               type="button" // 明確指定 type 防止 form submit 行為
               variant="primary" 
-              className="flex-[2] bg-[#9377D8] border-[#7556BA] hover:brightness-105"
+              className="flex-[2] bg-bey-orange text-bey-void border-bey-orangeDark hover:brightness-110"
               disabled={!selectedItemId}
               onClick={handleRedeemClick}
               icon={<Icons.Gift size={18} strokeWidth={3} />}

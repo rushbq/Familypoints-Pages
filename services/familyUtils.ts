@@ -17,20 +17,20 @@ export const SCORE_CATEGORY_OPTIONS = [
   {
     value: ScoreCategory.ACADEMIC,
     label: '學業',
-    chipClassName: 'bg-nook-blue/15 text-nook-blueDark border-nook-blue/30',
-    panelClassName: 'bg-nook-blue/10 border-nook-blue/25',
+    chipClassName: 'bg-bey-blue/15 text-bey-blue border-bey-blue/30',
+    panelClassName: 'bg-bey-blue/10 border-bey-blue/25',
   },
   {
     value: ScoreCategory.ACTIVITY,
     label: '活動',
-    chipClassName: 'bg-nook-orange/15 text-nook-orangeDark border-nook-orange/30',
-    panelClassName: 'bg-nook-orange/10 border-nook-orange/25',
+    chipClassName: 'bg-bey-orange/15 text-bey-orange border-bey-orange/30',
+    panelClassName: 'bg-bey-orange/10 border-bey-orange/25',
   },
   {
     value: ScoreCategory.DAILY,
     label: '日常',
-    chipClassName: 'bg-nook-green/15 text-nook-greenDark border-nook-green/30',
-    panelClassName: 'bg-nook-green/10 border-nook-green/25',
+    chipClassName: 'bg-bey-cyan/15 text-bey-cyan border-bey-cyan/30',
+    panelClassName: 'bg-bey-cyan/10 border-bey-cyan/25',
   },
 ] as const;
 
@@ -44,14 +44,14 @@ export const getScoreCategoryLabel = (category?: ScoreCategory | null): string =
 export const getScoreCategoryChipClassName = (category?: ScoreCategory | null): string => {
   return (
     SCORE_CATEGORY_OPTIONS.find((option) => option.value === category)?.chipClassName ??
-    'bg-nook-green/15 text-nook-greenDark border-nook-green/30'
+    'bg-bey-cyan/15 text-bey-cyan border-bey-cyan/30'
   );
 };
 
 export const getScoreCategoryPanelClassName = (category?: ScoreCategory | null): string => {
   return (
     SCORE_CATEGORY_OPTIONS.find((option) => option.value === category)?.panelClassName ??
-    'bg-nook-green/10 border-nook-green/25'
+    'bg-bey-cyan/10 border-bey-cyan/25'
   );
 };
 

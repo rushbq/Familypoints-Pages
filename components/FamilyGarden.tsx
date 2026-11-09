@@ -81,7 +81,7 @@ const WateringEffect: React.FC = () => (
       {WATER_DROPS.map((drop) => (
         <span
           key={drop.delay}
-          className="garden-drop absolute h-3 w-[7px] rounded-full bg-nook-blue"
+          className="garden-drop absolute h-3 w-[7px] rounded-full bg-bey-blue"
           style={{
             left: `${drop.x}px`,
             animationDelay: `${drop.delay}s`,
@@ -94,7 +94,7 @@ const WateringEffect: React.FC = () => (
     {[0.86, 1.04].map((delay) => (
       <span
         key={delay}
-        className="garden-splash absolute bottom-[13%] left-1/2 h-4 w-20 rounded-full border-[3px] border-nook-blue/70"
+        className="garden-splash absolute bottom-[13%] left-1/2 h-4 w-20 rounded-full border-[3px] border-bey-blue/70"
         style={{ animationDelay: `${delay}s` }}
       />
     ))}
@@ -233,16 +233,16 @@ export const FamilyGarden: React.FC<FamilyGardenProps> = ({
   };
 
   return (
-    <section aria-labelledby="family-garden-title" className="overflow-hidden rounded-2xl bg-white soft-card">
+    <section aria-labelledby="family-garden-title" className="overflow-hidden rounded-2xl bg-bey-paper soft-card">
       <div className="flex items-start justify-between gap-3 px-4 pb-3 pt-4 md:px-5 md:pt-5">
         <div className="min-w-0">
           <div className="flex items-center gap-2">
-            <span className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-nook-green/15 text-nook-greenDark" aria-hidden="true">
+            <span className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-bey-cyan/15 text-bey-cyan" aria-hidden="true">
               <Icons.Leaf size={18} />
             </span>
             <div>
-              <h2 id="family-garden-title" className="text-base font-bold text-nook-greenDark">{gardenName}</h2>
-              <p className="text-xs font-bold text-nook-brown/75">兩個人的陽光，養大同一株植物</p>
+              <h2 id="family-garden-title" className="text-base font-bold text-bey-cyan">{gardenName}</h2>
+              <p className="text-xs font-bold text-bey-ink/75">兩個人的陽光，養大同一株植物</p>
             </div>
           </div>
         </div>
@@ -251,7 +251,7 @@ export const FamilyGarden: React.FC<FamilyGardenProps> = ({
           onClick={() => setShowAlbum((visible) => !visible)}
           aria-expanded={showAlbum}
           aria-label="植物圖鑑"
-          className="inline-flex min-h-10 flex-shrink-0 items-center gap-2 rounded-xl px-3 text-xs font-bold text-nook-greenDark hover:bg-nook-green/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-nook-greenDark"
+          className="inline-flex min-h-10 flex-shrink-0 items-center gap-2 rounded-xl px-3 text-xs font-bold text-bey-cyan hover:bg-bey-cyan/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-bey-cyanDark"
         >
           <Icons.BookOpen size={16} />
           <span className="hidden sm:inline">植物圖鑑</span>
@@ -264,11 +264,11 @@ export const FamilyGarden: React.FC<FamilyGardenProps> = ({
           style={{ background: scene.backdrop }}
           className={`relative flex items-end justify-center overflow-hidden px-5 pt-4 transition-[background] duration-500 ${stage <= 1 ? 'min-h-[230px] md:min-h-[250px]' : stage === 2 ? 'min-h-[280px] md:min-h-[300px]' : 'min-h-[300px] md:min-h-[340px]'}`}
         >
-          <div className="absolute left-4 top-3 z-10 rounded-full bg-white/95 px-3 py-2 text-xs font-bold text-nook-greenDark soft-card">
+          <div className="absolute left-4 top-3 z-10 rounded-full bg-bey-paper/95 px-3 py-2 text-xs font-bold text-bey-cyan soft-card">
             {STAGE_LABELS[stage]}・第 {stage} / {garden.wateringsToBloom} 階段
           </div>
           {bloomed && activePlant && isCooperativeBloom(activePlant) && (
-            <div className="absolute right-4 top-3 z-10 rounded-full bg-nook-yellow px-3 py-2 text-xs font-bold text-[#684D0E]">
+            <div className="absolute right-4 top-3 z-10 rounded-full bg-bey-yellow px-3 py-2 text-xs font-bold text-[#684D0E]">
               🦋 協力開花
             </div>
           )}
@@ -276,13 +276,13 @@ export const FamilyGarden: React.FC<FamilyGardenProps> = ({
             type="button"
             onClick={handlePetPlant}
             aria-label={`摸摸看${species.commonName}`}
-            className="w-full max-w-[330px] rounded-2xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-nook-greenDark"
+            className="w-full max-w-[330px] rounded-2xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-bey-cyanDark"
           >
             <div className={`transition-[filter] duration-200 ${isWatering ? 'brightness-105' : ''} ${isPetting ? 'garden-wiggle' : ''}`}>
               <GardenPlant speciesId={species.id} stage={stage} sceneId={scene.id} />
             </div>
           </button>
-          <p className="absolute bottom-3 left-4 z-10 rounded-full bg-white/85 px-2.5 py-1 text-xs font-bold text-nook-brown/75">
+          <p className="absolute bottom-3 left-4 z-10 rounded-full bg-bey-paper/85 px-2.5 py-1 text-xs font-bold text-bey-ink/75">
             <span aria-hidden="true">{scene.emoji}</span> {scene.label}
           </p>
           {isWatering && <WateringEffect />}
@@ -292,10 +292,10 @@ export const FamilyGarden: React.FC<FamilyGardenProps> = ({
         <div className="flex min-w-0 flex-col px-4 py-4 md:px-5 md:py-5">
           <div>
             <div className="flex flex-wrap items-baseline gap-x-2 gap-y-1">
-              <h3 className="text-xl font-black text-nook-brown">{species.commonName}</h3>
-              <span className="text-xs font-bold italic text-nook-brown/75">{species.scientificName}</span>
+              <h3 className="text-xl font-black text-bey-ink">{species.commonName}</h3>
+              <span className="text-xs font-bold italic text-bey-ink/75">{species.scientificName}</span>
             </div>
-            <p className="mt-1 text-sm leading-relaxed text-nook-brown">{species.childFact}</p>
+            <p className="mt-1 text-sm leading-relaxed text-bey-ink">{species.childFact}</p>
           </div>
 
           {isChild ? (
@@ -305,19 +305,19 @@ export const FamilyGarden: React.FC<FamilyGardenProps> = ({
                   <p className="flex items-center gap-2 text-xs font-bold text-[#765812]">
                     <span aria-hidden="true">☀️</span> 你的陽光
                   </p>
-                  <p className="mt-1 font-black tabular-nums text-nook-brown">
-                    <span className="text-xl text-nook-greenDark">{currentPoints}</span>
-                    <span className="text-sm text-nook-brown/75"> / {garden.pointsPerWatering}</span>
+                  <p className="mt-1 font-black tabular-nums text-bey-ink">
+                    <span className="text-xl text-bey-cyan">{currentPoints}</span>
+                    <span className="text-sm text-bey-ink/75"> / {garden.pointsPerWatering}</span>
                   </p>
                 </div>
-                <p className="text-right text-xs font-bold text-nook-brown/75">
+                <p className="text-right text-xs font-bold text-bey-ink/75">
                   {currentAvailableWaterings > 0
                     ? `可以澆水 ${currentAvailableWaterings} 次`
                     : `還差 ${pointsUntilNext} 點`}
                 </p>
               </div>
               <div
-                className="mt-2 h-2.5 overflow-hidden rounded-full bg-nook-beige"
+                className="mt-2 h-2.5 overflow-hidden rounded-full bg-bey-deep"
                 role="progressbar"
                 aria-label="下一次澆水的陽光進度"
                 aria-valuemin={0}
@@ -325,7 +325,7 @@ export const FamilyGarden: React.FC<FamilyGardenProps> = ({
                 aria-valuenow={currentPoints}
               >
                 <div
-                  className="h-full rounded-full bg-nook-yellow transition-[width] duration-200"
+                  className="h-full rounded-full bg-bey-yellow transition-[width] duration-200"
                   style={{ width: `${Math.min(100, (currentPoints / garden.pointsPerWatering) * 100)}%` }}
                 />
               </div>
@@ -344,27 +344,27 @@ export const FamilyGarden: React.FC<FamilyGardenProps> = ({
                   size="lg"
                   onClick={handleWater}
                   disabled={currentAvailableWaterings < 1 || isWatering}
-                  className="mt-3 w-full disabled:border-nook-brown/10 disabled:bg-nook-beige disabled:text-nook-brown/75 disabled:opacity-100"
+                  className="mt-3 w-full disabled:border-bey-ink/10 disabled:bg-bey-deep disabled:text-bey-ink/75 disabled:opacity-100"
                   aria-describedby="garden-water-hint"
                 >
                   <span className="mr-2" aria-hidden="true">💧</span>
                   {isWatering ? '正在澆水…' : '幫花澆水'}
                 </Button>
               )}
-              <p id="garden-water-hint" className="mt-2 text-center text-xs font-bold text-nook-brown/75">
+              <p id="garden-water-hint" className="mt-2 text-center text-xs font-bold text-bey-ink/75">
                 家長登記好事加分時，1 分會變成 1 點陽光；集滿 {garden.pointsPerWatering} 點可澆水一次，且不會扣分。
               </p>
             </div>
           ) : (
-            <div className="mt-4 rounded-xl bg-nook-yellow/20 px-3 py-2">
+            <div className="mt-4 rounded-xl bg-bey-yellow/20 px-3 py-2">
               <p className="text-xs font-bold text-[#765812]">每登記 1 分好事，就會同步累積 1 點陽光；每 {garden.pointsPerWatering} 點可澆水一次。澆水留給孩子親自完成。</p>
             </div>
           )}
 
-          <div className="mt-4 border-t border-nook-greenDark/10 pt-3">
+          <div className="mt-4 border-t border-bey-cyanDark/10 pt-3">
             <div className="flex items-center justify-between gap-2">
-              <p className="text-xs font-bold text-nook-greenDark">本株澆水</p>
-              <p className="text-xs font-bold tabular-nums text-nook-brown">
+              <p className="text-xs font-bold text-bey-cyan">本株澆水</p>
+              <p className="text-xs font-bold tabular-nums text-bey-ink">
                 {stage} / {garden.wateringsToBloom} 次
               </p>
             </div>
@@ -374,12 +374,12 @@ export const FamilyGarden: React.FC<FamilyGardenProps> = ({
                 const progress = getGardenChildProgress(garden, child.id);
 
                 return (
-                  <div key={child.id} className="min-w-0 rounded-xl bg-nook-beige/60 px-3 py-2">
+                  <div key={child.id} className="min-w-0 rounded-xl bg-bey-deep/60 px-3 py-2">
                     <div className="flex items-center gap-2">
                       <span className="text-base" aria-hidden="true">{child.avatar}</span>
-                      <span className="truncate text-xs font-bold text-nook-brown">{child.name}</span>
+                      <span className="truncate text-xs font-bold text-bey-ink">{child.name}</span>
                     </div>
-                    <p className="mt-1 text-xs font-bold text-nook-brown/75">
+                    <p className="mt-1 text-xs font-bold text-bey-ink/75">
                       澆了 {contributions.get(child.id) ?? 0} 次
                       {!isChild && `・可用 ${available} 次`}
                     </p>
@@ -395,7 +395,7 @@ export const FamilyGarden: React.FC<FamilyGardenProps> = ({
           </div>
 
           {(feedback || bloomed) && (
-            <p className="mt-3 text-center text-sm font-bold text-nook-greenDark" aria-live="polite">
+            <p className="mt-3 text-center text-sm font-bold text-bey-cyan" aria-live="polite">
               {feedback ?? `${species.commonName}開花了！`}
             </p>
           )}

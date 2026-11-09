@@ -48,7 +48,11 @@ A **React 19 + TypeScript + Vite** single-page app deployed as a static site to 
 
 ## Conventions
 
-- **Tailwind is loaded via CDN in `index.html`, not npm.** The custom theme (the Animal-Crossing `nook-*` palette, `Zen Maru Gothic` font, `animate-pop`, stripes/leaf-pattern/tape-effect styles) is configured in a `<script>`/`<style>` block in `index.html` — there is **no `tailwind.config.js`**; do not add one. Match the `nook-*` colors and rounded, playful shapes.
+- **Tailwind is loaded via CDN in `index.html`, not npm.** The custom theme (the battle-top `bey-*` palette, `Orbitron` + `Chakra Petch` fonts, `app-bg` / `arena-pattern` / `arena-rings` / `speed-lines` / `clip-notch` / `bey-spin` / `animate-pop` styles) is configured in a `<script>`/`<style>` block in `index.html` — there is **no `tailwind.config.js`**; do not add one.
+- **Visual style: 戰鬥陀螺・競技場（STADIUM）**, a dark arena theme. Surfaces go `bey-deep` (page) → `bey-panel` (card) → `bey-paper` (raised/input), separated by `bey-steel` borders rather than shadows. Text is `bey-ink`, secondary `bey-dim`. Accents: `bey-cyan` is the home team / confirm, `bey-orange` the rival team / rewards, `bey-lime` positive bursts, `bey-yellow` referee + 獎勵卡, `bey-red` deductions. Two children are rendered as opposing teams — child index 0 cyan, index 1 orange.
+- **On bright fills (`bey-cyan`, `bey-lime`, `bey-yellow`) use `text-bey-void`, never `text-white`.** The `*Dark` tokens are for bottom borders and rings only, not text.
+- `font-display` (Orbitron) is for short Latin labels in caps with wide tracking. **Do not use it for score digits** — Orbitron's slashed zero reads as a symbol; scores use `font-sans` bold italic with `tabular-nums`.
+- `components/BeyTop.tsx` is the original spinning-top SVG (concentric blade ring + gear + core). All Beyblade-style art must stay original — no official logos, characters, or product renders.
 - `Button` variants use an "AC squishy" style: `border-b-4` + `active:border-b-0 active:translate-y-[4px]`. Match this for custom buttons.
 - Path alias `@` resolves to the **project root** (not `src/`), set in `vite.config.ts`.
 - All entity IDs are `Date.now().toString()`; timestamps are Unix ms (`Date.now()`).

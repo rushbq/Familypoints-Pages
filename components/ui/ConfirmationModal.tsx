@@ -34,16 +34,16 @@ export const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
   return (
     // z-index 設為 100 以確保蓋過其他 Modal (如 RewardRedeemer)
     <div 
-      className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-nook-brown/55 animate-pop"
+      className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-bey-void/80 animate-pop"
       onClick={(e) => e.stopPropagation()}
     >
-       <div className="bg-nook-cream rounded-2xl p-5 w-full max-w-sm soft-card flex flex-col items-center text-center relative">
+       <div className="bg-bey-panel rounded-2xl p-5 w-full max-w-sm soft-card flex flex-col items-center text-center relative">
           
           {/* 標題 */}
-          <h3 className="text-lg font-black text-nook-brown mb-2">{title}</h3>
+          <h3 className="text-lg font-black text-bey-ink mb-2">{title}</h3>
           
           {/* 內容 */}
-          <p className="text-sm text-nook-brown/75 font-bold mb-5 whitespace-pre-wrap leading-relaxed">
+          <p className="text-sm text-bey-ink/75 font-bold mb-5 whitespace-pre-wrap leading-relaxed">
             {message}
           </p>
           

@@ -37,16 +37,16 @@ export const RechartsWrapper: React.FC<RechartsWrapperProps> = ({ data, users })
           layout="vertical"
           margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
         >
-          <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#e2e8f0" />
+          <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#2C3B60" />
           <XAxis type="number" hide />
-          <YAxis dataKey="name" type="category" width={60} tick={{fill: '#64748b', fontSize: 14, fontWeight: 'bold'}} axisLine={false} tickLine={false} />
+          <YAxis dataKey="name" type="category" width={60} tick={{fill: '#9FB3D9', fontSize: 14, fontWeight: 'bold'}} axisLine={false} tickLine={false} />
           <Tooltip 
-            cursor={{fill: '#f1f5f9'}}
+            cursor={{fill: 'rgba(19,255,243,0.08)'}}
             contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
           />
           <Legend />
-          <Bar dataKey="加分" fill="#10b981" radius={[0, 4, 4, 0]} barSize={20} />
-          <Bar dataKey="扣分" fill="#f43f5e" radius={[0, 4, 4, 0]} barSize={20} />
+          <Bar dataKey="加分" fill="#A2FF1F" radius={[0, 4, 4, 0]} barSize={20} />
+          <Bar dataKey="扣分" fill="#FF4D4D" radius={[0, 4, 4, 0]} barSize={20} />
         </BarChart>
       </ResponsiveContainer>
     </div>

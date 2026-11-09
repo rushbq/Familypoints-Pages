@@ -240,10 +240,10 @@ const App: React.FC = () => {
 
   if (firebaseConfigError) {
     return (
-      <div className="h-screen flex flex-col items-center justify-center app-bg text-nook-brown p-6 text-center">
+      <div className="h-screen flex flex-col items-center justify-center app-bg text-bey-ink p-6 text-center">
         <div className="text-3xl mb-3">🛠️</div>
         <p className="text-lg font-black mb-2">Firebase 尚未設定完成</p>
-        <p className="max-w-xl text-sm font-bold text-nook-brown/70 leading-relaxed">
+        <p className="max-w-xl text-sm font-bold text-bey-ink/70 leading-relaxed">
           {firebaseConfigError}
           <br />
           請先建立 `.env.local` 並填入 Firebase Web App 設定值。
@@ -254,7 +254,7 @@ const App: React.FC = () => {
 
   if (isAuthLoading) {
     return (
-      <div className="h-screen flex flex-col items-center justify-center app-bg text-nook-brown">
+      <div className="h-screen flex flex-col items-center justify-center app-bg text-bey-ink">
         <div className="text-3xl mb-2">🌱</div>
         <p className="text-sm font-bold">確認雲端登入狀態中...</p>
       </div>
@@ -267,7 +267,7 @@ const App: React.FC = () => {
 
   if (isLoading) {
     return (
-      <div className="h-screen flex flex-col items-center justify-center app-bg text-nook-brown">
+      <div className="h-screen flex flex-col items-center justify-center app-bg text-bey-ink">
         <div className="text-3xl mb-2">🍃</div>
         <p className="text-sm font-bold">載入中...</p>
       </div>
@@ -276,12 +276,12 @@ const App: React.FC = () => {
 
   if (error || !data) {
     return (
-      <div className="h-screen flex flex-col items-center justify-center app-bg text-nook-brown">
+      <div className="h-screen flex flex-col items-center justify-center app-bg text-bey-ink">
         <div className="text-3xl mb-2">😢</div>
-        <p className="text-base font-bold text-nook-red">{error || '發生未知錯誤'}</p>
+        <p className="text-base font-bold text-bey-red">{error || '發生未知錯誤'}</p>
         <button 
           onClick={() => window.location.reload()}
-          className="mt-4 px-4 py-2 bg-nook-green text-white rounded-xl font-bold hover:brightness-105"
+          className="mt-4 px-4 py-2 bg-bey-cyan text-bey-void rounded-xl font-bold hover:brightness-105"
         >
           重新整理
         </button>
@@ -333,7 +333,7 @@ const App: React.FC = () => {
 // --- 儲存警告 Toast 元件 ---
 const SaveWarningToast: React.FC<{ message: string }> = ({ message }) => (
   <div className="fixed bottom-20 md:bottom-4 left-1/2 -translate-x-1/2 z-50 animate-pop">
-    <div className="bg-nook-orange text-white px-4 py-2 rounded-xl soft-card text-sm font-bold flex items-center gap-2">
+    <div className="bg-bey-orange text-white px-4 py-2 rounded-xl soft-card text-sm font-bold flex items-center gap-2">
       <span>⚠️</span>
       <span>{message}</span>
     </div>
