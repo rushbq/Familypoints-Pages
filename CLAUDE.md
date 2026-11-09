@@ -8,10 +8,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 npm run dev        # Dev server at http://localhost:3000 (host 0.0.0.0)
 npm run build      # Production build to dist/
 npm run preview    # Preview the production build locally
-npm run deploy     # Build + publish dist/ to GitHub Pages (predeploy runs the build)
 ```
 
-There is **no test runner and no linter** configured. UI text, JSDoc comments, and `console.log` messages are in **Traditional Chinese (zh-TW)**.
+There is **no test runner and no linter** configured. `tsc --noEmit` runs automatically at the end of a session (`.claude/hooks/typecheck.mjs`) — don't add it to a task's steps. UI text, JSDoc comments, and `console.log` messages are in **Traditional Chinese (zh-TW)**.
 
 **Always reply to the user in Traditional Chinese (zh-TW).**
 
@@ -25,13 +24,13 @@ A **React 19 + TypeScript + Vite** single-page app deployed as a static site to 
 - When a Firebase user signs in, `App.tsx` subscribes via `subscribeState()`. When `data` changes, it calls `persistData()` → `saveState()` to write the **whole normalized `AppState`** snapshot back. `lastSyncedStateRef` prevents re-writing identical state after a snapshot echoes back.
 
 ### Storage layer (`services/`) — cloud-first
-- `firebase.ts` — initializes Firebase App, `auth`, and Firestore with `persistentLocalCache()`. Requires the `VITE_FIREBASE_*` env vars (see below); missing vars set `firebaseConfigError`, which blocks the app with a setup screen.
+- `firebase.ts` — initializes Firebase App, `auth`, and Firestore with `persistentLocalCache()`. Requires the `VITE_FIREBASE_*` env vars; missing vars set `firebaseConfigError`, which blocks the app with a setup screen.
 - `storageService.ts` — the persistence facade. Firestore doc path is **`userStates/{uid}`** (one doc per Firebase account). `loadState()` reads, `subscribeState()` listens in real time, `saveState()` writes the full state with `setDoc()`. If no cloud doc exists, it bootstraps from local IndexedDB and uploads that snapshot (first-device migration path).
 - `database.ts` — legacy Dexie/IndexedDB (`FamilyPointsDB`, schema, default seed data). Now used only for old-data migration, browser cache, and storage-info helpers — **not** the source of truth. Bump `this.version(N)` (and add `.upgrade()` if transforming data) when changing the schema.
 
 ### App gates & shell
 1. `components/CloudLogin.tsx` — Firebase Email/Password sign-in. Nothing shows until authenticated.
-2. `components/RoleSelector.tsx` — local role pick. Children log in directly; parents must enter PIN **`080987`** (hardcoded `CORRECT_PIN`).
+2. `components/RoleSelector.tsx` — local role pick. Children log in directly; parents must enter a PIN (hardcoded as `CORRECT_PIN` in that file).
 3. `components/Dashboard.tsx` — main shell with tab navigation; renders modal overlays like `ActionLogger` and `RewardRedeemer`.
 4. `components/SettingsPanel.tsx` — parent-only admin: backup/restore, cleanup, member/score-item/reward-item/goal editing.
 - `components/ui/` — shared primitives (`Button`, `Card`, `ConfirmationModal`). `components/Icons.tsx` re-exports from `lucide-react`.
@@ -84,20 +83,9 @@ The app has two deliberately contrasting collection loops, both fed by parent-aw
 - A positive record feeds **both** counters in `App.tsx` `handleAddRecord` — they never consume each other.
 - Rare parts drop from milestones, detected by **before/after comparison** inside `handleUpdateGoalRewards` / `handleUpdateStampCards` / `handleUpdateRewardCards`. `SettingsPanel` knows nothing about the forge; keep it that way.
 - Part definitions live in `services/beyData.ts` (10 blades × 7 ratchets × 7 bits = 490 combinations). Adding a part is a data-only change; the SVG is parameterized by `shape`/`bladeCount`/`ratchetStyle`/`bitStyle`.
-- Planned next step (not built): 合作打週魔王 — both children's beys team up against a system boss. `BeyBuild` already carries full stats for this. **PvP between the siblings was deliberately rejected** — the score items include 刻意吵架/搶玩具, so a sanctioned win/lose between brothers is a known risk.
+- **Never build sibling-vs-sibling PvP.** The score items include 刻意吵架/搶玩具; a sanctioned win/lose between the brothers would manufacture conflict. Co-op against a system opponent is the accepted direction — see PRODUCT.md → Roadmap.
 - `Button` variants use an "AC squishy" style: `border-b-4` + `active:border-b-0 active:translate-y-[4px]`. Match this for custom buttons.
 - Path alias `@` resolves to the **project root** (not `src/`), set in `vite.config.ts`.
 - All entity IDs are `Date.now().toString()`; timestamps are Unix ms (`Date.now()`).
-
-## Firebase env vars (`.env.local`)
-
-Exact names expected by `firebase.ts` — keep them if touching onboarding/setup/auth:
-`VITE_FIREBASE_API_KEY`, `VITE_FIREBASE_AUTH_DOMAIN`, `VITE_FIREBASE_PROJECT_ID`, `VITE_FIREBASE_STORAGE_BUCKET`, `VITE_FIREBASE_MESSAGING_SENDER_ID`, `VITE_FIREBASE_APP_ID`.
-
-Firestore security rule restricts each user to their own doc: `match /userStates/{uid} { allow read, write: if request.auth != null && request.auth.uid == uid; }`.
-
-## Deployment (GitHub Pages)
-
-`vite.config.ts` uses `base: '/Familypoints-Pages/'` and `package.json` has `homepage: 'https://rushbq.github.io/Familypoints-Pages'`. Don't change these unless the repo/deploy target changes. Deploy with `npm run deploy` (publishes the `gh-pages` branch). See `github_pages_sop.md` for the full SOP.
-</content>
-</invoke>
+- **Never change `base` in `vite.config.ts` or `homepage` in `package.json`** unless the deploy target itself changes — they must match the GitHub Pages repo name or the deployed site breaks.
+- **Never put secrets in tracked files** (CLAUDE.md, README, commit messages) — Firebase keys live in `.env.local`, which is gitignored.
