@@ -19,7 +19,7 @@
 - ☁️ **雲端同步** - 使用 Firebase 登入後，電腦與手機可共用同一份資料
 - 🔒 **家長密碼保護** - 設定頁面仍需輸入 PIN 碼
 - 📲 **PWA 支援** - 可安裝至手機主畫面，支援離線快取
-- 🔄 **自動更新提示** - 偵測到新版本時會提示使用者更新，避免使用舊的資料結構
+- 🔄 **自動更新** - 偵測到新版本時自動清快取並重載，不需要使用者操作
 
 ## 🚀 本地開發
 
@@ -146,7 +146,10 @@ VITE_FIREBASE_APP_ID=your_app_id
 
 ### 版本更新
 
-當系統偵測到新版本時，會彈出更新提示對話框。建議點選「立即更新」以確保使用最新功能及資料結構，避免相容性問題。
+更新是**全自動的，沒有提示對話框**。`services/versionService.ts` 會比對遠端 `version.json` 與打包進程式的版本字串，
+不一致時自動清除快取並重新載入。檢查時機：開啟後 1.5 秒、每 5 分鐘、切回前景、從背景返回，兩次檢查最少間隔 60 秒。
+
+所以要讓裝置拿到新版，把 App 完全關掉再開啟即可。
 
 ### 離線支援
 
@@ -159,7 +162,7 @@ PWA 會快取靜態資源 (JS、CSS、字體等)，即使短暫斷線仍可瀏�
 - Tailwind CSS（CDN 載入，主題設定在 index.html）
 - Firebase Authentication - 雲端登入
 - Cloud Firestore - 雲端資料儲存
-- vite-plugin-pwa + Workbox - PWA 離線快取與更新提示
+- 自訂 Service Worker（`service-worker.js`，由 `vite.config.ts` 注入版本字串）- 離線 fallback 與自動更新
 - IndexedDB (瀏覽器快取 / 舊資料搬遷)
 - Lucide React - 圖示庫
 - gh-pages - GitHub Pages 部署
