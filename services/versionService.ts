@@ -118,7 +118,11 @@ const performVersionCheck = async () => {
     const manifest = await fetchVersionManifest();
     if (!manifest) return;
 
-    if (manifest.version !== __APP_VERSION__) {
+    // 只在遠端「比較新」時才重載，不能只看不相等：raw 帶 max-age=300，剛部署完
+    // 的那幾分鐘它可能還回著上一版，而使用者手上已經是新版了。用不相等判斷的話，
+    // 這段期間每次檢查都會把正在用的人踢去重載一次。
+    // 版本號是同一次 build 的 toISOString()，ISO 字串的字典序就是時間序。
+    if (manifest.version > __APP_VERSION__) {
       await reloadForVersion(manifest.version);
       return;
     }
