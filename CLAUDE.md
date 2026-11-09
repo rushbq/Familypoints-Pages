@@ -8,10 +8,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 npm run dev        # Dev server at http://localhost:3000 (host 0.0.0.0)
 npm run build      # Production build to dist/
 npm run preview    # Preview the production build locally
-npm run deploy     # Build + publish dist/ to GitHub Pages (predeploy runs the build)
 ```
 
-There is **no test runner and no linter** configured. UI text, JSDoc comments, and `console.log` messages are in **Traditional Chinese (zh-TW)**.
+There is **no test runner and no linter** configured. `tsc --noEmit` runs automatically at the end of a session (`.claude/hooks/typecheck.mjs`) — don't add it to a task's steps. UI text, JSDoc comments, and `console.log` messages are in **Traditional Chinese (zh-TW)**.
 
 **Always reply to the user in Traditional Chinese (zh-TW).**
 
@@ -25,13 +24,13 @@ A **React 19 + TypeScript + Vite** single-page app deployed as a static site to 
 - When a Firebase user signs in, `App.tsx` subscribes via `subscribeState()`. When `data` changes, it calls `persistData()` → `saveState()` to write the **whole normalized `AppState`** snapshot back. `lastSyncedStateRef` prevents re-writing identical state after a snapshot echoes back.
 
 ### Storage layer (`services/`) — cloud-first
-- `firebase.ts` — initializes Firebase App, `auth`, and Firestore with `persistentLocalCache()`. Requires the `VITE_FIREBASE_*` env vars (see below); missing vars set `firebaseConfigError`, which blocks the app with a setup screen.
+- `firebase.ts` — initializes Firebase App, `auth`, and Firestore with `persistentLocalCache()`. Requires the `VITE_FIREBASE_*` env vars; missing vars set `firebaseConfigError`, which blocks the app with a setup screen.
 - `storageService.ts` — the persistence facade. Firestore doc path is **`userStates/{uid}`** (one doc per Firebase account). `loadState()` reads, `subscribeState()` listens in real time, `saveState()` writes the full state with `setDoc()`. If no cloud doc exists, it bootstraps from local IndexedDB and uploads that snapshot (first-device migration path).
 - `database.ts` — legacy Dexie/IndexedDB (`FamilyPointsDB`, schema, default seed data). Now used only for old-data migration, browser cache, and storage-info helpers — **not** the source of truth. Bump `this.version(N)` (and add `.upgrade()` if transforming data) when changing the schema.
 
 ### App gates & shell
 1. `components/CloudLogin.tsx` — Firebase Email/Password sign-in. Nothing shows until authenticated.
-2. `components/RoleSelector.tsx` — local role pick. Children log in directly; parents must enter PIN **`080987`** (hardcoded `CORRECT_PIN`).
+2. `components/RoleSelector.tsx` — local role pick. Children log in directly; parents must enter a PIN (hardcoded as `CORRECT_PIN` in that file).
 3. `components/Dashboard.tsx` — main shell with tab navigation; renders modal overlays like `ActionLogger` and `RewardRedeemer`.
 4. `components/SettingsPanel.tsx` — parent-only admin: backup/restore, cleanup, member/score-item/reward-item/goal editing.
 - `components/ui/` — shared primitives (`Button`, `Card`, `ConfirmationModal`). `components/Icons.tsx` re-exports from `lucide-react`.
@@ -48,20 +47,62 @@ A **React 19 + TypeScript + Vite** single-page app deployed as a static site to 
 
 ## Conventions
 
-- **Tailwind is loaded via CDN in `index.html`, not npm.** The custom theme (the Animal-Crossing `nook-*` palette, `Zen Maru Gothic` font, `animate-pop`, stripes/leaf-pattern/tape-effect styles) is configured in a `<script>`/`<style>` block in `index.html` — there is **no `tailwind.config.js`**; do not add one. Match the `nook-*` colors and rounded, playful shapes.
+- **Tailwind is loaded via CDN in `index.html`, not npm.** The custom theme (the battle-top `bey-*` palette, `Orbitron` + `Chakra Petch` fonts, `app-bg` / `arena-pattern` / `arena-rings` / `speed-lines` / `clip-notch` / `bey-spin` / `animate-pop` styles) is configured in a `<script>`/`<style>` block in `index.html` — there is **no `tailwind.config.js`**; do not add one.
+- **Visual style: 戰鬥陀螺・競技場（STADIUM）**, a dark arena theme. Surfaces go `bey-deep` (page) → `bey-panel` (card) → `bey-paper` (raised/input), separated by `bey-steel` borders rather than shadows. Text is `bey-ink`, secondary `bey-dim`.
+- **Every accent owns exactly one role.** `bey-cyan` = system primary (active tab, confirm, focus ring, progress, app logo); `bey-lime` = positive/加分; `bey-red` = 扣分/danger; `bey-yellow` = 裁判席/獎勵卡/陽光; `bey-blue` = navigation/info; `bey-purple` and `bey-orange` are **reserved for team identity and nothing else**.
+- **Team colours: child index 0 `bey-purple`, index 1 `bey-orange`** — used for the top border, the bey SVG, the score and the `glow-*` on ScoreCard, ChildHomeSummary, BeyForge and RoleSelector. **Never give a child `bey-cyan`**: cyan means "this is the active control", so a cyan team reads as UI chrome rather than as that child. The app logo in the login page and nav stays cyan because it is branding, not a team.
+- **On bright fills (`bey-cyan`, `bey-lime`, `bey-yellow`) use `text-bey-void`, never `text-white`.** The `*Dark` tokens are for bottom borders and rings only, not text.
+- `font-display` (Orbitron) is for short Latin labels in caps with wide tracking. **Never apply it to Chinese** (Orbitron has no CJK glyphs, and the tracking wrecks the fallback) and **not to score digits** — Orbitron's slashed zero reads as a symbol; scores use `font-sans` bold italic with `tabular-nums`.
+
+### Typography scale
+
+Weights are a hierarchy, not decoration. The app previously set almost everything to 700/900, which flattened the hierarchy and blurred small Chinese on the dark background.
+
+| Weight | Use |
+|---|---|
+| `font-black` (900) | Page/section headings at `text-base`+, and score numbers. Nothing at `text-sm` or below. |
+| `font-bold` (700) | Card titles, names, buttons, chips, values worth scanning. |
+| `font-medium` (500) | Form labels, list labels. |
+| `font-normal` (400) | Descriptions, hints, timestamps, any full sentence. |
+
+- **Secondary text is `text-bey-dim`, a solid token — never `text-bey-ink/NN`.** Opacity below ~70% on `bey-panel` falls under 4.5:1 and fails WCAG AA. Keep opacity for borders and backgrounds only; the one exception is a deliberately disabled control.
+- Secondary text is `font-normal`. Exception: Orbitron micro-labels (`font-display`) need `font-bold` to hold up at 10–11px.
+- Minimum text size is `text-[10px]`, and only for Latin Orbitron labels; Chinese does not go below `text-xs`.
+- Dividers on dark panels use `border-bey-steel`. A tinted border like `border-bey-cyanDark/10` is invisible here.
+- `components/BeyTop.tsx` is the original spinning-top SVG (concentric blade ring + gear + core). Pass `bladeId`/`ratchetId`/`bitId` to draw a specific build, or just `color` for a plain team-colored top. All Beyblade-style art must stay original — no official logos, characters, or product renders.
+
+### Collection modules
+
+The app has two deliberately contrasting collection loops, both fed by parent-awarded positive points but with **separate, non-competing counters**, plus a weekend boss fight on top of the forge:
+
+| | 家庭花園 (`familyGarden`) | 陀螺工房 (`beyForge`) |
+|---|---|---|
+| Currency | 陽光 — 20 pts per watering | 鋼料 — 25 pts per forge draw |
+| Ownership | **Shared**, both children grow one plant | **Per-child**, own parts and beys |
+| Loop | Water 5× → bloom → species enters 圖鑑 | Draw parts → assemble blade+ratchet+bit → bey |
+| Logic | `services/gardenUtils.ts` | `services/beyUtils.ts` (mirrors the garden's shape) |
+
+- A positive record feeds **both** counters in `App.tsx` `handleAddRecord` — they never consume each other.
+- Rare parts drop from milestones, detected by **before/after comparison** inside `handleUpdateGoalRewards` / `handleUpdateStampCards` / `handleUpdateRewardCards`. `SettingsPanel` knows nothing about the forge; keep it that way.
+- Part definitions live in `services/beyData.ts` (14 blades × 11 ratchets × 11 bits = 1694 combinations). Adding a part is a data-only change; the SVG is parameterized by `shape`/`bladeCount`/`ratchetStyle`/`bitStyle`.
+- **Never build sibling-vs-sibling PvP.** The score items include 刻意吵架/搶玩具; a sanctioned win/lose between the brothers would manufacture conflict. Co-op against a system opponent is the accepted direction.
+
+#### Weekly boss (`beyBoss`, `services/beyBossUtils.ts`)
+
+- **Open on Saturday and Sunday only**, one attempt per day. Weekdays show the boss's stats and a countdown with the button locked, so the week is spent forging toward a known weakness.
+- The week's boss is **derived from the date** (`getWeekKey` → `getBossForWeek`), since there is no server. 12 bosses, so a quarter before one repeats.
+- Team stats are the **sum** of the lineup's beys, so a weak bey is still a net gain. Three rounds compare attack, then defense, then stamina; the higher value wins with a 20% upset chance; two round wins take the battle.
+- Both children in the lineup → full boss; a win gives each of them the boss's **exclusive part** and clears the week. One child → boss stats ×0.6; a win gives a normal rare part but **deliberately does not clear the week**, otherwise whoever plays first burns the other's shot at the exclusive part.
+- `BeyRarity` has a `BOSS` tier that `drawBeyPart` and `grantBeyPart` both exclude. A new boss part goes in `BOSS_PARTS` with a boss's `rewardPartId` pointing at it — never into the common or rare pools.
+- Parents see the panel read-only; the boss is the children's business.
+
+### Known parked code
+
+`components/SecretMailbox.tsx` is intentionally unreferenced — the mailbox UI was hidden in `a9c9cae`, not abandoned. `AppState.messages` and the `onSendMessage` / `onMarkMessageRead` props exist to keep it restorable. **Do not delete it as dead code**; removing it means removing the field from the stored state too, which is a data-model decision.
+- The boss renders with **its own `colorSet`**, not a team colour — otherwise it reads as one of the children's beys. It spins slowly on weekdays and fast only on battle days, so a locked card does not feel urgent.
+- Rules live in `components/BeyRulesModal.tsx`, written for an elementary-school reader: short sentences, second person, concrete numbers, no jargon. The numbers are interpolated from the balance constants (`DEFAULT_SCRAP_PER_DRAW`, `DUPLICATE_SCRAP_REFUND`, `UPSET_CHANCE`, `WEAKENED_MULTIPLIER`), so retuning balance never leaves the copy lying.
 - `Button` variants use an "AC squishy" style: `border-b-4` + `active:border-b-0 active:translate-y-[4px]`. Match this for custom buttons.
 - Path alias `@` resolves to the **project root** (not `src/`), set in `vite.config.ts`.
 - All entity IDs are `Date.now().toString()`; timestamps are Unix ms (`Date.now()`).
-
-## Firebase env vars (`.env.local`)
-
-Exact names expected by `firebase.ts` — keep them if touching onboarding/setup/auth:
-`VITE_FIREBASE_API_KEY`, `VITE_FIREBASE_AUTH_DOMAIN`, `VITE_FIREBASE_PROJECT_ID`, `VITE_FIREBASE_STORAGE_BUCKET`, `VITE_FIREBASE_MESSAGING_SENDER_ID`, `VITE_FIREBASE_APP_ID`.
-
-Firestore security rule restricts each user to their own doc: `match /userStates/{uid} { allow read, write: if request.auth != null && request.auth.uid == uid; }`.
-
-## Deployment (GitHub Pages)
-
-`vite.config.ts` uses `base: '/Familypoints-Pages/'` and `package.json` has `homepage: 'https://rushbq.github.io/Familypoints-Pages'`. Don't change these unless the repo/deploy target changes. Deploy with `npm run deploy` (publishes the `gh-pages` branch). See `github_pages_sop.md` for the full SOP.
-</content>
-</invoke>
+- **Never change `base` in `vite.config.ts` or `homepage` in `package.json`** unless the deploy target itself changes — they must match the GitHub Pages repo name or the deployed site breaks.
+- **Never put secrets in tracked files** (CLAUDE.md, README, commit messages) — Firebase keys live in `.env.local`, which is gitignored.

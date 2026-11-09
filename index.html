@@ -10,7 +10,7 @@
     <link rel="icon" type="image/svg+xml" href="./favicon.svg" />
     <link rel="apple-touch-icon" href="./apple-touch-icon.svg" />
     <link rel="manifest" href="./manifest.webmanifest" />
-    <meta name="theme-color" content="#EDF5E8" />
+    <meta name="theme-color" content="#0D1424" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <meta name="apple-mobile-web-app-title" content="家庭積分" />
@@ -20,23 +20,32 @@
         theme: {
           extend: {
             colors: {
-              nook: {
-                cream: '#F8FBF5',  /* 霧白內容面 */
-                beige: '#EAF2E5',  /* 葉影底色 */
-                brown: '#394438',  /* 墨綠灰主文字 */
-                green: '#64B96A',  /* 嫩芽綠 */
-                greenDark: '#2C7A4B',
-                blue: '#65B7D9',   /* 露水藍 */
-                blueDark: '#3282A5',
-                orange: '#F0A24A', /* 花蜜橘 */
-                orangeDark: '#B96828',
-                yellow: '#F6D96B', /* 花心黃 */
-                red: '#E76F67',
-                paper: '#FFFFFF',
+              /* 戰鬥陀螺・競技場（STADIUM）配色
+                 深藍鋼為場地、青色為主隊色、橘色為對手隊色、螢光綠為爆點。 */
+              bey: {
+                void: '#05080F',      /* 遮罩與最深層 */
+                deep: '#0D1424',      /* 競技場地板（整體背景） */
+                panel: '#16213A',     /* 一般面板 */
+                paper: '#1D2B4D',     /* 浮起面板／輸入框 */
+                steel: '#2C3B60',     /* 金屬邊框 */
+                dim: '#9FB3D9',       /* 次要文字 */
+                ink: '#E6EEFB',       /* 主要文字 */
+                cyan: '#13FFF3',      /* 系統主色：作用中、確認、焦點。不作為隊色 */
+                cyanDark: '#0A9C95',
+                blue: '#1C93E5',      /* 導覽・資訊 */
+                blueDark: '#0F5E96',
+                purple: '#C44DFF',    /* 隊色一（丞鈞）。保留給隊伍識別，系統不使用 */
+                purpleDark: '#7D1FB0',
+                orange: '#FF7A2F',    /* 隊色二（佑佑）・獎勵兌換 */
+                orangeDark: '#A8441A',
+                yellow: '#FCEE21',    /* 冠軍・星等 */
+                red: '#FF4D4D',       /* 扣分・危險 */
+                lime: '#A2FF1F',      /* 爆發強調 */
               }
             },
             fontFamily: {
-              sans: ['"Varela Round"', '"Zen Maru Gothic"', 'ui-rounded', 'system-ui', 'sans-serif'],
+              sans: ['"Chakra Petch"', '"Noto Sans TC"', 'system-ui', 'sans-serif'],
+              display: ['Orbitron', '"Chakra Petch"', 'sans-serif'],
             }
           }
         }
@@ -44,32 +53,104 @@
     </script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Varela+Round&family=Zen+Maru+Gothic:wght@400;500;700;900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;900&family=Chakra+Petch:wght@400;500;600;700&family=Noto+Sans+TC:wght@400;500;700;900&display=swap" rel="stylesheet">
     <style>
       /* 隱藏滾動條 */
       .no-scrollbar::-webkit-scrollbar { display: none; }
       .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
-      
+
       body {
-        background-color: #EDF5E8;
-        color: #394438;
+        background-color: #0D1424;
+        color: #E6EEFB;
+        line-height: 1.6;
+        -webkit-font-smoothing: antialiased;
       }
 
-      /* Sweet Home 花園風格：清爽草地與天空色調，不使用高噪音紋理。 */
+      /* 數字與標題使用寬體科技感字型，並稍微拉開字距。 */
+      .font-display { letter-spacing: 0.04em; }
+
+      /* ===== 競技場背景 ===== */
+      /* 投射燈（青／橘）＋同心圓場地線＋金屬格紋。 */
       .app-bg {
         background:
-          radial-gradient(circle at 8% 6%, rgba(246, 217, 107, 0.18), transparent 18rem),
-          radial-gradient(circle at 92% 12%, rgba(101, 183, 217, 0.16), transparent 20rem),
-          linear-gradient(180deg, #F6FAF3 0%, #EDF5E8 100%);
+          radial-gradient(circle at 12% 4%, rgba(19, 255, 243, 0.14), transparent 22rem),
+          radial-gradient(circle at 88% 10%, rgba(255, 122, 47, 0.12), transparent 24rem),
+          linear-gradient(180deg, #121D33 0%, #0D1424 55%, #080E1A 100%);
         background-attachment: fixed;
       }
 
-      /* 卡片以緊湊、低浮起感為主。 */
-      .soft-card {
-        box-shadow: 0 4px 8px -4px rgba(44, 122, 75, 0.22);
+      /* 登入／角色選擇：正對競技場中心的發射台視角。 */
+      .arena-pattern {
+        position: relative;
+        background:
+          radial-gradient(circle at 50% 42%, rgba(19, 255, 243, 0.16), transparent 20rem),
+          radial-gradient(circle at 50% 108%, rgba(255, 122, 47, 0.14), transparent 22rem),
+          linear-gradient(180deg, #131F38 0%, #0D1424 60%, #070C16 100%);
+      }
+      /* 場地同心圓：用 repeating-radial-gradient 畫出賽場刻線。 */
+      .arena-pattern::before {
+        content: "";
+        position: absolute;
+        inset: 0;
+        pointer-events: none;
+        background:
+          repeating-radial-gradient(circle at 50% 42%,
+            transparent 0 46px,
+            rgba(19, 255, 243, 0.08) 46px 47px);
+        mask-image: radial-gradient(circle at 50% 42%, #000 0%, transparent 72%);
+        -webkit-mask-image: radial-gradient(circle at 50% 42%, #000 0%, transparent 72%);
       }
 
-      /* 花朵輕微搖擺 */
+      /* 可重複使用的競技場刻線層，給首頁英雄區當底。 */
+      .arena-rings {
+        background:
+          repeating-radial-gradient(circle at var(--rings-x, 50%) var(--rings-y, 50%),
+            transparent 0 28px,
+            rgba(19, 255, 243, 0.10) 28px 29px);
+        mask-image: radial-gradient(circle at var(--rings-x, 50%) var(--rings-y, 50%), #000 10%, transparent 70%);
+        -webkit-mask-image: radial-gradient(circle at var(--rings-x, 50%) var(--rings-y, 50%), #000 10%, transparent 70%);
+      }
+
+      /* 速度線：斜向掃過的加速軌跡。 */
+      .speed-lines {
+        background: repeating-linear-gradient(115deg,
+          transparent 0 16px,
+          rgba(230, 238, 251, 0.045) 16px 18px);
+      }
+
+      /* 卡片：深色金屬面板，靠邊框而非陰影分層。 */
+      .soft-card {
+        border: 1px solid rgba(44, 59, 96, 0.9);
+        box-shadow:
+          0 10px 24px -14px rgba(0, 0, 0, 0.85),
+          inset 0 1px 0 rgba(230, 238, 251, 0.05);
+      }
+
+      /* 斜切角：競技場 HUD 的招牌輪廓。 */
+      .clip-notch {
+        clip-path: polygon(14px 0, 100% 0, 100% calc(100% - 14px), calc(100% - 14px) 100%, 0 100%, 0 14px);
+      }
+      .clip-notch-sm {
+        clip-path: polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px);
+      }
+
+      /* 發光文字，給分數用。 */
+      .glow-cyan { text-shadow: 0 0 18px rgba(19, 255, 243, 0.45); }
+      .glow-orange { text-shadow: 0 0 18px rgba(255, 122, 47, 0.45); }
+      .glow-purple { text-shadow: 0 0 18px rgba(196, 77, 255, 0.5); }
+
+      /* ===== 陀螺旋轉 ===== */
+      @keyframes beySpin { to { transform: rotate(360deg); } }
+      .bey-spin { animation: beySpin 2.6s linear infinite; transform-origin: 50% 50%; }
+      .bey-spin-fast { animation: beySpin 0.9s linear infinite; transform-origin: 50% 50%; }
+      /* 陀螺在場上游走時的輕微晃動。 */
+      @keyframes beyWobble {
+        0%, 100% { transform: translate(0, 0) rotate(-2deg); }
+        50% { transform: translate(2px, -3px) rotate(2deg); }
+      }
+      .bey-wobble { animation: beyWobble 3.2s ease-in-out infinite; }
+
+      /* 花朵輕微搖擺（花園沿用） */
       @keyframes sway {
         0%, 100% { transform: rotate(-6deg); }
         50% { transform: rotate(6deg); }
@@ -79,14 +160,6 @@
         .animate-sway { animation: none; }
       }
 
-      /* 登入與角色頁面的柔和花園底色。 */
-      .leaf-pattern {
-        background:
-          radial-gradient(circle at 18% 16%, rgba(246, 217, 107, 0.24), transparent 13rem),
-          radial-gradient(circle at 86% 82%, rgba(101, 183, 217, 0.2), transparent 15rem),
-          #EDF5E8;
-      }
-      
       /* 彈出動畫效果 */
       @keyframes popIn {
         0% { transform: translateY(4px); }
@@ -190,7 +263,10 @@
         padding-bottom: env(safe-area-inset-bottom, 8px);
       }
 
-      /* Safari 會使用較長的本地化日期文字；縮小內部留白以維持手機雙欄。 */
+      /* 深色底下的日期欄位需要反轉原生控制項色彩。 */
+      .compact-date-input {
+        color-scheme: dark;
+      }
       .compact-date-input::-webkit-date-and-time-value {
         min-width: 0;
         margin: 0;
@@ -206,16 +282,17 @@
         margin-left: 2px;
         padding: 1px;
         flex: 0 0 auto;
+        filter: invert(1);
       }
 
       /* 自訂捲軸 */
       .custom-scrollbar::-webkit-scrollbar { width: 6px; }
       .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
-      .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(107,91,73,0.15); border-radius: 999px; }
-      .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: rgba(107,91,73,0.3); }
+      .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(19,255,243,0.18); border-radius: 999px; }
+      .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: rgba(19,255,243,0.35); }
     </style>
 </head>
-  <body class="bg-nook-beige text-nook-brown antialiased select-none font-sans h-full">
+  <body class="bg-bey-deep text-bey-ink antialiased select-none font-sans h-full">
     <div id="root" class="h-full"></div>
   <script type="module" src="./index.tsx"></script>
 </body>

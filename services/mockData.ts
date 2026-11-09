@@ -8,6 +8,8 @@ import {
   UserRole,
 } from '../types';
 import { createInitialFamilyGarden } from './gardenUtils';
+import { createInitialBeyForge } from './beyUtils';
+import { createInitialBeyBoss, getWeekKey, getBossForWeek } from './beyBossUtils';
 
 /**
  * 開發預覽用的假資料（僅在 import.meta.env.DEV 下透過 PreviewHarness 使用）。
@@ -34,6 +36,44 @@ export const getMockState = (): AppState => {
   ];
   familyGarden.plants[0].waterings = [
     { id: 'gw_1', childId: 'child_1', childName: '丞鈞', wateredAt: now - 3 * DAY },
+  ];
+
+  // 預覽用：哥哥已經有一整顆陀螺可以看，弟弟剛起步。
+  const beyForge = createInitialBeyForge(users);
+  beyForge.childProgress = [
+    { childId: 'child_1', earnedScrap: 80, usedScrap: 2 },
+    { childId: 'child_2', earnedScrap: 18, usedScrap: 0 },
+  ];
+  beyForge.parts = [
+    { id: 'bp_1', childId: 'child_1', partId: 'blade_axe_orange', obtainedAt: now - 6 * DAY, source: 'SCRAP' },
+    { id: 'bp_2', childId: 'child_1', partId: 'ratchet_solid_silver', obtainedAt: now - 5 * DAY, source: 'SCRAP' },
+    { id: 'bp_3', childId: 'child_1', partId: 'bit_flat_orange', obtainedAt: now - 4 * DAY, source: 'SCRAP' },
+    { id: 'bp_4', childId: 'child_1', partId: 'blade_spear_red', obtainedAt: now - 2 * DAY, source: 'GOAL' },
+    { id: 'bp_5', childId: 'child_2', partId: 'blade_wing_blue', obtainedAt: now - 1 * DAY, source: 'REWARD_CARD' },
+  ];
+  beyForge.builds = [
+    {
+      id: 'bb_1',
+      childId: 'child_1',
+      name: '烈焰衝鋒',
+      bladeId: 'blade_axe_orange',
+      ratchetId: 'ratchet_solid_silver',
+      bitId: 'bit_flat_orange',
+      assembledAt: now - 3 * DAY,
+    },
+  ];
+
+  // 預覽用：哥哥已派出陀螺，弟弟還沒，剛好看得到「只有一人出戰」的減弱版狀態。
+  const beyBoss = createInitialBeyBoss();
+  const weekKey = getWeekKey();
+  beyBoss.entries = [
+    {
+      weekKey,
+      bossId: getBossForWeek(weekKey).id,
+      lineup: [{ childId: 'child_1', buildId: 'bb_1' }],
+      attempts: [],
+      defeatedAt: null,
+    },
   ];
 
   return {
@@ -80,5 +120,7 @@ export const getMockState = (): AppState => {
     { id: 'sc_2', childId: 'child_2', title: '主動刷牙集點', targetStamps: 5, stamps: 5, rewardLabel: '小汽車玩具', rewardIcon: '🚗', status: StampCardStatus.ACTIVE, createdAt: now - 7 * DAY },
   ],
   familyGarden,
+  beyForge,
+  beyBoss,
   };
 };

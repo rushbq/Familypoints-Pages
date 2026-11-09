@@ -39,22 +39,22 @@ export const SecretMailbox: React.FC<SecretMailboxProps> = ({
   if (!isParent) {
     return (
       <div className="max-w-3xl mx-auto relative">
-        <div className="bg-white rounded-[1.5rem] shadow-xl p-1 border-4 border-nook-beige relative overflow-hidden">
+        <div className="bg-bey-paper rounded-[1.5rem] shadow-xl p-1 border-4 border-bey-deep relative overflow-hidden">
             <div className="p-8 md:p-12 relative z-10">
                 {/* Stamp */}
                 <div className="absolute top-6 right-6 opacity-60 transform rotate-12 pointer-events-none">
-                   <div className="w-24 h-28 border-4 border-nook-green/30 p-2 flex flex-col items-center justify-center rounded-lg">
-                      <Icons.Leaf size={48} className="text-nook-green/30" />
-                      <span className="text-nook-green/30 font-black text-xs mt-1">LEAF MAIL</span>
+                   <div className="w-24 h-28 border-4 border-bey-cyan/30 p-2 flex flex-col items-center justify-center rounded-lg">
+                      <Icons.Leaf size={48} className="text-bey-cyan/30" />
+                      <span className="text-bey-cyan/30 font-bold text-xs mt-1">LEAF MAIL</span>
                    </div>
                 </div>
 
                 <div className="mb-8">
-                   <h2 className="text-3xl font-black text-nook-brown mb-2 flex items-center gap-3">
-                      <span className="bg-nook-blue text-white rounded-full p-2"><Icons.Send /></span>
+                   <h2 className="text-3xl font-black text-bey-ink mb-2 flex items-center gap-3">
+                      <span className="bg-bey-blue text-white rounded-full p-2"><Icons.Send /></span>
                       寄給爸媽的信
                    </h2>
-                   <p className="text-nook-brown/60 font-bold ml-12">有什麼心裡話，都可以在這裡說...</p>
+                   <p className="text-bey-dim font-normal ml-12">有什麼心裡話，都可以在這裡說...</p>
                 </div>
                 
                 {/* Clean White Paper Area - Removed Lines for better readability */}
@@ -63,7 +63,7 @@ export const SecretMailbox: React.FC<SecretMailboxProps> = ({
                     value={newMessage}
                     onChange={e => setNewMessage(e.target.value)}
                     placeholder="親愛的爸爸媽媽..."
-                    className="w-full h-80 p-6 rounded-2xl border-4 border-nook-beige/50 focus:border-nook-blue/50 focus:ring-0 outline-none resize-none bg-nook-cream text-2xl text-nook-brown font-medium shadow-inner placeholder-nook-brown/20"
+                    className="w-full h-80 p-6 rounded-2xl border-4 border-bey-deep/50 focus:border-bey-blue/50 focus:ring-0 outline-none resize-none bg-bey-panel text-2xl text-bey-ink font-medium shadow-inner placeholder-bey-ink/20"
                   />
                 </div>
 
@@ -75,7 +75,7 @@ export const SecretMailbox: React.FC<SecretMailboxProps> = ({
             </div>
             
             {/* Texture */}
-            <div className="absolute inset-0 pointer-events-none bg-white opacity-50" style={{ backgroundImage: 'radial-gradient(#F1F0E0 2px, transparent 2px)', backgroundSize: '20px 20px' }}></div>
+            <div className="absolute inset-0 pointer-events-none bg-bey-paper opacity-50" style={{ backgroundImage: 'radial-gradient(rgba(230,238,251,0.10) 2px, transparent 2px)', backgroundSize: '20px 20px' }}></div>
         </div>
       </div>
     );
@@ -86,17 +86,17 @@ export const SecretMailbox: React.FC<SecretMailboxProps> = ({
     <div className="space-y-6">
        <div className="flex items-center justify-between mb-8">
          <div className="flex items-center gap-4">
-            <div className="bg-nook-green p-4 rounded-2xl text-white border-b-4 border-nook-greenDark shadow-sm transform -rotate-3"><Icons.Mail size={32} /></div>
+            <div className="bg-bey-cyan p-4 rounded-2xl text-white border-b-4 border-bey-cyanDark shadow-sm transform -rotate-3"><Icons.Mail size={32} /></div>
             <div>
-                <h2 className="text-3xl font-black text-nook-brown">郵筒</h2>
-                <p className="font-bold text-nook-brown/50">收到 {messages.length} 封來自孩子的信</p>
+                <h2 className="text-3xl font-black text-bey-ink">郵筒</h2>
+                <p className="font-normal text-bey-dim">收到 {messages.length} 封來自孩子的信</p>
             </div>
          </div>
        </div>
 
        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
          {sortedMessages.length === 0 ? (
-           <div className="col-span-full text-center py-20 bg-white/50 rounded-[3rem] border-4 border-dashed border-nook-brown/10 text-nook-brown/40">
+           <div className="col-span-full text-center py-20 bg-bey-paper/50 rounded-[3rem] border-4 border-dashed border-bey-ink/10 text-bey-dim">
              <Icons.Inbox size={64} className="mx-auto mb-4 opacity-50" />
              <p className="text-xl font-bold">郵筒空空的...</p>
            </div>
@@ -107,47 +107,47 @@ export const SecretMailbox: React.FC<SecretMailboxProps> = ({
                onClick={() => !msg.isRead && onMarkRead(msg.id)}
                className={`relative p-8 rounded-[2rem] transition-all cursor-pointer group ${
                  msg.isRead 
-                   ? 'bg-white border-4 border-white shadow-sm rotate-0 scale-100 hover:rotate-1' 
-                   : 'bg-nook-cream border-8 border-white shadow-xl -rotate-1 hover:rotate-0 hover:scale-[1.02] z-10'
+                   ? 'bg-bey-paper border-4 border-bey-steel shadow-sm rotate-0 scale-100 hover:rotate-1' 
+                   : 'bg-bey-panel border-8 border-bey-steel shadow-xl -rotate-1 hover:rotate-0 hover:scale-[1.02] z-10'
                }`}
              >
                 {/* New Badge */}
                 {!msg.isRead && (
-                    <div className="absolute -top-4 -right-4 bg-nook-red text-white w-20 h-20 rounded-full flex items-center justify-center font-black rotate-12 shadow-md border-4 border-white animate-bounce z-20">
+                    <div className="absolute -top-4 -right-4 bg-bey-red text-white w-20 h-20 rounded-full flex items-center justify-center font-black rotate-12 shadow-md border-4 border-bey-steel animate-bounce z-20">
                         NEW!
                     </div>
                 )}
 
                {/* Postcard header */}
-               <div className="flex justify-between items-start mb-6 border-b-2 border-dashed border-nook-brown/10 pb-4">
+               <div className="flex justify-between items-start mb-6 border-b-2 border-dashed border-bey-ink/10 pb-4">
                  <div className="flex items-center gap-3">
-                    <div className="w-12 h-12 rounded-full bg-nook-beige flex items-center justify-center text-2xl border-2 border-nook-brown/10">
+                    <div className="w-12 h-12 rounded-full bg-bey-deep flex items-center justify-center text-2xl border-2 border-bey-ink/10">
                         <Icons.User />
                     </div>
                     <div>
-                        <span className="block font-black text-nook-brown text-lg">{msg.fromChildName}</span>
-                        <span className="text-xs font-bold text-nook-blue">寄件人</span>
+                        <span className="block font-black text-bey-ink text-lg">{msg.fromChildName}</span>
+                        <span className="text-xs font-bold text-bey-blue">寄件人</span>
                     </div>
                  </div>
                  <div className="text-right">
-                    <span className="block font-bold text-nook-brown/40 text-sm">
+                    <span className="block font-normal text-bey-dim text-sm">
                         {new Date(msg.timestamp).toLocaleString('zh-TW', {month:'numeric', day:'numeric'})}
                     </span>
-                    <span className="text-xs font-bold text-nook-brown/30">
+                    <span className="text-xs font-normal text-bey-dim">
                         {new Date(msg.timestamp).toLocaleString('zh-TW', {hour:'2-digit', minute:'2-digit'})}
                     </span>
                  </div>
                </div>
                
                <div className="min-h-[120px]">
-                <p className="text-nook-brown whitespace-pre-wrap text-xl leading-relaxed font-medium font-handwriting">
+                <p className="text-bey-ink whitespace-pre-wrap text-xl leading-relaxed font-medium font-handwriting">
                     {msg.content}
                 </p>
                </div>
 
                {!msg.isRead && (
                  <div className="mt-6 flex justify-end">
-                    <div className="text-sm font-black text-white bg-nook-blue px-4 py-2 rounded-full shadow-sm flex items-center">
+                    <div className="text-sm font-bold text-white bg-bey-blue px-4 py-2 rounded-full shadow-sm flex items-center">
                         <Icons.CheckCircle size={16} className="mr-2" /> 
                         標示為已讀
                     </div>

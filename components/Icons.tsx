@@ -44,7 +44,8 @@ import {
   Calendar,
   Award,
   Camera,
-  ImageOff
+  ImageOff,
+  Sparkles
 } from 'lucide-react';
 
 export const Icons = {
@@ -93,5 +94,6 @@ export const Icons = {
   Calendar,
   Award,
   Camera,
-  ImageOff
+  ImageOff,
+  Sparkles
 };

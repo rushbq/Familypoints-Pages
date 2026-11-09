@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import {
   AppState,
+  BeyBossAttempt,
   DiscountCard,
   GoalReward,
   RewardCard,
@@ -20,6 +21,15 @@ import {
   startFamilyGardenPlant,
   waterFamilyGarden,
 } from '../services/gardenUtils';
+import {
+  addBeyScrap,
+  assembleBey,
+  awardSpecificPart,
+  drawBeyPart,
+  grantBeyPart,
+  removeBeyBuild,
+} from '../services/beyUtils';
+import { challengeBoss, getWeekKey, setLineup } from '../services/beyBossUtils';
 
 /**
  * 開發預覽用的 Dashboard 外殼（僅 import.meta.env.DEV）。
@@ -54,8 +64,22 @@ export const PreviewHarness: React.FC<{ role: string }> = ({ role }) => {
       familyGarden: newRecord.pointsChange > 0
         ? addGardenPositivePoints(prev.familyGarden, newRecord.childId, newRecord.pointsChange)
         : prev.familyGarden,
+      beyForge: newRecord.pointsChange > 0
+        ? addBeyScrap(prev.beyForge, newRecord.childId, newRecord.pointsChange)
+        : prev.beyForge,
     }));
     return newRecord;
+  };
+
+  const onDrawBeyPart = (childId: string) => {
+    const timestamp = Date.now();
+    let outcome: { partId: string | null; isDuplicate: boolean } = { partId: null, isDuplicate: false };
+    setData((prev) => {
+      const result = drawBeyPart(prev.beyForge, childId, timestamp.toString(), timestamp);
+      outcome = { partId: result.partId, isDuplicate: result.isDuplicate };
+      return result.partId ? { ...prev, beyForge: result.forge } : prev;
+    });
+    return outcome;
   };
 
   const onWaterGarden = (childId: string) => {
@@ -65,6 +89,26 @@ export const PreviewHarness: React.FC<{ role: string }> = ({ role }) => {
       const result = waterFamilyGarden(prev.familyGarden, currentUser, timestamp.toString(), timestamp);
       return result.didWater ? { ...prev, familyGarden: result.garden } : prev;
     });
+  };
+
+  const onChallengeBoss = () => {
+    const timestamp = Date.now();
+    let outcome: BeyBossAttempt | null = null;
+    setData((prev) => {
+      const result = challengeBoss(prev.beyBoss, prev.beyForge, getWeekKey(), timestamp.toString(), timestamp);
+      if (!result.attempt) return prev;
+      outcome = result.attempt;
+      let beyForge = prev.beyForge;
+      prev.users.filter((u) => u.role === UserRole.CHILD).forEach((child, index) => {
+        if (result.rewardPartId) {
+          beyForge = awardSpecificPart(beyForge, child.id, result.rewardPartId, `${timestamp}_b${index}`, timestamp);
+        } else if (result.grantRare) {
+          beyForge = grantBeyPart(beyForge, child.id, 'BOSS', `${timestamp}_br${index}`, timestamp).forge;
+        }
+      });
+      return { ...prev, beyBoss: result.state, beyForge };
+    });
+    return outcome;
   };
 
   return (
@@ -93,6 +137,19 @@ export const PreviewHarness: React.FC<{ role: string }> = ({ role }) => {
           familyGarden: startFamilyGardenPlant(prev.familyGarden, speciesId, timestamp.toString(), timestamp),
         }));
       }}
+      onDrawBeyPart={onDrawBeyPart}
+      onAssembleBey={(childId: string, name: string, bladeId: string, ratchetId: string, bitId: string) => {
+        const timestamp = Date.now();
+        setData((prev) => ({
+          ...prev,
+          beyForge: assembleBey(prev.beyForge, childId, name, bladeId, ratchetId, bitId, timestamp.toString(), timestamp),
+        }));
+      }}
+      onDisassembleBey={(buildId: string) => setData((p) => ({ ...p, beyForge: removeBeyBuild(p.beyForge, buildId) }))}
+      onSetBossLineup={(childId: string, buildId: string | null) =>
+        setData((p) => ({ ...p, beyBoss: setLineup(p.beyBoss, getWeekKey(), childId, buildId) }))
+      }
+      onChallengeBoss={onChallengeBoss}
       cloudEmail="preview@example.com"
       onCloudLogout={() => window.alert('（預覽模式）切換帳號')}
     />

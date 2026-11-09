@@ -3,14 +3,17 @@ import { onAuthStateChanged, signOut, User as FirebaseUser } from 'firebase/auth
 import { saveState, SaveResult, subscribeState } from './services/storageService';
 import {
   AppState,
+  BeyBossAttempt,
   DiscountCard,
   GoalReward,
+  GoalRewardStatus,
   RewardCard,
   RewardItem,
   ScoreItem,
   ScoreRecord,
   SecretMessage,
   StampCard,
+  StampCardStatus,
   User,
   UserRole,
 } from './types';
@@ -24,6 +27,19 @@ import {
   startFamilyGardenPlant,
   waterFamilyGarden,
 } from './services/gardenUtils';
+import {
+  addBeyScrap,
+  assembleBey,
+  awardSpecificPart,
+  drawBeyPart,
+  grantBeyPart,
+  removeBeyBuild,
+} from './services/beyUtils';
+import {
+  challengeBoss,
+  getWeekKey,
+  setLineup,
+} from './services/beyBossUtils';
 
 /**
  * 應用程式主元件
@@ -143,12 +159,16 @@ const App: React.FC = () => {
       const recordCreator = prev.users.find((user) => user.id === newRecord.createdById);
       const shouldCountForGarden = newRecord.pointsChange > 0 && recordCreator?.role === UserRole.PARENT;
 
+      // 花園的陽光與陀螺的鋼料各走各的，同一筆加分兩邊都前進，不互相消耗。
       return {
         ...prev,
         records: [...prev.records, newRecord],
         familyGarden: shouldCountForGarden
           ? addGardenPositivePoints(prev.familyGarden, newRecord.childId, newRecord.pointsChange)
           : prev.familyGarden,
+        beyForge: shouldCountForGarden
+          ? addBeyScrap(prev.beyForge, newRecord.childId, newRecord.pointsChange)
+          : prev.beyForge,
       };
     });
     return newRecord;
@@ -188,20 +208,141 @@ const App: React.FC = () => {
     } : prev);
   };
 
+  /**
+   * 孩子按下鍛造，抽一個普通零件。
+   * 回傳結果讓畫面顯示抽到什麼；重複零件會退鋼料而不入庫。
+   */
+  const handleDrawBeyPart = (childId: string) => {
+    const timestamp = Date.now();
+    let outcome: { partId: string | null; isDuplicate: boolean } = { partId: null, isDuplicate: false };
+
+    setData((prev) => {
+      if (!prev) return prev;
+      const result = drawBeyPart(prev.beyForge, childId, timestamp.toString(), timestamp);
+      outcome = { partId: result.partId, isDuplicate: result.isDuplicate };
+      return result.partId ? { ...prev, beyForge: result.forge } : prev;
+    });
+
+    return outcome;
+  };
+
+  const handleAssembleBey = (
+    childId: string,
+    name: string,
+    bladeId: string,
+    ratchetId: string,
+    bitId: string,
+  ) => {
+    const timestamp = Date.now();
+    setData((prev) => (prev ? {
+      ...prev,
+      beyForge: assembleBey(prev.beyForge, childId, name, bladeId, ratchetId, bitId, timestamp.toString(), timestamp),
+    } : prev));
+  };
+
+  const handleDisassembleBey = (buildId: string) => {
+    setData((prev) => (prev ? { ...prev, beyForge: removeBeyBuild(prev.beyForge, buildId) } : prev));
+  };
+
+  /** 孩子為本週魔王派出（或收回）一顆陀螺。 */
+  const handleSetBossLineup = (childId: string, buildId: string | null) => {
+    if (!currentUser || currentUser.role !== UserRole.CHILD || currentUser.id !== childId) return;
+    setData((prev) => (prev ? {
+      ...prev,
+      beyBoss: setLineup(prev.beyBoss, getWeekKey(), childId, buildId),
+    } : prev));
+  };
+
+  /**
+   * 挑戰本週魔王。回傳這次的三回合結果讓畫面揭曉；
+   * 打贏完整版時兩個孩子各拿一個專屬零件，打贏減弱版則各拿一個一般稀有零件。
+   */
+  const handleChallengeBoss = () => {
+    const timestamp = Date.now();
+    let outcome: BeyBossAttempt | null = null;
+
+    setData((prev) => {
+      if (!prev) return prev;
+      const result = challengeBoss(prev.beyBoss, prev.beyForge, getWeekKey(), timestamp.toString(), timestamp);
+      if (!result.attempt) return prev;
+      outcome = result.attempt;
+
+      let beyForge = prev.beyForge;
+      const children = prev.users.filter((user) => user.role === UserRole.CHILD);
+      children.forEach((child, index) => {
+        if (result.rewardPartId) {
+          beyForge = awardSpecificPart(beyForge, child.id, result.rewardPartId, `${timestamp}_boss${index}`, timestamp);
+        } else if (result.grantRare) {
+          beyForge = grantBeyPart(beyForge, child.id, 'BOSS', `${timestamp}_bossr${index}`, timestamp).forge;
+        }
+      });
+
+      return { ...prev, beyBoss: result.state, beyForge };
+    });
+
+    return outcome;
+  };
+
+  /**
+   * 目標被標記為達成時掉一個稀有零件。
+   * 用前後比對偵測，SettingsPanel 不需要知道鍛造系統的存在。
+   */
   const handleUpdateGoalRewards = (updater: (items: GoalReward[]) => GoalReward[]) => {
-    setData((prev) => (prev ? { ...prev, goalRewards: updater(prev.goalRewards) } : prev));
+    setData((prev) => {
+      if (!prev) return prev;
+      const goalRewards = updater(prev.goalRewards);
+      const before = new Map(prev.goalRewards.map((goal) => [goal.id, goal.status]));
+      const achieved = goalRewards.filter((goal) => (
+        goal.status === GoalRewardStatus.ACHIEVED && before.get(goal.id) !== GoalRewardStatus.ACHIEVED
+      ));
+
+      let beyForge = prev.beyForge;
+      achieved.forEach((goal, index) => {
+        beyForge = grantBeyPart(beyForge, goal.childId, 'GOAL', `${Date.now()}_${index}`, Date.now()).forge;
+      });
+
+      return { ...prev, goalRewards, beyForge };
+    });
   };
 
   const handleUpdateDiscountCards = (updater: (items: DiscountCard[]) => DiscountCard[]) => {
     setData((prev) => (prev ? { ...prev, discountCards: updater(prev.discountCards) } : prev));
   };
 
+  /** 家長新發出獎勵卡時掉一個稀有零件。 */
   const handleUpdateRewardCards = (updater: (items: RewardCard[]) => RewardCard[]) => {
-    setData((prev) => (prev ? { ...prev, rewardCards: updater(prev.rewardCards) } : prev));
+    setData((prev) => {
+      if (!prev) return prev;
+      const rewardCards = updater(prev.rewardCards);
+      const existing = new Set(prev.rewardCards.map((card) => card.id));
+      const issued = rewardCards.filter((card) => !existing.has(card.id));
+
+      let beyForge = prev.beyForge;
+      issued.forEach((card, index) => {
+        beyForge = grantBeyPart(beyForge, card.childId, 'REWARD_CARD', `${Date.now()}_rc${index}`, Date.now()).forge;
+      });
+
+      return { ...prev, rewardCards, beyForge };
+    });
   };
 
+  /** 集點卡兌換（集滿）時掉一個稀有零件。 */
   const handleUpdateStampCards = (updater: (items: StampCard[]) => StampCard[]) => {
-    setData((prev) => (prev ? { ...prev, stampCards: updater(prev.stampCards) } : prev));
+    setData((prev) => {
+      if (!prev) return prev;
+      const stampCards = updater(prev.stampCards);
+      const before = new Map(prev.stampCards.map((card) => [card.id, card.status]));
+      const redeemed = stampCards.filter((card) => (
+        card.status === StampCardStatus.REDEEMED && before.get(card.id) !== StampCardStatus.REDEEMED
+      ));
+
+      let beyForge = prev.beyForge;
+      redeemed.forEach((card, index) => {
+        beyForge = grantBeyPart(beyForge, card.childId, 'STAMP', `${Date.now()}_sc${index}`, Date.now()).forge;
+      });
+
+      return { ...prev, stampCards, beyForge };
+    });
   };
 
   const handleSendMessage = (msg: Omit<SecretMessage, 'id' | 'timestamp' | 'isRead'>) => {
@@ -240,10 +381,10 @@ const App: React.FC = () => {
 
   if (firebaseConfigError) {
     return (
-      <div className="h-screen flex flex-col items-center justify-center app-bg text-nook-brown p-6 text-center">
+      <div className="h-screen flex flex-col items-center justify-center app-bg text-bey-ink p-6 text-center">
         <div className="text-3xl mb-3">🛠️</div>
         <p className="text-lg font-black mb-2">Firebase 尚未設定完成</p>
-        <p className="max-w-xl text-sm font-bold text-nook-brown/70 leading-relaxed">
+        <p className="max-w-xl text-sm font-normal text-bey-dim leading-relaxed">
           {firebaseConfigError}
           <br />
           請先建立 `.env.local` 並填入 Firebase Web App 設定值。
@@ -254,7 +395,7 @@ const App: React.FC = () => {
 
   if (isAuthLoading) {
     return (
-      <div className="h-screen flex flex-col items-center justify-center app-bg text-nook-brown">
+      <div className="h-screen flex flex-col items-center justify-center app-bg text-bey-ink">
         <div className="text-3xl mb-2">🌱</div>
         <p className="text-sm font-bold">確認雲端登入狀態中...</p>
       </div>
@@ -267,7 +408,7 @@ const App: React.FC = () => {
 
   if (isLoading) {
     return (
-      <div className="h-screen flex flex-col items-center justify-center app-bg text-nook-brown">
+      <div className="h-screen flex flex-col items-center justify-center app-bg text-bey-ink">
         <div className="text-3xl mb-2">🍃</div>
         <p className="text-sm font-bold">載入中...</p>
       </div>
@@ -276,12 +417,12 @@ const App: React.FC = () => {
 
   if (error || !data) {
     return (
-      <div className="h-screen flex flex-col items-center justify-center app-bg text-nook-brown">
+      <div className="h-screen flex flex-col items-center justify-center app-bg text-bey-ink">
         <div className="text-3xl mb-2">😢</div>
-        <p className="text-base font-bold text-nook-red">{error || '發生未知錯誤'}</p>
+        <p className="text-base font-bold text-bey-red">{error || '發生未知錯誤'}</p>
         <button 
           onClick={() => window.location.reload()}
-          className="mt-4 px-4 py-2 bg-nook-green text-white rounded-xl font-bold hover:brightness-105"
+          className="mt-4 px-4 py-2 bg-bey-cyan text-bey-void rounded-xl font-bold hover:brightness-105"
         >
           重新整理
         </button>
@@ -322,6 +463,11 @@ const App: React.FC = () => {
         onUpdateStampCards={handleUpdateStampCards}
         onWaterGarden={handleWaterGarden}
         onStartGardenPlant={handleStartGardenPlant}
+        onDrawBeyPart={handleDrawBeyPart}
+        onAssembleBey={handleAssembleBey}
+        onDisassembleBey={handleDisassembleBey}
+        onSetBossLineup={handleSetBossLineup}
+        onChallengeBoss={handleChallengeBoss}
         cloudEmail={cloudUser.email || '已登入雲端帳號'}
         onCloudLogout={handleCloudLogout}
       />
@@ -333,7 +479,7 @@ const App: React.FC = () => {
 // --- 儲存警告 Toast 元件 ---
 const SaveWarningToast: React.FC<{ message: string }> = ({ message }) => (
   <div className="fixed bottom-20 md:bottom-4 left-1/2 -translate-x-1/2 z-50 animate-pop">
-    <div className="bg-nook-orange text-white px-4 py-2 rounded-xl soft-card text-sm font-bold flex items-center gap-2">
+    <div className="bg-bey-orange text-white px-4 py-2 rounded-xl soft-card text-sm font-bold flex items-center gap-2">
       <span>⚠️</span>
       <span>{message}</span>
     </div>

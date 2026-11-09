@@ -237,4 +237,106 @@ export interface AppState {
   rewardCards: RewardCard[];// 獎勵卡
   stampCards: StampCard[];  // 集點卡
   familyGarden: FamilyGardenState;// 家庭共育花園
+  beyForge: BeyForgeState;  // 陀螺鍛造（個人收集）
+  beyBoss: BeyBossState;    // 週魔王戰（兩人合作）
+}
+
+/* ===== 陀螺鍛造（BEY FORGE） ===== */
+
+/** 陀螺的三個部位。 */
+export type BeyPartSlot = 'BLADE' | 'RATCHET' | 'BIT';
+
+/**
+ * 零件稀有度。
+ * COMMON 由日常鋼料抽出，RARE 只從里程碑取得，
+ * BOSS 只能打贏週魔王拿到——它被刻意排除在所有抽取與里程碑掉落之外。
+ */
+export type BeyRarity = 'COMMON' | 'RARE' | 'BOSS';
+
+/** 取得來源，用於零件庫的來源標記。 */
+export type BeyPartSource = 'SCRAP' | 'GOAL' | 'STAMP' | 'REWARD_CARD' | 'BOSS';
+
+/** 擁有一個零件的紀錄（零件本身的定義在 services/beyData.ts）。 */
+export interface BeyOwnedPart {
+  id: string;
+  childId: string;
+  partId: string;
+  obtainedAt: number;
+  source: BeyPartSource;
+}
+
+/** 一顆組裝完成的陀螺。三圍由三個零件相加算出，不存快照。 */
+export interface BeyBuild {
+  id: string;
+  childId: string;
+  name: string;
+  bladeId: string;
+  ratchetId: string;
+  bitId: string;
+  assembledAt: number;
+}
+
+/**
+ * 每位孩子的鍛造進度。
+ * earnedScrap 只增不減（鏡像花園的 earnedPositivePoints），usedScrap 記錄已消耗。
+ */
+export interface BeyChildProgress {
+  childId: string;
+  earnedScrap: number;
+  usedScrap: number;
+}
+
+/** 陀螺鍛造的整體狀態。零件與陀螺都屬於個別孩子。 */
+export interface BeyForgeState {
+  version: 1;
+  /** 累積多少鋼料可以鍛造一次。 */
+  scrapPerDraw: number;
+  childProgress: BeyChildProgress[];
+  parts: BeyOwnedPart[];
+  builds: BeyBuild[];
+}
+
+/* ===== 週魔王戰（BOSS BATTLE） ===== */
+
+/** 一位孩子為本週派出的陀螺。 */
+export interface BeyBossLineupEntry {
+  childId: string;
+  buildId: string;
+}
+
+/** 一回合的結果；三回合依序比攻擊、防禦、持久。 */
+export interface BeyBossRound {
+  stat: 'attack' | 'defense' | 'stamina';
+  teamValue: number;
+  bossValue: number;
+  won: boolean;
+  /** 數值較低卻贏下來（或較高卻輸掉）的爆冷回合。 */
+  upset: boolean;
+}
+
+/** 一次挑戰。每個週末日各限一次。 */
+export interface BeyBossAttempt {
+  id: string;
+  attemptedAt: number;
+  /** YYYY-MM-DD，用來判斷今天是否已經打過。 */
+  dateKey: string;
+  /** 只有一人派出時打的是減弱版，獎勵較小。 */
+  weakened: boolean;
+  rounds: BeyBossRound[];
+  won: boolean;
+}
+
+/** 某一週的魔王戰紀錄。 */
+export interface BeyBossEntry {
+  /** YYYY-Www，由日期推導，無伺服器也能兩台裝置一致。 */
+  weekKey: string;
+  bossId: string;
+  lineup: BeyBossLineupEntry[];
+  attempts: BeyBossAttempt[];
+  defeatedAt?: number | null;
+}
+
+export interface BeyBossState {
+  version: 1;
+  entries: BeyBossEntry[];
 }
