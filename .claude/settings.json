@@ -1,0 +1,28 @@
+{
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write|MultiEdit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "[ ! -f \"C:\\\\MyWorkSpace\\\\_SideProject\\\\Familypoints\\\\.claude\\\\hooks\\\\typecheck.mjs\" ] || node \"C:\\\\MyWorkSpace\\\\_SideProject\\\\Familypoints\\\\.claude\\\\hooks\\\\typecheck.mjs\" mark",
+            "timeout": 5
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "[ ! -f \"C:\\\\MyWorkSpace\\\\_SideProject\\\\Familypoints\\\\.claude\\\\hooks\\\\typecheck.mjs\" ] || node \"C:\\\\MyWorkSpace\\\\_SideProject\\\\Familypoints\\\\.claude\\\\hooks\\\\typecheck.mjs\" typecheck",
+            "timeout": 60,
+            "statusMessage": "Type checking ..."
+          }
+        ]
+      }
+    ]
+  }
+}
