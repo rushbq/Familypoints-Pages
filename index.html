@@ -32,14 +32,14 @@
                 ink: '#E6EEFB',       /* 主要文字 */
                 cyan: '#13FFF3',      /* 系統主色：作用中、確認、焦點。不作為隊色 */
                 cyanDark: '#0A9C95',
-                blue: '#1C93E5',      /* 導覽・資訊 */
+                blue: '#3BA7F0',      /* 導覽・資訊 */
                 blueDark: '#0F5E96',
-                purple: '#C44DFF',    /* 隊色一（丞鈞）。保留給隊伍識別，系統不使用 */
+                purple: '#D47CFF',    /* 隊色一（丞鈞）。亮度對齊 orange，兩個孩子視覺對等 */
                 purpleDark: '#7D1FB0',
                 orange: '#FF7A2F',    /* 隊色二（佑佑）・獎勵兌換 */
                 orangeDark: '#A8441A',
                 yellow: '#FCEE21',    /* 冠軍・星等 */
-                red: '#FF4D4D',       /* 扣分・危險 */
+                red: '#FF6B6B',       /* 扣分・危險。#FF4D4D 在 bey-paper 上只有 4.27 */
                 lime: '#A2FF1F',      /* 爆發強調 */
               }
             },
@@ -55,6 +55,10 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;900&family=Chakra+Petch:wght@400;500;600;700&family=Noto+Sans+TC:wght@400;500;700;900&display=swap" rel="stylesheet">
     <style>
+      /* 文字可以選取（家長要複製備註／帳號），但按鈕與導覽不給選，
+         避免小孩長按時整塊反白。 */
+      button, a, [role="tab"], nav, label { -webkit-user-select: none; user-select: none; }
+
       /* 隱藏滾動條 */
       .no-scrollbar::-webkit-scrollbar { display: none; }
       .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
@@ -137,7 +141,7 @@
       /* 發光文字，給分數用。 */
       .glow-cyan { text-shadow: 0 0 18px rgba(19, 255, 243, 0.45); }
       .glow-orange { text-shadow: 0 0 18px rgba(255, 122, 47, 0.45); }
-      .glow-purple { text-shadow: 0 0 18px rgba(196, 77, 255, 0.5); }
+      .glow-purple { text-shadow: 0 0 18px rgba(212, 124, 255, 0.5); }
 
       /* ===== 陀螺旋轉 ===== */
       @keyframes beySpin { to { transform: rotate(360deg); } }
@@ -393,9 +397,9 @@
       .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(19,255,243,0.18); border-radius: 999px; }
       .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: rgba(19,255,243,0.35); }
     </style>
-  <script type="module" crossorigin src="/Familypoints-Pages/assets/index-JgklFk5s.js"></script>
+  <script type="module" crossorigin src="/Familypoints-Pages/assets/index-CJ_jflm3.js"></script>
 </head>
-  <body class="bg-bey-deep text-bey-ink antialiased select-none font-sans h-full">
-    <div id="root" class="h-full"></div>
+  <body class="bg-bey-deep text-bey-ink antialiased font-sans h-full">
+    <div id="root" class="h-full"></div>
 </body>
 </html>
