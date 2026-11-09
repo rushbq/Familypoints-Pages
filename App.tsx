@@ -338,7 +338,7 @@ const App: React.FC = () => {
       <div className="h-screen flex flex-col items-center justify-center app-bg text-bey-ink p-6 text-center">
         <div className="text-3xl mb-3">🛠️</div>
         <p className="text-lg font-black mb-2">Firebase 尚未設定完成</p>
-        <p className="max-w-xl text-sm font-bold text-bey-ink/70 leading-relaxed">
+        <p className="max-w-xl text-sm font-normal text-bey-dim leading-relaxed">
           {firebaseConfigError}
           <br />
           請先建立 `.env.local` 並填入 Firebase Web App 設定值。

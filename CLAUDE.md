@@ -51,7 +51,23 @@ A **React 19 + TypeScript + Vite** single-page app deployed as a static site to 
 - **Tailwind is loaded via CDN in `index.html`, not npm.** The custom theme (the battle-top `bey-*` palette, `Orbitron` + `Chakra Petch` fonts, `app-bg` / `arena-pattern` / `arena-rings` / `speed-lines` / `clip-notch` / `bey-spin` / `animate-pop` styles) is configured in a `<script>`/`<style>` block in `index.html` — there is **no `tailwind.config.js`**; do not add one.
 - **Visual style: 戰鬥陀螺・競技場（STADIUM）**, a dark arena theme. Surfaces go `bey-deep` (page) → `bey-panel` (card) → `bey-paper` (raised/input), separated by `bey-steel` borders rather than shadows. Text is `bey-ink`, secondary `bey-dim`. Accents: `bey-cyan` is the home team / confirm, `bey-orange` the rival team / rewards, `bey-lime` positive bursts, `bey-yellow` referee + 獎勵卡, `bey-red` deductions. Two children are rendered as opposing teams — child index 0 cyan, index 1 orange.
 - **On bright fills (`bey-cyan`, `bey-lime`, `bey-yellow`) use `text-bey-void`, never `text-white`.** The `*Dark` tokens are for bottom borders and rings only, not text.
-- `font-display` (Orbitron) is for short Latin labels in caps with wide tracking. **Do not use it for score digits** — Orbitron's slashed zero reads as a symbol; scores use `font-sans` bold italic with `tabular-nums`.
+- `font-display` (Orbitron) is for short Latin labels in caps with wide tracking. **Never apply it to Chinese** (Orbitron has no CJK glyphs, and the tracking wrecks the fallback) and **not to score digits** — Orbitron's slashed zero reads as a symbol; scores use `font-sans` bold italic with `tabular-nums`.
+
+### Typography scale
+
+Weights are a hierarchy, not decoration. The app previously set almost everything to 700/900, which flattened the hierarchy and blurred small Chinese on the dark background.
+
+| Weight | Use |
+|---|---|
+| `font-black` (900) | Page/section headings at `text-base`+, and score numbers. Nothing at `text-sm` or below. |
+| `font-bold` (700) | Card titles, names, buttons, chips, values worth scanning. |
+| `font-medium` (500) | Form labels, list labels. |
+| `font-normal` (400) | Descriptions, hints, timestamps, any full sentence. |
+
+- **Secondary text is `text-bey-dim`, a solid token — never `text-bey-ink/NN`.** Opacity below ~70% on `bey-panel` falls under 4.5:1 and fails WCAG AA. Keep opacity for borders and backgrounds only; the one exception is a deliberately disabled control.
+- Secondary text is `font-normal`. Exception: Orbitron micro-labels (`font-display`) need `font-bold` to hold up at 10–11px.
+- Minimum text size is `text-[10px]`, and only for Latin Orbitron labels; Chinese does not go below `text-xs`.
+- Dividers on dark panels use `border-bey-steel`. A tinted border like `border-bey-cyanDark/10` is invisible here.
 - `components/BeyTop.tsx` is the original spinning-top SVG (concentric blade ring + gear + core). Pass `bladeId`/`ratchetId`/`bitId` to draw a specific build, or just `color` for a plain team-colored top. All Beyblade-style art must stay original — no official logos, characters, or product renders.
 
 ### Two collection modules

@@ -44,13 +44,13 @@ const GardenPhotoViewer: React.FC<{ species: GardenSpecies; onClose: () => void 
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0">
             <h4 className="text-lg font-black text-bey-cyan">{species.commonName}</h4>
-            <p className="text-xs font-bold italic text-bey-ink/75">{species.scientificName}</p>
+            <p className="text-xs font-bold italic text-bey-dim">{species.scientificName}</p>
           </div>
           <button
             type="button"
             onClick={onClose}
             aria-label="關閉照片"
-            className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl text-bey-ink/70 hover:bg-bey-deep hover:text-bey-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-bey-cyanDark"
+            className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl text-bey-dim hover:bg-bey-deep hover:text-bey-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-bey-cyanDark"
           >
             <Icons.X size={20} />
           </button>
@@ -59,8 +59,8 @@ const GardenPhotoViewer: React.FC<{ species: GardenSpecies; onClose: () => void 
         <div className="mt-2 overflow-hidden rounded-xl bg-bey-deep">
           {failed ? (
             <div className="flex min-h-[180px] flex-col items-center justify-center gap-2 px-4 py-8 text-center">
-              <Icons.ImageOff size={28} className="text-bey-ink/60" />
-              <p className="text-sm font-bold text-bey-ink/75">照片載入失敗，請確認網路連線</p>
+              <Icons.ImageOff size={28} className="text-bey-dim" />
+              <p className="text-sm font-normal text-bey-dim">照片載入失敗，請確認網路連線</p>
             </div>
           ) : (
             <img
@@ -87,7 +87,7 @@ const GardenPhotoViewer: React.FC<{ species: GardenSpecies; onClose: () => void 
           href={species.photoSourceUrl}
           target="_blank"
           rel="noreferrer"
-          className="mt-2 block text-right text-xs font-bold text-bey-ink/60 hover:text-bey-cyan"
+          className="mt-2 block text-right text-xs font-normal text-bey-dim hover:text-bey-cyan"
         >
           照片：{species.photoCredit}（Wikimedia Commons）↗
         </a>
@@ -131,14 +131,14 @@ export const GardenAlbum: React.FC<GardenAlbumProps> = ({
   });
 
   return (
-    <section aria-labelledby="garden-album-title" className="border-t border-bey-cyanDark/10 pt-4">
+    <section aria-labelledby="garden-album-title" className="border-t border-bey-steel pt-4">
       <div className="flex items-start justify-between gap-3">
         <div>
           <div className="flex items-center gap-2">
             <Icons.BookOpen size={18} className="text-bey-cyan" />
             <h3 id="garden-album-title" className="text-base font-bold text-bey-ink">常見植物圖鑑</h3>
           </div>
-          <p className="mt-1 text-xs font-bold text-bey-ink/75">
+          <p className="mt-1 text-xs font-normal text-bey-dim">
             已收集 {collectedSpeciesCount} / {GARDEN_SPECIES.length} 種
           </p>
         </div>
@@ -152,13 +152,13 @@ export const GardenAlbum: React.FC<GardenAlbumProps> = ({
       <div className="mt-3 flex gap-2">
         <label className="relative min-w-0 flex-1">
           <span className="sr-only">搜尋植物</span>
-          <Icons.Search size={16} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-bey-ink/60" />
+          <Icons.Search size={16} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-bey-dim" />
           <input
             type="search"
             value={searchQuery}
             onChange={(event) => setSearchQuery(event.target.value)}
             placeholder="搜尋植物名稱"
-            className="min-h-10 w-full rounded-xl border border-bey-ink/10 bg-bey-paper py-2 pl-9 pr-3 text-sm font-bold text-bey-ink outline-none placeholder:text-bey-ink/60 focus:border-bey-cyanDark focus:ring-2 focus:ring-bey-cyan/20"
+            className="min-h-10 w-full rounded-xl border border-bey-ink/10 bg-bey-paper py-2 pl-9 pr-3 text-sm font-bold text-bey-ink outline-none placeholder:text-bey-dim focus:border-bey-cyanDark focus:ring-2 focus:ring-bey-cyan/20"
           />
         </label>
         <label className="relative flex-shrink-0">
@@ -172,7 +172,7 @@ export const GardenAlbum: React.FC<GardenAlbumProps> = ({
             <option value="collected">已收集</option>
             <option value="uncollected">未收集</option>
           </select>
-          <Icons.ChevronDown size={14} className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 text-bey-ink/60" />
+          <Icons.ChevronDown size={14} className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 text-bey-dim" />
         </label>
       </div>
 
@@ -194,14 +194,14 @@ export const GardenAlbum: React.FC<GardenAlbumProps> = ({
               }`}
             >
               <span className="block text-xs font-bold">{species.commonName}</span>
-              <span className={`block text-xs font-bold ${selected ? 'text-white' : 'text-bey-ink/75'}`}>
+              <span className={`block text-xs font-bold ${selected ? 'text-white' : 'text-bey-dim'}`}>
                 {count > 0 ? `開花 ${count} 次` : '尚未收集'}
               </span>
             </button>
           );
         })}
         {filteredSpecies.length === 0 && (
-          <p className="col-span-full py-4 text-center text-sm font-bold text-bey-ink/75">找不到符合條件的植物</p>
+          <p className="col-span-full py-4 text-center text-sm font-normal text-bey-dim">找不到符合條件的植物</p>
         )}
       </div>
 
@@ -230,9 +230,9 @@ export const GardenAlbum: React.FC<GardenAlbumProps> = ({
           <div className="min-w-0">
             <div className="flex flex-wrap items-baseline gap-x-2 gap-y-1">
               <h4 className="text-base font-bold text-bey-cyan">{selectedSpecies.commonName}</h4>
-              <p className="text-xs font-bold italic text-bey-ink/75">{selectedSpecies.scientificName}</p>
+              <p className="text-xs font-bold italic text-bey-dim">{selectedSpecies.scientificName}</p>
             </div>
-            <p className="mt-1 text-xs font-bold text-bey-ink/75">
+            <p className="mt-1 text-xs font-normal text-bey-dim">
               {selectedSpecies.familyName}・{selectedSpecies.growthHabit}
             </p>
 
@@ -259,7 +259,7 @@ export const GardenAlbum: React.FC<GardenAlbumProps> = ({
               </div>
             </dl>
 
-            <div className="mt-3 flex flex-wrap items-center gap-2 border-t border-bey-cyanDark/10 pt-2">
+            <div className="mt-3 flex flex-wrap items-center gap-2 border-t border-bey-steel pt-2">
               {canStartNextPlant && (
                 <Button
                   size="sm"
@@ -274,7 +274,7 @@ export const GardenAlbum: React.FC<GardenAlbumProps> = ({
                 target="_blank"
                 rel="noreferrer"
                 aria-label={`查看 ${selectedSpecies.commonName} 的 Kew Science 資料來源`}
-                className="ml-auto inline-flex min-h-8 items-center rounded-lg px-2 text-xs font-bold text-bey-ink/60 hover:bg-bey-paper hover:text-bey-cyan focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-bey-cyanDark"
+                className="ml-auto inline-flex min-h-8 items-center rounded-lg px-2 text-xs font-normal text-bey-dim hover:bg-bey-paper hover:text-bey-cyan focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-bey-cyanDark"
               >
                 Kew Science ↗
               </a>

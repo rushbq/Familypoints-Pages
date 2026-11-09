@@ -35,13 +35,13 @@ export const CloudLogin: React.FC = () => {
           <div>
             <p className="font-display text-[10px] font-bold tracking-[0.3em] text-bey-cyan">BLADER LOGIN</p>
             <h1 className="text-xl font-black text-bey-ink">回到競技場</h1>
-            <p className="text-xs text-bey-dim font-bold mt-0.5">登入後即可同步所有戰績資料</p>
+            <p className="text-xs text-bey-dim font-normal mt-0.5">登入後即可同步所有戰績資料</p>
           </div>
         </div>
 
         <form className="space-y-4" onSubmit={handleSubmit}>
           <label className="block">
-            <span className="block font-display text-[10px] font-bold tracking-[0.18em] text-bey-dim mb-1.5">Email</span>
+            <span className="block font-display text-[11px] font-bold tracking-[0.16em] text-bey-dim mb-1.5">Email</span>
             <input
               type="email"
               value={email}
@@ -54,7 +54,7 @@ export const CloudLogin: React.FC = () => {
           </label>
 
           <label className="block">
-            <span className="block font-display text-[10px] font-bold tracking-[0.18em] text-bey-dim mb-1.5">密碼</span>
+            <span className="block text-xs font-medium text-bey-dim mb-1.5">密碼</span>
             <input
               type="password"
               value={password}
@@ -77,7 +77,7 @@ export const CloudLogin: React.FC = () => {
           </Button>
         </form>
 
-        <div className="mt-4 flex items-start gap-2 rounded-xl bg-bey-void/50 border border-bey-steel px-3 py-2.5 text-xs text-bey-dim font-bold leading-relaxed">
+        <div className="mt-4 flex items-start gap-2 rounded-xl bg-bey-void/50 border border-bey-steel px-3 py-2.5 text-xs text-bey-dim font-normal leading-relaxed">
           <span aria-hidden="true">⚡</span>
           <span>首次登入時，舊裝置的本機資料會自動搬到雲端。</span>
         </div>

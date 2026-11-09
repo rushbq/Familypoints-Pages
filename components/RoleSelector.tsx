@@ -69,7 +69,7 @@ export const RoleSelector: React.FC<RoleSelectorProps> = ({ users, onSelectUser,
           <p className="font-display text-[10px] font-bold tracking-[0.34em] text-bey-cyan">BLADER SELECT</p>
           <h1 className="mt-1 font-display text-2xl font-black italic text-bey-ink">ENTER THE ARENA</h1>
           <p className="mt-2 text-base font-black text-bey-cyan">選擇要出戰的 Blader</p>
-          <p className="mt-1 text-sm font-bold text-bey-dim">孩子可以查看自己的戰績，家長進入裁判席管理積分與獎勵。</p>
+          <p className="mt-1 text-sm font-normal text-bey-dim">孩子可以查看自己的戰績，家長進入裁判席管理積分與獎勵。</p>
         </header>
 
         <section aria-labelledby="child-role-title">
@@ -126,7 +126,7 @@ export const RoleSelector: React.FC<RoleSelectorProps> = ({ users, onSelectUser,
                   <span className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-full bg-bey-yellow/15 text-2xl" aria-hidden="true">{user.avatar}</span>
                   <span className="min-w-0 flex-1">
                     <span className="block truncate text-base font-black text-bey-ink">{user.name}</span>
-                    <span className="block text-xs font-bold text-bey-ink/75">進入裁判席需要輸入 6 位數密碼</span>
+                    <span className="block text-xs font-normal text-bey-dim">進入裁判席需要輸入 6 位數密碼</span>
                   </span>
                   <Icons.Shield size={20} className="flex-shrink-0 text-bey-yellow" />
                 </button>
@@ -137,13 +137,13 @@ export const RoleSelector: React.FC<RoleSelectorProps> = ({ users, onSelectUser,
 
         <footer className="mt-5 flex items-center justify-between gap-3 border-t border-bey-steel px-1 pt-4">
           <div className="min-w-0">
-            <p className="text-xs font-bold text-bey-dim">☁️ 目前雲端帳號</p>
+            <p className="text-xs font-normal text-bey-dim">☁️ 目前雲端帳號</p>
             <p className="truncate text-sm font-bold text-bey-ink">{cloudEmail}</p>
           </div>
           <button
             type="button"
             onClick={onCloudLogout}
-            className="min-h-10 flex-shrink-0 rounded-xl px-3 text-xs font-bold text-bey-dim transition-colors hover:bg-bey-paper hover:text-bey-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-bey-cyanDark"
+            className="min-h-10 flex-shrink-0 rounded-xl px-3 text-xs font-normal text-bey-dim transition-colors hover:bg-bey-paper hover:text-bey-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-bey-cyanDark"
           >
             切換帳號
           </button>
@@ -157,7 +157,7 @@ export const RoleSelector: React.FC<RoleSelectorProps> = ({ users, onSelectUser,
             <div className="text-center mb-4">
               <div className="mx-auto mb-2 flex h-10 w-10 items-center justify-center rounded-full bg-bey-yellow/15 text-bey-yellow"><Icons.Shield size={20} /></div>
               <h3 id="parent-pin-title" className="mb-1 text-lg font-black text-bey-ink">家長密碼</h3>
-              <p className="mb-3 text-xs font-bold text-bey-dim">請輸入 6 位數密碼進入裁判席</p>
+              <p className="mb-3 text-xs font-normal text-bey-dim">請輸入 6 位數密碼進入裁判席</p>
               
               {/* PIN 碼顯示點 */}
               <div className="flex justify-center gap-2.5 h-11 items-center bg-bey-paper rounded-xl px-4 mb-2 border border-bey-steel">

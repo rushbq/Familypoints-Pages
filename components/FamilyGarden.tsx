@@ -242,7 +242,7 @@ export const FamilyGarden: React.FC<FamilyGardenProps> = ({
             </span>
             <div>
               <h2 id="family-garden-title" className="text-base font-bold text-bey-cyan">{gardenName}</h2>
-              <p className="text-xs font-bold text-bey-ink/75">兩個人的陽光，養大同一株植物</p>
+              <p className="text-xs font-normal text-bey-dim">兩個人的陽光，養大同一株植物</p>
             </div>
           </div>
         </div>
@@ -282,7 +282,7 @@ export const FamilyGarden: React.FC<FamilyGardenProps> = ({
               <GardenPlant speciesId={species.id} stage={stage} sceneId={scene.id} />
             </div>
           </button>
-          <p className="absolute bottom-3 left-4 z-10 rounded-full bg-bey-paper/85 px-2.5 py-1 text-xs font-bold text-bey-ink/75">
+          <p className="absolute bottom-3 left-4 z-10 rounded-full bg-bey-paper/85 px-2.5 py-1 text-xs font-normal text-bey-dim">
             <span aria-hidden="true">{scene.emoji}</span> {scene.label}
           </p>
           {isWatering && <WateringEffect />}
@@ -293,7 +293,7 @@ export const FamilyGarden: React.FC<FamilyGardenProps> = ({
           <div>
             <div className="flex flex-wrap items-baseline gap-x-2 gap-y-1">
               <h3 className="text-xl font-black text-bey-ink">{species.commonName}</h3>
-              <span className="text-xs font-bold italic text-bey-ink/75">{species.scientificName}</span>
+              <span className="text-xs font-bold italic text-bey-dim">{species.scientificName}</span>
             </div>
             <p className="mt-1 text-sm leading-relaxed text-bey-ink">{species.childFact}</p>
           </div>
@@ -302,15 +302,15 @@ export const FamilyGarden: React.FC<FamilyGardenProps> = ({
             <div className="mt-4">
               <div className="flex items-end justify-between gap-3">
                 <div>
-                  <p className="flex items-center gap-2 text-xs font-bold text-[#765812]">
+                  <p className="flex items-center gap-2 text-xs font-bold text-bey-yellow">
                     <span aria-hidden="true">☀️</span> 你的陽光
                   </p>
                   <p className="mt-1 font-black tabular-nums text-bey-ink">
                     <span className="text-xl text-bey-cyan">{currentPoints}</span>
-                    <span className="text-sm text-bey-ink/75"> / {garden.pointsPerWatering}</span>
+                    <span className="text-sm text-bey-dim"> / {garden.pointsPerWatering}</span>
                   </p>
                 </div>
-                <p className="text-right text-xs font-bold text-bey-ink/75">
+                <p className="text-right text-xs font-normal text-bey-dim">
                   {currentAvailableWaterings > 0
                     ? `可以澆水 ${currentAvailableWaterings} 次`
                     : `還差 ${pointsUntilNext} 點`}
@@ -351,17 +351,17 @@ export const FamilyGarden: React.FC<FamilyGardenProps> = ({
                   {isWatering ? '正在澆水…' : '幫花澆水'}
                 </Button>
               )}
-              <p id="garden-water-hint" className="mt-2 text-center text-xs font-bold text-bey-ink/75">
+              <p id="garden-water-hint" className="mt-2 text-center text-xs font-normal text-bey-dim">
                 家長登記好事加分時，1 分會變成 1 點陽光；集滿 {garden.pointsPerWatering} 點可澆水一次，且不會扣分。
               </p>
             </div>
           ) : (
             <div className="mt-4 rounded-xl bg-bey-yellow/20 px-3 py-2">
-              <p className="text-xs font-bold text-[#765812]">每登記 1 分好事，就會同步累積 1 點陽光；每 {garden.pointsPerWatering} 點可澆水一次。澆水留給孩子親自完成。</p>
+              <p className="text-xs font-normal text-bey-yellow">每登記 1 分好事，就會同步累積 1 點陽光；每 {garden.pointsPerWatering} 點可澆水一次。澆水留給孩子親自完成。</p>
             </div>
           )}
 
-          <div className="mt-4 border-t border-bey-cyanDark/10 pt-3">
+          <div className="mt-4 border-t border-bey-steel pt-3">
             <div className="flex items-center justify-between gap-2">
               <p className="text-xs font-bold text-bey-cyan">本株澆水</p>
               <p className="text-xs font-bold tabular-nums text-bey-ink">
@@ -379,12 +379,12 @@ export const FamilyGarden: React.FC<FamilyGardenProps> = ({
                       <span className="text-base" aria-hidden="true">{child.avatar}</span>
                       <span className="truncate text-xs font-bold text-bey-ink">{child.name}</span>
                     </div>
-                    <p className="mt-1 text-xs font-bold text-bey-ink/75">
+                    <p className="mt-1 text-xs font-normal text-bey-dim">
                       澆了 {contributions.get(child.id) ?? 0} 次
                       {!isChild && `・可用 ${available} 次`}
                     </p>
                     {!isChild && (
-                      <p className="text-xs font-bold text-[#765812]">
+                      <p className="text-xs font-bold text-bey-yellow">
                         累積陽光 {progress.earnedPositivePoints} 點
                       </p>
                     )}

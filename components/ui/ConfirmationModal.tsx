@@ -43,7 +43,7 @@ export const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
           <h3 className="text-lg font-black text-bey-ink mb-2">{title}</h3>
           
           {/* 內容 */}
-          <p className="text-sm text-bey-ink/75 font-bold mb-5 whitespace-pre-wrap leading-relaxed">
+          <p className="text-sm text-bey-dim font-normal mb-5 whitespace-pre-wrap leading-relaxed">
             {message}
           </p>
           

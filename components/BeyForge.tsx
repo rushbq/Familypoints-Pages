@@ -47,7 +47,7 @@ const StatBars: React.FC<{ attack: number; defense: number; stamina: number }> =
     <div className="space-y-1.5">
       {STAT_ROWS.map((row) => (
         <div key={row.key} className="flex items-center gap-2">
-          <span className="w-8 flex-shrink-0 text-[11px] font-bold text-bey-dim">{row.label}</span>
+          <span className="w-8 flex-shrink-0 text-[11px] font-normal text-bey-dim">{row.label}</span>
           <div className="h-2 flex-1 overflow-hidden rounded-full border border-bey-steel bg-bey-void/70">
             <div className={`h-full rounded-full ${row.color}`} style={{ width: `${(values[row.key] / STAT_MAX) * 100}%` }} />
           </div>
@@ -119,10 +119,10 @@ const ChildForgePanel: React.FC<{
       <div className="mb-3 flex items-center gap-2.5">
         <BeyTop color={teamColor} size={40} speed="slow" />
         <div className="min-w-0 flex-1">
-          <h4 className="truncate text-sm font-black text-bey-ink">
+          <h4 className="truncate text-sm font-bold text-bey-ink">
             <span aria-hidden="true">{child.avatar}</span> {child.name} 的工房
           </h4>
-          <p className={`font-display text-[9px] font-bold tracking-[0.2em] ${accent}`}>
+          <p className={`font-display text-[10px] font-bold tracking-[0.2em] ${accent}`}>
             PARTS {ownedParts.length}/{BEY_PARTS.length}・BEYS {builds.length}
           </p>
         </div>
@@ -172,8 +172,8 @@ const ChildForgePanel: React.FC<{
             bitId={drawnPart.slot === 'BIT' ? drawnPart.id : undefined}
           />
           <div className="min-w-0 flex-1">
-            <p className="text-sm font-black text-bey-ink">{drawnPart.name}</p>
-            <p className="text-[11px] font-bold text-bey-dim">
+            <p className="text-sm font-bold text-bey-ink">{drawnPart.name}</p>
+            <p className="text-[11px] font-normal text-bey-dim">
               {BEY_SLOT_LABELS[drawnPart.slot]}
               {drawResult?.isDuplicate ? '・重複了，換到 +10 鋼料' : '・新零件入庫！'}
             </p>
@@ -193,7 +193,7 @@ const ChildForgePanel: React.FC<{
       <div className="mt-3 space-y-2">
         {SLOTS.map((slot) => (
           <div key={slot}>
-            <p className="mb-1 font-display text-[9px] font-bold tracking-[0.18em] text-bey-dim">
+            <p className="mb-1 font-display text-[10px] font-bold tracking-[0.18em] text-bey-dim">
               {BEY_SLOT_LABELS[slot]}
             </p>
             <div className="flex flex-wrap gap-1">
@@ -253,9 +253,9 @@ const ChildForgePanel: React.FC<{
 
               {SLOTS.map((slot) => (
                 <div key={slot} className="mb-2">
-                  <p className="mb-1 text-[11px] font-bold text-bey-dim">{BEY_SLOT_LABELS[slot]}</p>
+                  <p className="mb-1 text-[11px] font-normal text-bey-dim">{BEY_SLOT_LABELS[slot]}</p>
                   {ownedBySlot[slot].length === 0 ? (
-                    <p className="text-[11px] font-bold text-bey-dim/60">還沒有{BEY_SLOT_LABELS[slot]}，先去鍛造吧</p>
+                    <p className="text-[11px] font-normal text-bey-dim/60">還沒有{BEY_SLOT_LABELS[slot]}，先去鍛造吧</p>
                   ) : (
                     <div className="flex flex-wrap gap-1.5">
                       {ownedBySlot[slot].map((part: BeyPartDef) => (
@@ -308,8 +308,8 @@ const ChildForgePanel: React.FC<{
                 <div key={build.id} className="flex items-center gap-2.5 rounded-xl border border-bey-steel bg-bey-void/40 p-2.5">
                   <BeyTop size={46} speed="slow" bladeId={build.bladeId} ratchetId={build.ratchetId} bitId={build.bitId} />
                   <div className="min-w-0 flex-1">
-                    <p className="truncate text-sm font-black text-bey-ink">{build.name}</p>
-                    <p className="text-[10px] font-bold text-bey-dim">
+                    <p className="truncate text-sm font-bold text-bey-ink">{build.name}</p>
+                    <p className="text-[10px] font-normal text-bey-dim">
                       攻 {stats.attack}・防 {stats.defense}・久 {stats.stamina}
                     </p>
                   </div>
@@ -355,7 +355,7 @@ export const BeyForge: React.FC<BeyForgeProps> = ({
 
   return (
     <section aria-label="陀螺鍛造" className="space-y-3">
-      <p className="px-1 text-[11px] font-bold text-bey-dim">
+      <p className="px-1 text-[11px] font-normal text-bey-dim">
         家長加分會累積鋼料，集滿就能鍛造零件、組裝自己的陀螺。
       </p>
 

@@ -148,7 +148,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
                         {new Date().getHours() < 12 ? '早安！' : '你好！'}
                         <span className="text-bey-cyan ml-1">{currentUser.name}</span>
                     </h2>
-                    <p className="text-bey-dim font-bold mt-1 text-xs md:text-sm">記錄今天的對戰結果</p>
+                    <p className="text-bey-dim font-normal mt-1 text-xs md:text-sm">記錄今天的對戰結果</p>
                 </div>
                 <div className="bg-bey-panel px-2.5 py-1.5 flex-shrink-0 soft-card clip-notch-sm">
                     <span className="font-display font-bold text-bey-dim text-xs">{new Date().toLocaleDateString('zh-TW', { month: 'numeric', day: 'numeric', weekday: 'short' })}</span>
@@ -283,7 +283,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
                   <Icons.BookOpen className="text-bey-cyan" size={18} />
                   <div>
                     <h2 className="text-base font-black text-bey-ink md:text-lg">戰績日誌</h2>
-                    <p className="text-[10px] font-bold text-bey-dim">每筆加扣分依時間排列</p>
+                    <p className="text-[10px] font-normal text-bey-dim">每筆加扣分依時間排列</p>
                   </div>
                 </div>
                 
@@ -319,7 +319,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
             onUpdateStampCards={onUpdateStampCards}
             resolver={currentUser}
           />
-        ) : <div className="p-12 md:p-20 text-center font-bold text-bey-dim text-lg md:text-xl">🚧 維修區，Blader 勿進！ 🚧</div>;
+        ) : <div className="p-12 md:p-20 text-center font-normal text-bey-dim text-lg md:text-xl">🚧 維修區，Blader 勿進！ 🚧</div>;
       default:
         return null;
     }
@@ -457,7 +457,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
   return (
     <div className="flex flex-col lg:flex-row h-screen overflow-hidden app-bg">
       {/* ===== 桌面版側邊導覽列 (lg 以上；手機與 iPad 直式改用底部導覽) ===== */}
-      <aside className="relative z-20 hidden w-20 flex-shrink-0 flex-col border-r border-bey-cyanDark/10 bg-bey-panel lg:flex">
+      <aside className="relative z-20 hidden w-20 flex-shrink-0 flex-col border-r border-bey-steel bg-bey-panel lg:flex">
 
         <button
           type="button"
@@ -496,7 +496,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
           )}
         </nav>
 
-        <div className="mt-auto border-t border-bey-cyanDark/10 p-2">
+        <div className="mt-auto border-t border-bey-steel p-2">
           <div className="flex justify-center py-2" title={`${currentUser.name}・${cloudEmail}`}>
             <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full border border-bey-ink/10 bg-bey-paper text-lg">
               {currentUser.avatar}
@@ -509,7 +509,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
               <button
                 type="button"
                 onClick={onCloudLogout}
-                className="flex min-h-10 items-center justify-center rounded-xl text-bey-ink/70 transition-colors hover:bg-bey-paper hover:text-bey-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-bey-cyanDark"
+                className="flex min-h-10 items-center justify-center rounded-xl text-bey-dim transition-colors hover:bg-bey-paper hover:text-bey-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-bey-cyanDark"
                 aria-label="切換雲端帳號"
                 title="切換雲端帳號"
               >
@@ -519,7 +519,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
             <button
               type="button"
               onClick={onLogout}
-              className="flex min-h-10 items-center justify-center rounded-xl text-bey-ink/70 transition-colors hover:bg-bey-paper hover:text-bey-cyan focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-bey-cyanDark"
+              className="flex min-h-10 items-center justify-center rounded-xl text-bey-dim transition-colors hover:bg-bey-paper hover:text-bey-cyan focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-bey-cyanDark"
               aria-label="切換家庭角色"
               title="切換家庭角色"
             >
@@ -537,7 +537,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
               <BeyTop color="cyan" size={30} speed="slow" />
               <div>
                 <h1 className="font-display text-base font-black italic text-bey-ink leading-none">BEY ARENA</h1>
-                <span className="font-display text-[9px] font-bold tracking-[0.22em] text-bey-cyan">FAMILY LEAGUE</span>
+                <span className="font-display text-[10px] font-bold tracking-[0.22em] text-bey-cyan">FAMILY LEAGUE</span>
               </div>
             </div>
             <div className="flex items-center gap-2">
@@ -559,12 +559,12 @@ export const Dashboard: React.FC<DashboardProps> = ({
         {/* 手機版雲端帳號下拉面板 */}
         {isParent && showCloudInfo && (
           <div className="lg:hidden bg-bey-panel border-b border-bey-steel px-4 py-2.5 animate-pop z-20 relative">
-            <p className="text-xs font-bold text-bey-dim">☁️ 雲端帳號</p>
+            <p className="text-xs font-normal text-bey-dim">☁️ 雲端帳號</p>
             <p className="text-sm font-bold text-bey-ink break-all mb-3">{cloudEmail}</p>
             <button
               type="button"
               onClick={onCloudLogout}
-              className="w-full flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl bg-bey-red/10 text-bey-red text-sm font-black hover:bg-bey-red/20 transition-colors"
+              className="w-full flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl bg-bey-red/10 text-bey-red text-sm font-bold hover:bg-bey-red/20 transition-colors"
             >
               <Icons.LogOut size={16} />
               登出雲端帳號
@@ -694,7 +694,7 @@ const CollectionTab = ({ active, onClick, icon, label, controls }: {
     aria-selected={active}
     aria-controls={controls}
     onClick={onClick}
-    className={`flex min-h-11 flex-1 items-center justify-center gap-1.5 clip-notch-sm px-3 text-sm font-black transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-bey-cyan focus-visible:ring-offset-2 focus-visible:ring-offset-bey-deep ${
+    className={`flex min-h-11 flex-1 items-center justify-center gap-1.5 clip-notch-sm px-3 text-sm font-bold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-bey-cyan focus-visible:ring-offset-2 focus-visible:ring-offset-bey-deep ${
       active
         ? 'bg-bey-cyan text-bey-void'
         : 'bg-bey-panel text-bey-dim hover:text-bey-ink border border-bey-steel'
@@ -795,11 +795,11 @@ const ChildHomeSummary = ({
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1">
             <div>
-              <p className="font-display text-[9px] font-bold tracking-[0.3em] text-bey-cyan">BLADER STATUS</p>
+              <p className="font-display text-[10px] font-bold tracking-[0.3em] text-bey-cyan">BLADER STATUS</p>
               <h2 className="text-lg font-black leading-tight text-bey-ink">
                 <span aria-hidden="true">{currentUser.avatar}</span> {currentUser.name}
               </h2>
-              <p className="mt-1 text-xs font-bold text-bey-dim">{getEncouragement(score)}</p>
+              <p className="mt-1 text-xs font-normal text-bey-dim">{getEncouragement(score)}</p>
             </div>
             <div className="flex items-baseline gap-1">
               <span className="text-4xl font-bold italic leading-none text-bey-cyan tabular-nums glow-cyan">{score}</span>
@@ -872,20 +872,20 @@ const ParentGoalReminderSection = ({
         }`}
       >
         <div className="flex flex-wrap items-center gap-1.5 mb-1.5">
-          <span className="text-[11px] font-black px-2 py-0.5 rounded-full bg-bey-blue/10 text-bey-blue">
+          <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-bey-blue/10 text-bey-blue">
             {child?.name ?? '未指定孩子'}
           </span>
-          <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-bey-yellow/25 text-bey-orange">
+          <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-bey-yellow/25 text-bey-orange">
             {tone === 'pending' ? '待判定' : '進行中'}
           </span>
           {hasIssuedCard && (
-            <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-bey-lime/20 text-bey-lime">
+            <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-bey-lime/20 text-bey-lime">
               已發卡
             </span>
           )}
         </div>
         <p className="font-bold text-sm text-bey-ink leading-snug">{goal.targetText}</p>
-        <p className="text-[10px] font-bold text-bey-ink/45 mt-1">{formatGoalDateRange(goal)}</p>
+        <p className="text-[10px] font-normal text-bey-dim mt-1">{formatGoalDateRange(goal)}</p>
       </div>
     );
   };
@@ -895,7 +895,7 @@ const ParentGoalReminderSection = ({
       <div className="flex items-center mb-3 gap-2">
         <div className="w-8 h-8 bg-bey-orange/15 rounded-lg text-bey-orange flex items-center justify-center"><Icons.Calendar size={17} /></div>
         <h3 className="text-base font-black text-bey-ink">目標提醒</h3>
-        <div className="ml-auto flex gap-1.5 text-[10px] font-black">
+        <div className="ml-auto flex gap-1.5 text-[10px] font-bold">
           {pendingGoals.length > 0 && <span className="px-2 py-1 rounded-full bg-bey-red/10 text-bey-red">待判定 {pendingGoals.length}</span>}
           {goals.length > 0 && <span className="px-2 py-1 rounded-full bg-bey-cyan/10 text-bey-cyan">進行中 {goals.length}</span>}
         </div>
@@ -945,16 +945,16 @@ const ParentRecentRecordsGrid = ({
               </div>
               <div>
                 <h3 className="font-black text-xl text-bey-ink">{childScore.user.name}</h3>
-                <p className="text-sm font-bold text-bey-ink/50">最近 5 筆紀錄</p>
+                <p className="text-sm font-normal text-bey-dim">最近 5 筆紀錄</p>
               </div>
             </div>
-            <div className={`px-3 py-1 rounded-full text-xs font-black ${isBlue ? 'bg-bey-blue text-white' : 'bg-bey-cyan text-bey-void'}`}>
+            <div className={`px-3 py-1 rounded-full text-xs font-bold ${isBlue ? 'bg-bey-blue text-white' : 'bg-bey-cyan text-bey-void'}`}>
               目前 {childScore.score} 分
             </div>
           </div>
 
           {recentRecords.length === 0 ? (
-            <div className="rounded-[1.5rem] border-2 border-dashed border-bey-ink/10 bg-bey-paper/70 px-4 py-8 text-center text-bey-ink/40 font-bold">
+            <div className="rounded-[1.5rem] border-2 border-dashed border-bey-ink/10 bg-bey-paper/70 px-4 py-8 text-center text-bey-dim font-normal">
               還沒有任何紀錄
             </div>
           ) : (
@@ -965,17 +965,17 @@ const ParentRecentRecordsGrid = ({
                     <div className="min-w-0">
                       <p className="font-bold text-bey-ink truncate">{record.itemName}</p>
                       <div className="flex flex-wrap items-center gap-2 mt-1">
-                        <span className="text-xs font-bold text-bey-ink/40">
+                        <span className="text-xs font-normal text-bey-dim">
                           {new Date(record.timestamp).toLocaleString('zh-TW', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
                         </span>
                         {record.scoreCategory && (
-                          <span className={`text-xs font-black px-2 py-0.5 rounded-full border ${getScoreCategoryChipClassName(record.scoreCategory)}`}>
+                          <span className={`text-xs font-bold px-2 py-0.5 rounded-full border ${getScoreCategoryChipClassName(record.scoreCategory)}`}>
                             {getScoreCategoryLabel(record.scoreCategory)}
                           </span>
                         )}
                       </div>
                       {record.note && (
-                        <p className="text-xs font-bold text-bey-ink/55 mt-2 break-words">{record.note}</p>
+                        <p className="text-xs font-normal text-bey-dim mt-2 break-words">{record.note}</p>
                       )}
                     </div>
                     <div className={`text-lg font-black flex-shrink-0 ${record.pointsChange > 0 ? 'text-bey-cyan' : 'text-bey-red'}`}>
@@ -1024,14 +1024,14 @@ const ChildOverviewSection = ({ currentUser, records, scoreItems, goalRewards, r
         <Card className="bg-bey-orange/10">
           <div className="flex items-center mb-2.5 gap-2">
             <div className="w-7 h-7 bg-bey-orange/20 rounded-lg text-bey-orange flex items-center justify-center"><Icons.Calendar size={15} /></div>
-            <h3 className="text-sm md:text-base font-black text-bey-ink">這段時間的努力目標</h3>
+            <h3 className="text-sm md:text-base font-bold text-bey-ink">這段時間的努力目標</h3>
           </div>
           <div className="space-y-2">
             {goalRewards.map((goal) => (
               <div key={goal.id} className="bg-bey-paper/85 rounded-xl p-3">
-                <p className="text-sm font-black text-bey-ink leading-snug">{goal.targetText}</p>
+                <p className="text-sm font-bold text-bey-ink leading-snug">{goal.targetText}</p>
                 <div className="flex flex-wrap items-center justify-between gap-1 mt-1.5">
-                  <p className="text-xs font-bold text-bey-ink/75">{formatGoalDateRange(goal)}</p>
+                  <p className="text-xs font-normal text-bey-dim">{formatGoalDateRange(goal)}</p>
                   <p className="text-xs font-bold text-bey-orange">達成可獲得 5 折卡</p>
                 </div>
               </div>
@@ -1054,22 +1054,22 @@ const ChildOverviewSection = ({ currentUser, records, scoreItems, goalRewards, r
         <Card className="bg-bey-paper">
           <div className="mb-3 flex items-center gap-2">
             <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-bey-blue/15 text-bey-blue"><Icons.TrendingUp size={15} /></div>
-            <h3 className="text-sm font-black text-bey-ink md:text-base">這週的進步</h3>
+            <h3 className="text-sm font-bold text-bey-ink md:text-base">這週的進步</h3>
           </div>
           <div className="grid grid-cols-3 gap-2">
             <div className="rounded-xl bg-bey-cyan/10 p-2 text-center">
               <div className="text-xl font-black text-bey-cyan">{weekPositive.length}</div>
-              <div className="text-xs font-bold text-bey-ink/75">加分</div>
+              <div className="text-xs font-normal text-bey-dim">加分</div>
             </div>
             <div className="rounded-xl bg-bey-red/10 p-2 text-center">
               <div className="text-xl font-black text-bey-red">{weekNegative.length}</div>
-              <div className="text-xs font-bold text-bey-ink/75">扣分</div>
+              <div className="text-xs font-normal text-bey-dim">扣分</div>
             </div>
             <div className={`${weekNet >= 0 ? 'bg-bey-blue/10' : 'bg-bey-orange/10'} rounded-xl p-2 text-center`}>
               <div className={`text-xl font-black ${weekNet >= 0 ? 'text-bey-blue' : 'text-bey-orange'}`}>
                 {weekNet >= 0 ? '+' : ''}{weekNet}
               </div>
-              <div className="text-xs font-bold text-bey-ink/75">淨得分</div>
+              <div className="text-xs font-normal text-bey-dim">淨得分</div>
             </div>
           </div>
         </Card>
@@ -1083,8 +1083,8 @@ const ChildOverviewSection = ({ currentUser, records, scoreItems, goalRewards, r
           aria-expanded={showGuide}
         >
           <div className="w-7 h-7 bg-bey-cyan/15 rounded-lg text-bey-cyan flex items-center justify-center"><Icons.BookOpen size={15} /></div>
-          <h3 className="text-sm md:text-base font-black text-bey-ink">積分項目指南</h3>
-          <span className="ml-auto flex items-center gap-1 text-xs font-bold text-bey-ink/50">
+          <h3 className="text-sm md:text-base font-bold text-bey-ink">積分項目指南</h3>
+          <span className="ml-auto flex items-center gap-1 text-xs font-normal text-bey-dim">
             {showGuide ? '收合' : '展開'}
             <Icons.ChevronRight size={18} className={`transition-transform ${showGuide ? 'rotate-90' : ''}`} />
           </span>
@@ -1128,12 +1128,12 @@ const FamilyCardsSection = ({
     <Card className="bg-bey-paper">
       <div className="flex items-center mb-3 gap-2">
         <div className="w-7 h-7 bg-bey-yellow/20 rounded-lg text-bey-yellow flex items-center justify-center"><Icons.Gift size={15} /></div>
-        <h3 className="text-sm md:text-base font-black text-bey-ink truncate">{childName ? `${childName}的收藏` : '我的卡片'}</h3>
+        <h3 className="text-sm md:text-base font-bold text-bey-ink truncate">{childName ? `${childName}的收藏` : '我的卡片'}</h3>
       </div>
 
       {activeRewardCards.length > 0 && (
         <div className="mb-3">
-          <p className="mb-2 text-xs font-black text-bey-yellow">獎勵卡</p>
+          <p className="mb-2 text-xs font-bold text-bey-yellow">獎勵卡</p>
           <div className="space-y-1.5">
             {activeRewardCards.map((card) => (
               <div key={card.id} className="bg-bey-void/40 border border-bey-steel rounded-xl p-2.5">
@@ -1142,20 +1142,20 @@ const FamilyCardsSection = ({
                     {card.rewardIcon || '🎁'}
                   </div>
                   <div className="min-w-0 flex-1">
-                    <p className="truncate text-xs font-bold text-bey-ink/75">{card.title}</p>
-                    <p className="truncate whitespace-nowrap text-xs font-black leading-tight text-bey-ink" title={card.rewardLabel}>{card.rewardLabel}</p>
+                    <p className="truncate text-xs font-normal text-bey-dim">{card.title}</p>
+                    <p className="truncate whitespace-nowrap text-xs font-bold leading-tight text-bey-ink" title={card.rewardLabel}>{card.rewardLabel}</p>
                   </div>
                 </div>
                 {isParent ? (
                     <button
                       type="button"
-                      className="mt-2 min-h-8 w-full rounded-lg bg-bey-yellow px-2 text-xs font-black text-bey-void hover:brightness-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-bey-yellow"
+                      className="mt-2 min-h-8 w-full rounded-lg bg-bey-yellow px-2 text-xs font-bold text-bey-void hover:brightness-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-bey-yellow"
                       onClick={() => onRedeemRewardCard?.(card)}
                     >
                       兌換這份獎勵
                     </button>
                   ) : (
-                    <span className="mt-2 block rounded-lg bg-bey-paper px-2 py-1.5 text-center text-xs font-black text-bey-yellow">
+                    <span className="mt-2 block rounded-lg bg-bey-paper px-2 py-1.5 text-center text-xs font-bold text-bey-yellow">
                       請爸媽協助兌換
                     </span>
                   )}
@@ -1167,7 +1167,7 @@ const FamilyCardsSection = ({
 
       {activeStampCards.length > 0 && (
         <div>
-          <p className="mb-2 text-xs font-black text-bey-orange">集點卡</p>
+          <p className="mb-2 text-xs font-bold text-bey-orange">集點卡</p>
           <div className="space-y-1.5">
             {activeStampCards.map((card) => (
               <StampCardRow key={card.id} card={card} />
@@ -1188,10 +1188,10 @@ const StampCardRow = ({ card }: { card: StampCard }) => {
     <div className={`rounded-xl p-2.5 ${complete ? 'bg-bey-yellow/20' : 'bg-bey-deep/35'}`}>
       <div className="flex items-start justify-between gap-2 mb-2">
         <div className="min-w-0">
-          <p className="text-xs font-black text-bey-ink leading-tight break-words">{card.title}</p>
-          <p className="truncate text-xs font-bold text-bey-ink/75">{card.rewardIcon || '🎁'} {card.rewardLabel}</p>
+          <p className="text-xs font-bold text-bey-ink leading-tight break-words">{card.title}</p>
+          <p className="truncate text-xs font-normal text-bey-dim">{card.rewardIcon || '🎁'} {card.rewardLabel}</p>
         </div>
-        <span className={`flex-shrink-0 rounded-full px-2 py-0.5 text-xs font-black ${complete ? 'bg-bey-orange text-white' : 'bg-bey-paper text-bey-ink/75'}`}>
+        <span className={`flex-shrink-0 rounded-full px-2 py-0.5 text-xs font-bold ${complete ? 'bg-bey-orange text-white' : 'bg-bey-paper text-bey-dim'}`}>
           {filled}/{card.targetStamps}
         </span>
       </div>
@@ -1199,7 +1199,7 @@ const StampCardRow = ({ card }: { card: StampCard }) => {
         <div className="h-full rounded-full bg-bey-orange" style={{ width: `${Math.min((filled / card.targetStamps) * 100, 100)}%` }} />
       </div>
       {complete && (
-        <p className="mt-2 text-xs font-black text-bey-orange">集滿了，可以兌換禮物！</p>
+        <p className="mt-2 text-xs font-bold text-bey-orange">集滿了，可以兌換禮物！</p>
       )}
     </div>
   );
@@ -1223,7 +1223,7 @@ const ScoreGuidePanel = ({
 
         return (
           <div key={option.value} className="space-y-1.5">
-            <div className={`inline-flex rounded-full border px-2 py-1 text-xs font-black ${getScoreCategoryChipClassName(option.value)}`}>
+            <div className={`inline-flex rounded-full border px-2 py-1 text-xs font-bold ${getScoreCategoryChipClassName(option.value)}`}>
               {option.label}
             </div>
             <div className="space-y-2">
@@ -1237,7 +1237,7 @@ const ScoreGuidePanel = ({
                       <p className="text-xs font-bold text-bey-ink break-words">{item.label}</p>
                     </div>
                   </div>
-                  <div className={`rounded-full px-2 py-0.5 text-xs font-black ${type === ScoreType.POSITIVE ? 'bg-bey-cyan/20 text-bey-cyan' : 'bg-bey-red/20 text-bey-red'}`}>
+                  <div className={`rounded-full px-2 py-0.5 text-xs font-bold ${type === ScoreType.POSITIVE ? 'bg-bey-cyan/20 text-bey-cyan' : 'bg-bey-red/20 text-bey-red'}`}>
                     {type === ScoreType.POSITIVE ? '+' : '-'}{item.points}
                   </div>
                 </div>
@@ -1280,10 +1280,10 @@ const ScoreCard = ({ user, score, onAddPoints, onDeductPoints, onRedeem, canMana
           <BeyTop color={colorTheme} size={44} speed="slow" />
         </div>
         <div className="min-w-0">
-          <h3 className="text-sm md:text-base font-black text-bey-ink leading-tight truncate">
+          <h3 className="text-sm md:text-base font-bold text-bey-ink leading-tight truncate">
             <span aria-hidden="true">{user.avatar}</span> {user.name}
           </h3>
-          <span className="text-xs font-black text-bey-lime">
+          <span className="text-xs font-bold text-bey-lime">
             5 折卡 {availableDiscountCardCount} 張
           </span>
         </div>

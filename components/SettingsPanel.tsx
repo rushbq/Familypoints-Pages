@@ -564,17 +564,17 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
   return (
     <div className="grid items-start gap-5 lg:grid-cols-[13rem_minmax(0,1fr)]">
       <aside className="sticky top-4 hidden rounded-2xl bg-bey-paper p-3 soft-card lg:block">
-        <div className="flex items-center gap-2 border-b border-bey-cyanDark/10 px-2 pb-3">
+        <div className="flex items-center gap-2 border-b border-bey-steel px-2 pb-3">
           <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-bey-cyan/15 text-bey-cyan"><Icons.Settings size={18} /></span>
           <div>
             <h2 className="text-base font-black text-bey-ink">設定中心</h2>
-            <p className="text-xs font-bold text-bey-ink/75">依功能分類管理</p>
+            <p className="text-xs font-normal text-bey-dim">依功能分類管理</p>
           </div>
         </div>
         <nav className="mt-3 space-y-4" aria-label="設定項目">
           {SETTINGS_GROUPS.map((group) => (
             <section key={group.key} aria-labelledby={`settings-group-${group.key}`}>
-              <h3 id={`settings-group-${group.key}`} className="mb-1 px-2 text-xs font-black text-bey-ink/75">{group.label}</h3>
+              <h3 id={`settings-group-${group.key}`} className="mb-1 px-2 text-xs font-bold text-bey-dim">{group.label}</h3>
               <div className="space-y-1">
                 {group.tabs.map((tab) => {
                   const TabIcon = tab.Icon;
@@ -585,7 +585,7 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
                       type="button"
                       onClick={() => setActiveTab(tab.key)}
                       aria-current={selected ? 'page' : undefined}
-                      className={`flex min-h-10 w-full items-center gap-2 rounded-xl px-3 text-left text-sm font-bold transition-colors ${selected ? 'bg-bey-cyan/15 text-bey-cyan' : 'text-bey-ink/75 hover:bg-bey-deep hover:text-bey-ink'}`}
+                      className={`flex min-h-10 w-full items-center gap-2 rounded-xl px-3 text-left text-sm font-bold transition-colors ${selected ? 'bg-bey-cyan/15 text-bey-cyan' : 'text-bey-dim hover:bg-bey-deep hover:text-bey-ink'}`}
                     >
                       <TabIcon size={17} />
                       <span>{tab.label}</span>
@@ -624,7 +624,7 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
           <span className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl bg-bey-cyan/15 text-bey-cyan"><CurrentSettingsIcon size={20} /></span>
           <div>
             <h2 className="text-lg font-black text-bey-ink">{currentSettingsTab.label}</h2>
-            <p className="mt-0.5 text-sm font-bold text-bey-ink/75">{currentSettingsGroup.description}</p>
+            <p className="mt-0.5 text-sm font-normal text-bey-dim">{currentSettingsGroup.description}</p>
           </div>
         </header>
 
@@ -641,7 +641,7 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
               />
               <div className="grid grid-cols-2 gap-2 md:col-span-2">
                 <div className="min-w-0">
-                  <label className="mb-1 ml-1 block text-xs font-black text-bey-ink">開始日期</label>
+                  <label className="mb-1 ml-1 block text-xs font-bold text-bey-ink">開始日期</label>
                   <input
                     type="date"
                     value={newGoal.startDate}
@@ -650,7 +650,7 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
                   />
                 </div>
                 <div className="min-w-0">
-                  <label className="mb-1 ml-1 block text-xs font-black text-bey-ink">結束日期</label>
+                  <label className="mb-1 ml-1 block text-xs font-bold text-bey-ink">結束日期</label>
                   <input
                     type="date"
                     value={newGoal.endDate}
@@ -757,13 +757,13 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
                       ? type === ScoreType.POSITIVE
                         ? 'bg-bey-cyan text-bey-void shadow-sm'
                         : 'bg-bey-red text-white shadow-sm'
-                      : 'text-bey-ink/50 hover:bg-bey-deep'
+                      : 'text-bey-dim hover:bg-bey-deep'
                   }`}
                 >
                   <Icon size={18} />
                   <span className="text-left leading-tight">
-                    <span className="block text-sm font-black">{label}</span>
-                    <span className={`block text-xs font-bold ${active ? 'text-white' : 'text-bey-ink/75'}`}>{hint}</span>
+                    <span className="block text-sm font-bold">{label}</span>
+                    <span className={`block text-xs font-bold ${active ? 'text-white' : 'text-bey-dim'}`}>{hint}</span>
                   </span>
                 </button>
               );
@@ -774,14 +774,14 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
             title={`${scoreType === ScoreType.POSITIVE ? '🌱 新增加分項目' : '🪨 新增扣分項目'}`}
             className={scoreType === ScoreType.POSITIVE ? 'bg-bey-cyan/10 border-bey-cyan/30' : 'bg-bey-red/10 border-bey-red/25'}
           >
-            <p className="mb-3 text-xs font-bold leading-relaxed text-bey-ink/55">
+            <p className="mb-3 text-xs font-bold leading-relaxed text-bey-dim">
               {scoreType === ScoreType.POSITIVE
                 ? '把常見的好行為設成快捷項目，記錄時一點就能加分。'
                 : '只保留清楚、可改善的行為，避免孩子看不懂扣分原因。'}
             </p>
             <div className="grid grid-cols-[minmax(0,1fr)_6.5rem] gap-3">
               <div>
-                <label className="mb-1.5 ml-1 block text-xs font-black text-bey-ink">項目名稱</label>
+                <label className="mb-1.5 ml-1 block text-xs font-bold text-bey-ink">項目名稱</label>
                 <input
                   type="text"
                   value={newItem.label}
@@ -791,7 +791,7 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
                 />
               </div>
               <div>
-                <label className="mb-1.5 ml-1 block text-xs font-black text-bey-ink">點數</label>
+                <label className="mb-1.5 ml-1 block text-xs font-bold text-bey-ink">點數</label>
                 <input
                   type="number"
                   min={1}
@@ -804,7 +804,7 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
             </div>
 
             <div className="mt-3">
-              <label className="mb-1.5 ml-1 block text-xs font-black text-bey-ink">分類</label>
+              <label className="mb-1.5 ml-1 block text-xs font-bold text-bey-ink">分類</label>
               <div className="relative">
                 <select
                   value={newItem.category}
@@ -815,7 +815,7 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
                     <option key={option.value} value={option.value}>{option.label}</option>
                   ))}
                 </select>
-                <Icons.ChevronDown size={17} className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-bey-ink/40" />
+                <Icons.ChevronDown size={17} className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-bey-dim" />
               </div>
             </div>
 
@@ -840,14 +840,14 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
           <section className="space-y-2" aria-label={`${scoreType === ScoreType.POSITIVE ? '加分' : '扣分'}項目清單`}>
             <div className="flex items-center justify-between px-1">
               <div>
-                <h3 className="text-sm font-black text-bey-ink">目前的{scoreType === ScoreType.POSITIVE ? '加分' : '扣分'}項目</h3>
-                <p className="text-xs font-bold text-bey-ink/75">清單會跟著上方頁籤切換，不需左右或區塊內捲動。</p>
+                <h3 className="text-sm font-bold text-bey-ink">目前的{scoreType === ScoreType.POSITIVE ? '加分' : '扣分'}項目</h3>
+                <p className="text-xs font-normal text-bey-dim">清單會跟著上方頁籤切換，不需左右或區塊內捲動。</p>
               </div>
-              <span className="shrink-0 rounded-full bg-bey-paper px-2.5 py-1 text-xs font-black text-bey-ink/50">{visibleScoreItemCount} 項</span>
+              <span className="shrink-0 rounded-full bg-bey-paper px-2.5 py-1 text-xs font-bold text-bey-dim">{visibleScoreItemCount} 項</span>
             </div>
 
             {visibleScoreItemCount === 0 ? (
-              <div className="rounded-2xl border border-dashed border-bey-ink/15 bg-bey-paper/60 py-7 text-center text-sm font-bold text-bey-ink/40">
+              <div className="rounded-2xl border border-dashed border-bey-ink/15 bg-bey-paper/60 py-7 text-center text-sm font-normal text-bey-dim">
                 尚未建立{scoreType === ScoreType.POSITIVE ? '加分' : '扣分'}項目
               </div>
             ) : (
@@ -857,7 +857,7 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
                   if (!items.length) return null;
                   return (
                     <div key={option.value} className="space-y-1.5">
-                      <div className={`inline-flex rounded-lg border px-2.5 py-1 text-xs font-black ${getScoreCategoryChipClassName(option.value)}`}>
+                      <div className={`inline-flex rounded-lg border px-2.5 py-1 text-xs font-bold ${getScoreCategoryChipClassName(option.value)}`}>
                         {option.label} · {items.length}
                       </div>
                       {items.map((item) => (
@@ -927,7 +927,7 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
                        </div>
                        <div>
                            <div className="font-black text-bey-ink text-sm md:text-base">{item.label}</div>
-                           <div className="text-xs font-black px-2 py-0.5 rounded-full inline-block bg-bey-orange text-bey-void">
+                           <div className="text-xs font-bold px-2 py-0.5 rounded-full inline-block bg-bey-orange text-bey-void">
                                {item.points} pt
                            </div>
                        </div>
@@ -938,14 +938,14 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
                         e.stopPropagation();
                         handleDeleteRewardItem(item.id);
                      }} 
-                     className="text-bey-ink/30 hover:text-bey-red hover:bg-bey-red/10 p-3 rounded-xl transition-colors"
+                     className="text-bey-dim hover:text-bey-red hover:bg-bey-red/10 p-3 rounded-xl transition-colors"
                    >
                      <Icons.Trash2 size={20} />
                    </button>
                 </div>
              ))}
              {appData.rewardItems.length === 0 && (
-                 <div className="col-span-full text-center text-bey-ink/40 py-4 font-bold">沒有獎勵項目</div>
+                 <div className="col-span-full text-center text-bey-dim py-4 font-bold">沒有獎勵項目</div>
              )}
           </div>
         </Card>
@@ -953,7 +953,7 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
 
       {activeTab === 'rewardCards' && (
         <Card title="🎫 獎勵卡管理" className="bg-bey-yellow/10 border-bey-yellow/40">
-          <p className="text-sm font-bold text-bey-ink/60 mb-3">
+          <p className="text-sm font-normal text-bey-dim mb-3">
             孩子有特殊表現（例如比賽獲獎）時頒發。頒發時就綁定兌換內容，兌換時<span className="text-bey-yellow">不扣分</span>。
           </p>
 
@@ -1010,7 +1010,7 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
                         <option key={item.id} value={item.id}>{item.icon || '🎁'} {item.label}</option>
                       ))}
                     </select>
-                    <Icons.ChevronDown size={17} className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-bey-ink/40" />
+                    <Icons.ChevronDown size={17} className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-bey-dim" />
                   </div>
                 ) : (
                   <p className="text-sm font-bold text-bey-red bg-bey-paper rounded-xl p-3 border border-bey-red/20">
@@ -1054,14 +1054,14 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
                       {card.rewardIcon || '🎁'}
                     </div>
                     <div className="min-w-0 flex-1">
-                      <span className="text-sm font-black px-3 py-0.5 rounded-full bg-bey-blue/10 text-bey-blue">{childNameById(card.childId)}</span>
+                      <span className="text-sm font-bold px-3 py-0.5 rounded-full bg-bey-blue/10 text-bey-blue">{childNameById(card.childId)}</span>
                       <p className="font-black text-bey-ink mt-1 break-words">{card.rewardLabel}</p>
-                      <p className="text-xs font-bold text-bey-ink/50 break-words">🏅 {card.title}</p>
+                      <p className="text-xs font-normal text-bey-dim break-words">🏅 {card.title}</p>
                     </div>
                     <button
                       type="button"
                       onClick={() => handleDeleteRewardCard(card.id)}
-                      className="text-bey-ink/30 hover:text-bey-red hover:bg-bey-red/10 p-2.5 rounded-xl transition-colors flex-shrink-0"
+                      className="text-bey-dim hover:text-bey-red hover:bg-bey-red/10 p-2.5 rounded-xl transition-colors flex-shrink-0"
                     >
                       <Icons.Trash2 size={18} />
                     </button>
@@ -1077,10 +1077,10 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
                       {card.rewardIcon || '🎁'}
                     </div>
                     <div className="min-w-0 flex-1">
-                      <p className="font-bold text-bey-ink/70 break-words">{childNameById(card.childId)}｜{card.rewardLabel}</p>
-                      <p className="text-xs font-bold text-bey-ink/40 break-words">🏅 {card.title}</p>
+                      <p className="font-normal text-bey-dim break-words">{childNameById(card.childId)}｜{card.rewardLabel}</p>
+                      <p className="text-xs font-normal text-bey-dim break-words">🏅 {card.title}</p>
                     </div>
-                    <span className="text-xs font-black px-3 py-1 rounded-full bg-bey-cyan/20 text-bey-cyan flex-shrink-0">已兌換</span>
+                    <span className="text-xs font-bold px-3 py-1 rounded-full bg-bey-cyan/20 text-bey-cyan flex-shrink-0">已兌換</span>
                   </div>
                 </div>
               ))}
@@ -1091,7 +1091,7 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
 
       {activeTab === 'stampCards' && (
         <Card title="🏅 集點卡管理" className="bg-bey-yellow/10 border-bey-yellow/40">
-          <p className="text-sm font-bold text-bey-ink/60 mb-3">
+          <p className="text-sm font-normal text-bey-dim mb-3">
             由家長手動蓋章的集點卡，<span className="text-bey-orange">獨立於積分</span>（不加分、不扣分）。集滿即可兌換家長指定的實體禮物。
           </p>
 
@@ -1176,23 +1176,23 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
                 return (
                   <div key={card.id} className={`p-3 rounded-xl border shadow-sm ${complete ? 'bg-bey-yellow/20 border-bey-orange/40' : 'bg-bey-paper border-bey-ink/5'}`}>
                     <div className="flex items-center justify-between gap-2 mb-2">
-                      <span className="text-sm font-black px-3 py-0.5 rounded-full bg-bey-blue/10 text-bey-blue">{childNameById(card.childId)}</span>
+                      <span className="text-sm font-bold px-3 py-0.5 rounded-full bg-bey-blue/10 text-bey-blue">{childNameById(card.childId)}</span>
                       <button
                         type="button"
                         onClick={() => handleDeleteStampCard(card.id)}
-                        className="text-bey-ink/30 hover:text-bey-red hover:bg-bey-red/10 p-2 rounded-xl transition-colors"
+                        className="text-bey-dim hover:text-bey-red hover:bg-bey-red/10 p-2 rounded-xl transition-colors"
                       >
                         <Icons.Trash2 size={16} />
                       </button>
                     </div>
                     <p className="font-black text-bey-ink leading-tight">{card.title}</p>
-                    <p className="text-xs font-bold text-bey-ink/50 mb-3">禮物：{card.rewardIcon || '🎁'} {card.rewardLabel}</p>
+                    <p className="text-xs font-normal text-bey-dim mb-3">禮物：{card.rewardIcon || '🎁'} {card.rewardLabel}</p>
 
                     <div className="flex flex-wrap gap-1.5 mb-3">
                       {Array.from({ length: card.targetStamps }).map((_, idx) => (
                         <span
                           key={idx}
-                          className={`w-7 h-7 rounded-full flex items-center justify-center text-sm border ${idx < filled ? 'bg-bey-orange text-white border-bey-orangeDark' : 'bg-bey-paper text-bey-ink/20 border-bey-steel'}`}
+                          className={`w-7 h-7 rounded-full flex items-center justify-center text-sm border ${idx < filled ? 'bg-bey-orange text-white border-bey-orangeDark' : 'bg-bey-paper text-bey-dim border-bey-steel'}`}
                         >
                           {idx < filled ? '★' : '☆'}
                         </span>
@@ -1200,7 +1200,7 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
                     </div>
 
                     <div className="flex flex-wrap items-center gap-2">
-                      <span className="text-xs font-black px-3 py-1.5 rounded-full bg-bey-deep text-bey-ink/60">{filled}/{card.targetStamps}</span>
+                      <span className="text-xs font-bold px-3 py-1.5 rounded-full bg-bey-deep text-bey-dim">{filled}/{card.targetStamps}</span>
                       <Button size="sm" variant="outline" onClick={() => handleAdjustStamp(card, -1)} disabled={card.stamps <= 0}>
                         −1
                       </Button>
@@ -1225,10 +1225,10 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
                       {card.rewardIcon || '🎁'}
                     </div>
                     <div className="min-w-0 flex-1">
-                      <p className="font-bold text-bey-ink/70 break-words">{childNameById(card.childId)}｜{card.title}</p>
-                      <p className="text-xs font-bold text-bey-ink/40 break-words">禮物：{card.rewardLabel}</p>
+                      <p className="font-normal text-bey-dim break-words">{childNameById(card.childId)}｜{card.title}</p>
+                      <p className="text-xs font-normal text-bey-dim break-words">禮物：{card.rewardLabel}</p>
                     </div>
-                    <span className="text-xs font-black px-3 py-1 rounded-full bg-bey-cyan/20 text-bey-cyan flex-shrink-0">已兌換</span>
+                    <span className="text-xs font-bold px-3 py-1 rounded-full bg-bey-cyan/20 text-bey-cyan flex-shrink-0">已兌換</span>
                   </div>
                 </div>
               ))}
@@ -1270,7 +1270,7 @@ const ChildRadioGroup: React.FC<{
 
   return (
     <fieldset>
-      <legend className="mb-1.5 ml-1 text-xs font-black text-bey-ink">{label}</legend>
+      <legend className="mb-1.5 ml-1 text-xs font-bold text-bey-ink">{label}</legend>
       <div className={`grid gap-2 ${childrenUsers.length > 1 ? 'grid-cols-2' : 'grid-cols-1'}`}>
         {childrenUsers.map((child) => {
           const selected = child.id === value;
@@ -1278,7 +1278,7 @@ const ChildRadioGroup: React.FC<{
             <label
               key={child.id}
               className={`flex min-h-11 cursor-pointer items-center gap-2 rounded-xl border px-3 py-2 transition-colors ${
-                selected ? selectedClass : 'border-bey-steel bg-bey-paper text-bey-ink/55 hover:border-bey-ink/25'
+                selected ? selectedClass : 'border-bey-steel bg-bey-paper text-bey-dim hover:border-bey-ink/25'
               }`}
             >
               <input
@@ -1290,7 +1290,7 @@ const ChildRadioGroup: React.FC<{
                 className="sr-only"
               />
               <span className="text-xl" aria-hidden="true">{child.avatar}</span>
-              <span className="min-w-0 flex-1 truncate text-sm font-black">{child.name}</span>
+              <span className="min-w-0 flex-1 truncate text-sm font-bold">{child.name}</span>
               <span className={`flex h-4 w-4 shrink-0 items-center justify-center rounded-full border ${selected ? 'border-current' : 'border-bey-ink/20'}`}>
                 {selected && <span className="h-2 w-2 rounded-full bg-current" />}
               </span>
@@ -1321,8 +1321,8 @@ const IconChoiceGrid: React.FC<{
   return (
     <fieldset className="mt-3">
       <div className="mb-1.5 flex items-baseline justify-between gap-2 px-1">
-        <legend className="text-xs font-black text-bey-ink">{label}</legend>
-        <span className="text-xs font-bold text-bey-ink/75">{hint}</span>
+        <legend className="text-xs font-bold text-bey-ink">{label}</legend>
+        <span className="text-xs font-normal text-bey-dim">{hint}</span>
       </div>
       <div className="grid grid-cols-4 gap-1.5">
         {options.map((option) => {
@@ -1334,11 +1334,11 @@ const IconChoiceGrid: React.FC<{
               aria-pressed={selected}
               onClick={() => onChange(option.icon)}
               className={`flex min-h-12 flex-col items-center justify-center rounded-xl border px-1 py-1.5 transition-colors ${
-                selected ? selectedClass : 'border-bey-steel bg-bey-paper/80 text-bey-ink/50 hover:border-bey-ink/25'
+                selected ? selectedClass : 'border-bey-steel bg-bey-paper/80 text-bey-dim hover:border-bey-ink/25'
               }`}
             >
               <span className="text-xl leading-none" aria-hidden="true">{option.icon}</span>
-              <span className="mt-1 text-xs font-black leading-none">{option.label}</span>
+              <span className="mt-1 text-xs font-bold leading-none">{option.label}</span>
             </button>
           );
         })}
@@ -1366,11 +1366,11 @@ const ItemRow: React.FC<ItemRowProps> = ({ label, points, icon, type, category, 
       <div className="min-w-0">
         <div className="font-bold text-bey-ink text-sm truncate">{label}</div>
         <div className="flex flex-wrap items-center gap-2 mt-1">
-          <div className={`text-xs font-black px-2 py-0.5 rounded-full inline-block ${type === ScoreType.POSITIVE ? 'bg-bey-cyan/20 text-bey-cyan' : 'bg-bey-red/20 text-bey-red'}`}>
+          <div className={`text-xs font-bold px-2 py-0.5 rounded-full inline-block ${type === ScoreType.POSITIVE ? 'bg-bey-cyan/20 text-bey-cyan' : 'bg-bey-red/20 text-bey-red'}`}>
             {type === ScoreType.POSITIVE ? '+' : '-'}{points}
           </div>
           {category && (
-            <div className={`text-xs font-black px-2 py-0.5 rounded-full border inline-block ${getScoreCategoryChipClassName(category)}`}>
+            <div className={`text-xs font-bold px-2 py-0.5 rounded-full border inline-block ${getScoreCategoryChipClassName(category)}`}>
               {getScoreCategoryLabel(category)}
             </div>
           )}
@@ -1383,7 +1383,7 @@ const ItemRow: React.FC<ItemRowProps> = ({ label, points, icon, type, category, 
           e.stopPropagation();
           onDelete();
       }} 
-      className="text-bey-ink/30 hover:text-bey-red hover:bg-bey-red/10 p-2 rounded-lg transition-colors"
+      className="text-bey-dim hover:text-bey-red hover:bg-bey-red/10 p-2 rounded-lg transition-colors"
     >
       <Icons.Trash2 size={17} />
     </button>
@@ -1400,13 +1400,13 @@ const CardListColumn: React.FC<{
     <div className="bg-bey-paper/70 p-3 rounded-xl">
       <div className="flex items-center justify-between gap-3">
         <h3 className="font-black text-bey-ink text-base">{title}</h3>
-        <span className="text-xs font-black text-bey-ink/50 bg-bey-deep px-3 py-1 rounded-full">{count} 筆</span>
+        <span className="text-xs font-bold text-bey-dim bg-bey-deep px-3 py-1 rounded-full">{count} 筆</span>
       </div>
     </div>
 
     <div className="space-y-2">
       {count === 0 ? (
-        <div className="text-center py-6 rounded-xl border border-dashed border-bey-steel bg-bey-paper/50 text-bey-ink/40 text-sm font-bold">
+        <div className="text-center py-6 rounded-xl border border-dashed border-bey-steel bg-bey-paper/50 text-bey-dim text-sm font-bold">
           {emptyText}
         </div>
       ) : (
@@ -1430,7 +1430,7 @@ const GoalSection: React.FC<GoalSectionProps> = ({ title, goals, users, appData,
     <div className="bg-bey-paper/70 p-3 rounded-xl">
       <div className="flex items-center justify-between gap-3">
         <h3 className="font-black text-bey-ink text-base">{title}</h3>
-        <span className="text-xs font-black text-bey-ink/50 bg-bey-deep px-3 py-1 rounded-full">{goals.length} 筆</span>
+        <span className="text-xs font-bold text-bey-dim bg-bey-deep px-3 py-1 rounded-full">{goals.length} 筆</span>
       </div>
     </div>
 
@@ -1442,24 +1442,24 @@ const GoalSection: React.FC<GoalSectionProps> = ({ title, goals, users, appData,
         return (
           <div key={goal.id} className="p-3 bg-bey-paper rounded-xl border border-bey-ink/5">
             <div className="flex flex-wrap items-center gap-1.5 mb-2">
-              <span className="text-xs font-black px-2 py-0.5 rounded-full bg-bey-blue/10 text-bey-blue">
+              <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-bey-blue/10 text-bey-blue">
                 {child?.name ?? '未指定孩子'}
               </span>
-              <span className="rounded-full bg-bey-yellow/20 px-2 py-0.5 text-xs font-black text-bey-orange">
+              <span className="rounded-full bg-bey-yellow/20 px-2 py-0.5 text-xs font-bold text-bey-orange">
                 {getGoalRewardStatusLabel(goal.status)}
               </span>
               {linkedCardCount > 0 && (
-                <span className="rounded-full bg-bey-orange/10 px-2 py-0.5 text-xs font-black text-bey-orange">
+                <span className="rounded-full bg-bey-orange/10 px-2 py-0.5 text-xs font-bold text-bey-orange">
                   已發 5 折卡
                 </span>
               )}
             </div>
 
             <p className="font-bold text-bey-ink text-sm leading-snug">{goal.targetText}</p>
-            <p className="text-xs font-bold text-bey-ink/50 mt-1">{formatGoalDateRange(goal)}</p>
+            <p className="text-xs font-normal text-bey-dim mt-1">{formatGoalDateRange(goal)}</p>
 
             {goal.resolvedByName && (
-              <p className="text-xs font-bold text-bey-ink/40 mt-2">
+              <p className="text-xs font-normal text-bey-dim mt-2">
                 判定者：{goal.resolvedByName}
               </p>
             )}
@@ -1474,7 +1474,7 @@ const GoalSection: React.FC<GoalSectionProps> = ({ title, goals, users, appData,
       })}
 
       {goals.length === 0 && (
-        <div className="text-center py-6 rounded-xl border border-dashed border-bey-steel bg-bey-paper/50 text-bey-ink/40 text-sm font-bold">
+        <div className="text-center py-6 rounded-xl border border-dashed border-bey-steel bg-bey-paper/50 text-bey-dim text-sm font-bold">
           {emptyText}
         </div>
       )}

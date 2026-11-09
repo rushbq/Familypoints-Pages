@@ -84,8 +84,8 @@ export const ActionLogger: React.FC<ActionLoggerProps> = ({ isOpen, onClose, onS
         <div className="p-4 overflow-y-auto flex-1 bg-bey-panel">
           <div className="mb-4">
             <div className="flex items-center gap-2 mb-2">
-              <Icons.Hash size={15} className="text-bey-ink/60" />
-              <span className="text-sm font-black text-bey-ink">先選分類</span>
+              <Icons.Hash size={15} className="text-bey-dim" />
+              <span className="text-sm font-bold text-bey-ink">先選分類</span>
             </div>
             <div className="flex flex-wrap gap-2">
               {SCORE_CATEGORY_OPTIONS.map((option) => {
@@ -98,7 +98,7 @@ export const ActionLogger: React.FC<ActionLoggerProps> = ({ isOpen, onClose, onS
                     className={`px-3 py-1.5 rounded-full border text-xs font-bold transition-colors ${
                       isActive
                         ? getScoreCategoryChipClassName(option.value)
-                        : 'bg-bey-paper text-bey-ink/60 border-bey-steel hover:text-bey-ink hover:border-bey-ink/20'
+                        : 'bg-bey-paper text-bey-dim border-bey-steel hover:text-bey-ink hover:border-bey-ink/20'
                     }`}
                   >
                     {option.label}
@@ -122,7 +122,7 @@ export const ActionLogger: React.FC<ActionLoggerProps> = ({ isOpen, onClose, onS
                 }`}
               >
                 {/* Points Badge */}
-                <div className={`absolute top-1.5 right-1.5 px-2 py-0.5 rounded-full font-black text-[10px] ${isPositive ? 'bg-bey-cyan text-bey-void' : 'bg-bey-red text-white'}`}>
+                <div className={`absolute top-1.5 right-1.5 px-2 py-0.5 rounded-full font-bold text-[10px] ${isPositive ? 'bg-bey-cyan text-bey-void' : 'bg-bey-red text-white'}`}>
                     {isPositive ? '+' : '-'}{item.points}
                 </div>
 
@@ -135,7 +135,7 @@ export const ActionLogger: React.FC<ActionLoggerProps> = ({ isOpen, onClose, onS
                 </span>
 
                 {selectedItemId === item.id && (
-                    <div className="absolute bottom-1 left-1 text-bey-cyan text-[9px] font-black">
+                    <div className="absolute bottom-1 left-1 text-bey-cyan text-[10px] font-bold">
                         ✓
                     </div>
                 )}
@@ -160,7 +160,7 @@ export const ActionLogger: React.FC<ActionLoggerProps> = ({ isOpen, onClose, onS
                   其它
               </span>
               {isCustom && (
-                  <div className="absolute bottom-1 left-1 text-bey-cyan text-[9px] font-black">
+                  <div className="absolute bottom-1 left-1 text-bey-cyan text-[10px] font-bold">
                       ✓
                   </div>
               )}
@@ -168,7 +168,7 @@ export const ActionLogger: React.FC<ActionLoggerProps> = ({ isOpen, onClose, onS
           </div>
 
           {filteredItems.length === 0 && (
-            <div className="mb-4 text-center py-5 rounded-xl border border-dashed border-bey-ink/15 bg-bey-paper/60 text-bey-ink/50 text-sm font-bold">
+            <div className="mb-4 text-center py-5 rounded-xl border border-dashed border-bey-ink/15 bg-bey-paper/60 text-bey-dim text-sm font-bold">
               這個分類目前還沒有可選項目，可以改選其他分類或使用「其它」。
             </div>
           )}
@@ -176,7 +176,7 @@ export const ActionLogger: React.FC<ActionLoggerProps> = ({ isOpen, onClose, onS
           {/* 「其它」自訂分數輸入 */}
           {isCustom && (
             <div className="bg-bey-paper rounded-xl p-3 mb-3">
-              <label className="block text-bey-ink font-black mb-2 text-sm flex items-center gap-2">
+              <label className="block text-bey-ink font-bold mb-2 text-sm flex items-center gap-2">
                  <Icons.Hash size={20} />
                  <span>自訂分數 <span className="text-bey-red text-sm">*必填</span></span>
               </label>
@@ -192,7 +192,7 @@ export const ActionLogger: React.FC<ActionLoggerProps> = ({ isOpen, onClose, onS
           )}
 
           <div className="bg-bey-paper rounded-xl p-3">
-            <label className="block text-bey-ink font-black mb-2 text-sm flex items-center gap-2">
+            <label className="block text-bey-ink font-bold mb-2 text-sm flex items-center gap-2">
                <Icons.PenTool size={20} />
                <span>{isCustom ? '原因' : '備註事項'} {isCustom ? <span className="text-bey-red text-sm">*必填</span> : '(選填)'}</span>
             </label>

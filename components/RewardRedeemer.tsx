@@ -108,7 +108,7 @@ export const RewardRedeemer: React.FC<RewardRedeemerProps> = ({
               <div className="flex items-center justify-between gap-3">
                 <div>
                   <p className="font-black text-bey-ink text-sm">5 折卡</p>
-                  <p className="text-[10px] font-bold text-bey-ink/55">
+                  <p className="text-[10px] font-normal text-bey-dim">
                     本次兌換半價，奇數無條件進位
                   </p>
                 </div>
@@ -116,7 +116,7 @@ export const RewardRedeemer: React.FC<RewardRedeemerProps> = ({
                   type="button"
                   disabled={!hasDiscountCards}
                   onClick={() => hasDiscountCards && setUseDiscountCard((prev) => !prev)}
-                  className={`px-3 py-2 rounded-lg border text-xs font-black transition-colors ${
+                  className={`px-3 py-2 rounded-lg border text-xs font-bold transition-colors ${
                     useDiscountCard && hasDiscountCards
                       ? 'bg-bey-orange text-bey-void border-bey-orangeDark'
                       : hasDiscountCards
@@ -148,7 +148,7 @@ export const RewardRedeemer: React.FC<RewardRedeemerProps> = ({
                       }`}
                   >
                     {/* 價格標籤 */}
-                    <div className="absolute top-1.5 right-1.5 px-2 py-0.5 rounded-full text-white font-black text-[10px] bg-bey-orange">
+                    <div className="absolute top-1.5 right-1.5 px-2 py-0.5 rounded-full text-white font-bold text-[10px] bg-bey-orange">
                         {finalCost} pt
                     </div>
 
@@ -163,7 +163,7 @@ export const RewardRedeemer: React.FC<RewardRedeemerProps> = ({
                           {item.label}
                       </span>
                       {useDiscountCard && hasDiscountCards && (
-                        <span className="text-[9px] font-bold text-bey-ink/40 mt-0.5 block text-center">
+                        <span className="text-[10px] font-normal text-bey-dim mt-0.5 block text-center">
                           原價 {item.points} pt
                         </span>
                       )}
@@ -171,7 +171,7 @@ export const RewardRedeemer: React.FC<RewardRedeemerProps> = ({
 
                     {/* 選中標記 */}
                     {selectedItemId === item.id && (
-                        <div className="absolute bottom-1 left-1 text-bey-orange text-[9px] font-black">
+                        <div className="absolute bottom-1 left-1 text-bey-orange text-[10px] font-bold">
                             ✓
                         </div>
                     )}
@@ -181,7 +181,7 @@ export const RewardRedeemer: React.FC<RewardRedeemerProps> = ({
             </div>
             
             {items.length === 0 && (
-              <div className="text-center text-bey-ink/40 text-sm font-bold py-6">
+              <div className="text-center text-bey-dim text-sm font-bold py-6">
                   目前沒有可兌換的獎勵喔！請家長新增。
               </div>
             )}

@@ -45,7 +45,7 @@ export const SecretMailbox: React.FC<SecretMailboxProps> = ({
                 <div className="absolute top-6 right-6 opacity-60 transform rotate-12 pointer-events-none">
                    <div className="w-24 h-28 border-4 border-bey-cyan/30 p-2 flex flex-col items-center justify-center rounded-lg">
                       <Icons.Leaf size={48} className="text-bey-cyan/30" />
-                      <span className="text-bey-cyan/30 font-black text-xs mt-1">LEAF MAIL</span>
+                      <span className="text-bey-cyan/30 font-bold text-xs mt-1">LEAF MAIL</span>
                    </div>
                 </div>
 
@@ -54,7 +54,7 @@ export const SecretMailbox: React.FC<SecretMailboxProps> = ({
                       <span className="bg-bey-blue text-white rounded-full p-2"><Icons.Send /></span>
                       寄給爸媽的信
                    </h2>
-                   <p className="text-bey-ink/60 font-bold ml-12">有什麼心裡話，都可以在這裡說...</p>
+                   <p className="text-bey-dim font-normal ml-12">有什麼心裡話，都可以在這裡說...</p>
                 </div>
                 
                 {/* Clean White Paper Area - Removed Lines for better readability */}
@@ -89,14 +89,14 @@ export const SecretMailbox: React.FC<SecretMailboxProps> = ({
             <div className="bg-bey-cyan p-4 rounded-2xl text-white border-b-4 border-bey-cyanDark shadow-sm transform -rotate-3"><Icons.Mail size={32} /></div>
             <div>
                 <h2 className="text-3xl font-black text-bey-ink">郵筒</h2>
-                <p className="font-bold text-bey-ink/50">收到 {messages.length} 封來自孩子的信</p>
+                <p className="font-normal text-bey-dim">收到 {messages.length} 封來自孩子的信</p>
             </div>
          </div>
        </div>
 
        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
          {sortedMessages.length === 0 ? (
-           <div className="col-span-full text-center py-20 bg-bey-paper/50 rounded-[3rem] border-4 border-dashed border-bey-ink/10 text-bey-ink/40">
+           <div className="col-span-full text-center py-20 bg-bey-paper/50 rounded-[3rem] border-4 border-dashed border-bey-ink/10 text-bey-dim">
              <Icons.Inbox size={64} className="mx-auto mb-4 opacity-50" />
              <p className="text-xl font-bold">郵筒空空的...</p>
            </div>
@@ -130,10 +130,10 @@ export const SecretMailbox: React.FC<SecretMailboxProps> = ({
                     </div>
                  </div>
                  <div className="text-right">
-                    <span className="block font-bold text-bey-ink/40 text-sm">
+                    <span className="block font-normal text-bey-dim text-sm">
                         {new Date(msg.timestamp).toLocaleString('zh-TW', {month:'numeric', day:'numeric'})}
                     </span>
-                    <span className="text-xs font-bold text-bey-ink/30">
+                    <span className="text-xs font-normal text-bey-dim">
                         {new Date(msg.timestamp).toLocaleString('zh-TW', {hour:'2-digit', minute:'2-digit'})}
                     </span>
                  </div>
@@ -147,7 +147,7 @@ export const SecretMailbox: React.FC<SecretMailboxProps> = ({
 
                {!msg.isRead && (
                  <div className="mt-6 flex justify-end">
-                    <div className="text-sm font-black text-white bg-bey-blue px-4 py-2 rounded-full shadow-sm flex items-center">
+                    <div className="text-sm font-bold text-white bg-bey-blue px-4 py-2 rounded-full shadow-sm flex items-center">
                         <Icons.CheckCircle size={16} className="mr-2" /> 
                         標示為已讀
                     </div>
