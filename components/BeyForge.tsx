@@ -29,6 +29,7 @@ interface BeyForgeProps {
   onDrawPart: (childId: string) => { partId: string | null; isDuplicate: boolean };
   onAssemble: (childId: string, name: string, bladeId: string, ratchetId: string, bitId: string) => void;
   onDisassemble: (buildId: string) => void;
+  onShowRules: () => void;
 }
 
 const SLOTS: BeyPartSlot[] = ['BLADE', 'RATCHET', 'BIT'];
@@ -346,6 +347,7 @@ export const BeyForge: React.FC<BeyForgeProps> = ({
   onDrawPart,
   onAssemble,
   onDisassemble,
+  onShowRules,
 }) => {
   const isParent = currentUser.role === UserRole.PARENT;
   const allChildren = users.filter((user) => user.role === UserRole.CHILD);
@@ -355,9 +357,18 @@ export const BeyForge: React.FC<BeyForgeProps> = ({
 
   return (
     <section aria-label="陀螺鍛造" className="space-y-3">
-      <p className="px-1 text-[11px] font-normal text-bey-dim">
-        家長加分會累積鋼料，集滿就能鍛造零件、組裝自己的陀螺。
-      </p>
+      <div className="flex items-center justify-between gap-2 px-1">
+        <p className="min-w-0 text-[11px] font-normal text-bey-dim">
+          家長加分會累積鋼料，集滿就能鍛造零件。
+        </p>
+        <button
+          type="button"
+          onClick={onShowRules}
+          className="flex min-h-8 flex-shrink-0 items-center gap-1 rounded-lg border border-bey-steel px-2.5 text-[11px] font-bold text-bey-dim transition-colors hover:border-bey-cyan/50 hover:text-bey-ink"
+        >
+          <Icons.BookOpen size={13} /> 玩法說明
+        </button>
+      </div>
 
       <div className={`grid gap-3 md:gap-4 ${visibleChildren.length > 1 ? 'grid-cols-1 md:grid-cols-2' : 'grid-cols-1'}`}>
         {visibleChildren.map((child) => {

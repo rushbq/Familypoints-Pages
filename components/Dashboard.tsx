@@ -31,6 +31,7 @@ import { BeyTop } from './BeyTop';
 import { FamilyGarden } from './FamilyGarden';
 import { BeyForge } from './BeyForge';
 import { BeyBoss } from './BeyBoss';
+import { BeyRulesModal } from './BeyRulesModal';
 import {
   formatGoalDateRange,
   getActiveRewardCards,
@@ -132,6 +133,9 @@ export const Dashboard: React.FC<DashboardProps> = ({
   // --- 狀態：收集模組頁簽；陀螺工房為預設 ---
   const [collectionTab, setCollectionTab] = useState<'forge' | 'garden'>('forge');
 
+  // --- 狀態：玩法說明；規則很長，放 modal 不佔版面 ---
+  const [showBeyRules, setShowBeyRules] = useState(false);
+
   // --- 狀態：手機版雲端帳號展開 ---
   const [showCloudInfo, setShowCloudInfo] = useState(false);
 
@@ -227,6 +231,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
                     boss={data.beyBoss}
                     onSetLineup={onSetBossLineup}
                     onChallenge={onChallengeBoss}
+                    onShowRules={() => setShowBeyRules(true)}
                   />
                   <BeyForge
                     currentUser={currentUser}
@@ -235,6 +240,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
                     onDrawPart={onDrawBeyPart}
                     onAssemble={onAssembleBey}
                     onDisassemble={onDisassembleBey}
+                    onShowRules={() => setShowBeyRules(true)}
                   />
                 </div>
               ) : (
@@ -624,6 +630,8 @@ export const Dashboard: React.FC<DashboardProps> = ({
           />
         </div>
       </nav>
+
+      <BeyRulesModal isOpen={showBeyRules} onClose={() => setShowBeyRules(false)} />
 
       {/* 加扣分操作視窗 (Modal) */}
       {isParent && loggingAction && (

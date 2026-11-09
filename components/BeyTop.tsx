@@ -12,6 +12,8 @@ type TeamColor = 'cyan' | 'orange' | 'lime' | 'yellow';
 interface BeyTopProps {
   /** 隊色；給沒有指定零件的場合（登入頁、導覽列、計分卡）使用。 */
   color?: TeamColor;
+  /** 直接指定配色，優先於 color。魔王有自己的色系，不在隊色裡。 */
+  colorSet?: BeyColorSet;
   /** 指定三個零件後，陀螺會依零件的外型與配色繪製。 */
   bladeId?: string;
   ratchetId?: string;
@@ -134,6 +136,7 @@ const renderBit = (style: BeyBitStyle, color: BeyColorSet) => {
  */
 export const BeyTop: React.FC<BeyTopProps> = ({
   color = 'cyan',
+  colorSet,
   bladeId,
   ratchetId,
   bitId,
@@ -141,7 +144,7 @@ export const BeyTop: React.FC<BeyTopProps> = ({
   speed = 'slow',
   className = '',
 }) => {
-  const fallback = TEAM_PALETTE[color];
+  const fallback = colorSet ?? TEAM_PALETTE[color];
   const blade = bladeId ? getBeyPart(bladeId) : null;
   const ratchet = ratchetId ? getBeyPart(ratchetId) : null;
   const bit = bitId ? getBeyPart(bitId) : null;

@@ -93,6 +93,8 @@ The app has two deliberately contrasting collection loops, both fed by parent-aw
 - Both children in the lineup → full boss; a win gives each of them the boss's **exclusive part** and clears the week. One child → boss stats ×0.6; a win gives a normal rare part but **deliberately does not clear the week**, otherwise whoever plays first burns the other's shot at the exclusive part.
 - `BeyRarity` has a `BOSS` tier that `drawBeyPart` and `grantBeyPart` both exclude. A new boss part goes in `BOSS_PARTS` with a boss's `rewardPartId` pointing at it — never into the common or rare pools.
 - Parents see the panel read-only; the boss is the children's business.
+- The boss renders with **its own `colorSet`**, not a team colour — otherwise it reads as one of the children's beys. It spins slowly on weekdays and fast only on battle days, so a locked card does not feel urgent.
+- Rules live in `components/BeyRulesModal.tsx`, written for an elementary-school reader: short sentences, second person, concrete numbers, no jargon. The numbers are interpolated from the balance constants (`DEFAULT_SCRAP_PER_DRAW`, `DUPLICATE_SCRAP_REFUND`, `UPSET_CHANCE`, `WEAKENED_MULTIPLIER`), so retuning balance never leaves the copy lying.
 - `Button` variants use an "AC squishy" style: `border-b-4` + `active:border-b-0 active:translate-y-[4px]`. Match this for custom buttons.
 - Path alias `@` resolves to the **project root** (not `src/`), set in `vite.config.ts`.
 - All entity IDs are `Date.now().toString()`; timestamps are Unix ms (`Date.now()`).

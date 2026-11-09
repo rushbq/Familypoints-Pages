@@ -7,6 +7,7 @@ import {
   getBossForWeek,
   getDaysUntilBattle,
   getEffectiveBossStats,
+  isBattleDay,
   getLineupBuildId,
   getSelectableBuilds,
   getTeamStats,
@@ -25,6 +26,7 @@ interface BeyBossProps {
   boss: BeyBossState;
   onSetLineup: (childId: string, buildId: string | null) => void;
   onChallenge: () => BeyBossAttempt | null;
+  onShowRules: () => void;
 }
 
 const STAT_KEYS = ['attack', 'defense', 'stamina'] as const;
@@ -62,6 +64,7 @@ export const BeyBoss: React.FC<BeyBossProps> = ({
   boss,
   onSetLineup,
   onChallenge,
+  onShowRules,
 }) => {
   const [result, setResult] = useState<BeyBossAttempt | null>(null);
   const [expanded, setExpanded] = useState(false);
@@ -110,7 +113,14 @@ export const BeyBoss: React.FC<BeyBossProps> = ({
       <div className="pointer-events-none absolute inset-0 speed-lines opacity-40" aria-hidden="true" />
 
       <div className="relative flex items-center gap-3">
-        <BeyTop size={52} speed={availability === 'DEFEATED' ? 'idle' : 'fast'} color="cyan" className="flex-shrink-0" />
+        {/* 魔王用自己的色系，才分得出敵我；平日慢轉、戰鬥日才轉快，
+            避免平常看一眼就被催促 */}
+        <BeyTop
+          size={52}
+          colorSet={def.color}
+          speed={availability === 'DEFEATED' ? 'idle' : isBattleDay() ? 'fast' : 'slow'}
+          className="flex-shrink-0"
+        />
         <div className="min-w-0 flex-1">
           <p className="font-display text-[10px] font-bold tracking-[0.26em]" style={{ color: def.color.main }}>
             WEEKLY BOSS
@@ -121,6 +131,15 @@ export const BeyBoss: React.FC<BeyBossProps> = ({
           </h3>
           <p className="text-[11px] font-normal text-bey-dim">{statusLine}</p>
         </div>
+        <button
+          type="button"
+          onClick={onShowRules}
+          className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full border border-bey-steel text-[11px] font-bold text-bey-dim transition-colors hover:border-bey-cyan/50 hover:text-bey-ink"
+          aria-label="玩法說明"
+          title="玩法說明"
+        >
+          ？
+        </button>
         <button
           type="button"
           onClick={() => setExpanded(!expanded)}
