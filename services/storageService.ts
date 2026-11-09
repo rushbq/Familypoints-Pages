@@ -7,6 +7,7 @@ import {
 } from './database';
 import { normalizeScoreItem, normalizeScoreRecord } from './familyUtils';
 import { normalizeFamilyGarden } from './gardenUtils';
+import { normalizeBeyForge } from './beyUtils';
 import { auth, firestore } from './firebase';
 
 /**
@@ -39,6 +40,7 @@ export const normalizeAppState = (state?: Partial<AppState>): AppState => {
     rewardCards: state?.rewardCards ?? defaults.rewardCards,
     stampCards: state?.stampCards ?? defaults.stampCards,
     familyGarden: normalizeFamilyGarden(state?.familyGarden, users),
+    beyForge: normalizeBeyForge(state?.beyForge, users),
   };
 };
 

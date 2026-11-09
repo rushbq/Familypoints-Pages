@@ -237,4 +237,56 @@ export interface AppState {
   rewardCards: RewardCard[];// 獎勵卡
   stampCards: StampCard[];  // 集點卡
   familyGarden: FamilyGardenState;// 家庭共育花園
+  beyForge: BeyForgeState;  // 陀螺鍛造（個人收集）
+}
+
+/* ===== 陀螺鍛造（BEY FORGE） ===== */
+
+/** 陀螺的三個部位。 */
+export type BeyPartSlot = 'BLADE' | 'RATCHET' | 'BIT';
+
+/** 零件稀有度：普通由日常鋼料抽出，稀有只從里程碑取得。 */
+export type BeyRarity = 'COMMON' | 'RARE';
+
+/** 取得來源，用於零件庫的來源標記。 */
+export type BeyPartSource = 'SCRAP' | 'GOAL' | 'STAMP' | 'REWARD_CARD';
+
+/** 擁有一個零件的紀錄（零件本身的定義在 services/beyData.ts）。 */
+export interface BeyOwnedPart {
+  id: string;
+  childId: string;
+  partId: string;
+  obtainedAt: number;
+  source: BeyPartSource;
+}
+
+/** 一顆組裝完成的陀螺。三圍由三個零件相加算出，不存快照。 */
+export interface BeyBuild {
+  id: string;
+  childId: string;
+  name: string;
+  bladeId: string;
+  ratchetId: string;
+  bitId: string;
+  assembledAt: number;
+}
+
+/**
+ * 每位孩子的鍛造進度。
+ * earnedScrap 只增不減（鏡像花園的 earnedPositivePoints），usedScrap 記錄已消耗。
+ */
+export interface BeyChildProgress {
+  childId: string;
+  earnedScrap: number;
+  usedScrap: number;
+}
+
+/** 陀螺鍛造的整體狀態。零件與陀螺都屬於個別孩子。 */
+export interface BeyForgeState {
+  version: 1;
+  /** 累積多少鋼料可以鍛造一次。 */
+  scrapPerDraw: number;
+  childProgress: BeyChildProgress[];
+  parts: BeyOwnedPart[];
+  builds: BeyBuild[];
 }

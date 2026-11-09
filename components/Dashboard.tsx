@@ -28,6 +28,7 @@ import { RewardRedeemer } from './RewardRedeemer';
 import { ConfirmationModal } from './ui/ConfirmationModal';
 import { BeyTop } from './BeyTop';
 import { FamilyGarden } from './FamilyGarden';
+import { BeyForge } from './BeyForge';
 import {
   formatGoalDateRange,
   getActiveRewardCards,
@@ -59,6 +60,9 @@ interface DashboardProps {
   onUpdateStampCards: (updater: (items: StampCard[]) => StampCard[]) => void;
   onWaterGarden: (childId: string) => void;
   onStartGardenPlant: (speciesId: string) => void;
+  onDrawBeyPart: (childId: string) => { partId: string | null; isDuplicate: boolean };
+  onAssembleBey: (childId: string, name: string, bladeId: string, ratchetId: string, bitId: string) => void;
+  onDisassembleBey: (buildId: string) => void;
   cloudEmail: string;
   onCloudLogout: () => void;
 }
@@ -80,6 +84,9 @@ export const Dashboard: React.FC<DashboardProps> = ({
   onUpdateStampCards,
   onWaterGarden,
   onStartGardenPlant,
+  onDrawBeyPart,
+  onAssembleBey,
+  onDisassembleBey,
   cloudEmail,
   onCloudLogout,
 }) => {
@@ -187,6 +194,15 @@ export const Dashboard: React.FC<DashboardProps> = ({
               garden={data.familyGarden}
               onWaterGarden={onWaterGarden}
               onStartGardenPlant={onStartGardenPlant}
+            />
+
+            <BeyForge
+              currentUser={currentUser}
+              users={data.users}
+              forge={data.beyForge}
+              onDrawPart={onDrawBeyPart}
+              onAssemble={onAssembleBey}
+              onDisassemble={onDisassembleBey}
             />
 
              {/* 家長專屬：獎勵卡與集點卡 */}

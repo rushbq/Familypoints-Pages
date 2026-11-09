@@ -52,7 +52,23 @@ A **React 19 + TypeScript + Vite** single-page app deployed as a static site to 
 - **Visual style: 戰鬥陀螺・競技場（STADIUM）**, a dark arena theme. Surfaces go `bey-deep` (page) → `bey-panel` (card) → `bey-paper` (raised/input), separated by `bey-steel` borders rather than shadows. Text is `bey-ink`, secondary `bey-dim`. Accents: `bey-cyan` is the home team / confirm, `bey-orange` the rival team / rewards, `bey-lime` positive bursts, `bey-yellow` referee + 獎勵卡, `bey-red` deductions. Two children are rendered as opposing teams — child index 0 cyan, index 1 orange.
 - **On bright fills (`bey-cyan`, `bey-lime`, `bey-yellow`) use `text-bey-void`, never `text-white`.** The `*Dark` tokens are for bottom borders and rings only, not text.
 - `font-display` (Orbitron) is for short Latin labels in caps with wide tracking. **Do not use it for score digits** — Orbitron's slashed zero reads as a symbol; scores use `font-sans` bold italic with `tabular-nums`.
-- `components/BeyTop.tsx` is the original spinning-top SVG (concentric blade ring + gear + core). All Beyblade-style art must stay original — no official logos, characters, or product renders.
+- `components/BeyTop.tsx` is the original spinning-top SVG (concentric blade ring + gear + core). Pass `bladeId`/`ratchetId`/`bitId` to draw a specific build, or just `color` for a plain team-colored top. All Beyblade-style art must stay original — no official logos, characters, or product renders.
+
+### Two collection modules
+
+The app has two deliberately contrasting collection loops, both fed by parent-awarded positive points but with **separate, non-competing counters**:
+
+| | 家庭花園 (`familyGarden`) | 陀螺工房 (`beyForge`) |
+|---|---|---|
+| Currency | 陽光 — 20 pts per watering | 鋼料 — 25 pts per forge draw |
+| Ownership | **Shared**, both children grow one plant | **Per-child**, own parts and beys |
+| Loop | Water 5× → bloom → species enters 圖鑑 | Draw parts → assemble blade+ratchet+bit → bey |
+| Logic | `services/gardenUtils.ts` | `services/beyUtils.ts` (mirrors the garden's shape) |
+
+- A positive record feeds **both** counters in `App.tsx` `handleAddRecord` — they never consume each other.
+- Rare parts drop from milestones, detected by **before/after comparison** inside `handleUpdateGoalRewards` / `handleUpdateStampCards` / `handleUpdateRewardCards`. `SettingsPanel` knows nothing about the forge; keep it that way.
+- Part definitions live in `services/beyData.ts` (10 blades × 7 ratchets × 7 bits = 490 combinations). Adding a part is a data-only change; the SVG is parameterized by `shape`/`bladeCount`/`ratchetStyle`/`bitStyle`.
+- Planned next step (not built): 合作打週魔王 — both children's beys team up against a system boss. `BeyBuild` already carries full stats for this. **PvP between the siblings was deliberately rejected** — the score items include 刻意吵架/搶玩具, so a sanctioned win/lose between brothers is a known risk.
 - `Button` variants use an "AC squishy" style: `border-b-4` + `active:border-b-0 active:translate-y-[4px]`. Match this for custom buttons.
 - Path alias `@` resolves to the **project root** (not `src/`), set in `vite.config.ts`.
 - All entity IDs are `Date.now().toString()`; timestamps are Unix ms (`Date.now()`).

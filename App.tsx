@@ -5,12 +5,14 @@ import {
   AppState,
   DiscountCard,
   GoalReward,
+  GoalRewardStatus,
   RewardCard,
   RewardItem,
   ScoreItem,
   ScoreRecord,
   SecretMessage,
   StampCard,
+  StampCardStatus,
   User,
   UserRole,
 } from './types';
@@ -24,6 +26,13 @@ import {
   startFamilyGardenPlant,
   waterFamilyGarden,
 } from './services/gardenUtils';
+import {
+  addBeyScrap,
+  assembleBey,
+  drawBeyPart,
+  grantBeyPart,
+  removeBeyBuild,
+} from './services/beyUtils';
 
 /**
  * 應用程式主元件
@@ -143,12 +152,16 @@ const App: React.FC = () => {
       const recordCreator = prev.users.find((user) => user.id === newRecord.createdById);
       const shouldCountForGarden = newRecord.pointsChange > 0 && recordCreator?.role === UserRole.PARENT;
 
+      // 花園的陽光與陀螺的鋼料各走各的，同一筆加分兩邊都前進，不互相消耗。
       return {
         ...prev,
         records: [...prev.records, newRecord],
         familyGarden: shouldCountForGarden
           ? addGardenPositivePoints(prev.familyGarden, newRecord.childId, newRecord.pointsChange)
           : prev.familyGarden,
+        beyForge: shouldCountForGarden
+          ? addBeyScrap(prev.beyForge, newRecord.childId, newRecord.pointsChange)
+          : prev.beyForge,
       };
     });
     return newRecord;
@@ -188,20 +201,102 @@ const App: React.FC = () => {
     } : prev);
   };
 
+  /**
+   * 孩子按下鍛造，抽一個普通零件。
+   * 回傳結果讓畫面顯示抽到什麼；重複零件會退鋼料而不入庫。
+   */
+  const handleDrawBeyPart = (childId: string) => {
+    const timestamp = Date.now();
+    let outcome: { partId: string | null; isDuplicate: boolean } = { partId: null, isDuplicate: false };
+
+    setData((prev) => {
+      if (!prev) return prev;
+      const result = drawBeyPart(prev.beyForge, childId, timestamp.toString(), timestamp);
+      outcome = { partId: result.partId, isDuplicate: result.isDuplicate };
+      return result.partId ? { ...prev, beyForge: result.forge } : prev;
+    });
+
+    return outcome;
+  };
+
+  const handleAssembleBey = (
+    childId: string,
+    name: string,
+    bladeId: string,
+    ratchetId: string,
+    bitId: string,
+  ) => {
+    const timestamp = Date.now();
+    setData((prev) => (prev ? {
+      ...prev,
+      beyForge: assembleBey(prev.beyForge, childId, name, bladeId, ratchetId, bitId, timestamp.toString(), timestamp),
+    } : prev));
+  };
+
+  const handleDisassembleBey = (buildId: string) => {
+    setData((prev) => (prev ? { ...prev, beyForge: removeBeyBuild(prev.beyForge, buildId) } : prev));
+  };
+
+  /**
+   * 目標被標記為達成時掉一個稀有零件。
+   * 用前後比對偵測，SettingsPanel 不需要知道鍛造系統的存在。
+   */
   const handleUpdateGoalRewards = (updater: (items: GoalReward[]) => GoalReward[]) => {
-    setData((prev) => (prev ? { ...prev, goalRewards: updater(prev.goalRewards) } : prev));
+    setData((prev) => {
+      if (!prev) return prev;
+      const goalRewards = updater(prev.goalRewards);
+      const before = new Map(prev.goalRewards.map((goal) => [goal.id, goal.status]));
+      const achieved = goalRewards.filter((goal) => (
+        goal.status === GoalRewardStatus.ACHIEVED && before.get(goal.id) !== GoalRewardStatus.ACHIEVED
+      ));
+
+      let beyForge = prev.beyForge;
+      achieved.forEach((goal, index) => {
+        beyForge = grantBeyPart(beyForge, goal.childId, 'GOAL', `${Date.now()}_${index}`, Date.now()).forge;
+      });
+
+      return { ...prev, goalRewards, beyForge };
+    });
   };
 
   const handleUpdateDiscountCards = (updater: (items: DiscountCard[]) => DiscountCard[]) => {
     setData((prev) => (prev ? { ...prev, discountCards: updater(prev.discountCards) } : prev));
   };
 
+  /** 家長新發出獎勵卡時掉一個稀有零件。 */
   const handleUpdateRewardCards = (updater: (items: RewardCard[]) => RewardCard[]) => {
-    setData((prev) => (prev ? { ...prev, rewardCards: updater(prev.rewardCards) } : prev));
+    setData((prev) => {
+      if (!prev) return prev;
+      const rewardCards = updater(prev.rewardCards);
+      const existing = new Set(prev.rewardCards.map((card) => card.id));
+      const issued = rewardCards.filter((card) => !existing.has(card.id));
+
+      let beyForge = prev.beyForge;
+      issued.forEach((card, index) => {
+        beyForge = grantBeyPart(beyForge, card.childId, 'REWARD_CARD', `${Date.now()}_rc${index}`, Date.now()).forge;
+      });
+
+      return { ...prev, rewardCards, beyForge };
+    });
   };
 
+  /** 集點卡兌換（集滿）時掉一個稀有零件。 */
   const handleUpdateStampCards = (updater: (items: StampCard[]) => StampCard[]) => {
-    setData((prev) => (prev ? { ...prev, stampCards: updater(prev.stampCards) } : prev));
+    setData((prev) => {
+      if (!prev) return prev;
+      const stampCards = updater(prev.stampCards);
+      const before = new Map(prev.stampCards.map((card) => [card.id, card.status]));
+      const redeemed = stampCards.filter((card) => (
+        card.status === StampCardStatus.REDEEMED && before.get(card.id) !== StampCardStatus.REDEEMED
+      ));
+
+      let beyForge = prev.beyForge;
+      redeemed.forEach((card, index) => {
+        beyForge = grantBeyPart(beyForge, card.childId, 'STAMP', `${Date.now()}_sc${index}`, Date.now()).forge;
+      });
+
+      return { ...prev, stampCards, beyForge };
+    });
   };
 
   const handleSendMessage = (msg: Omit<SecretMessage, 'id' | 'timestamp' | 'isRead'>) => {
@@ -322,6 +417,9 @@ const App: React.FC = () => {
         onUpdateStampCards={handleUpdateStampCards}
         onWaterGarden={handleWaterGarden}
         onStartGardenPlant={handleStartGardenPlant}
+        onDrawBeyPart={handleDrawBeyPart}
+        onAssembleBey={handleAssembleBey}
+        onDisassembleBey={handleDisassembleBey}
         cloudEmail={cloudUser.email || '已登入雲端帳號'}
         onCloudLogout={handleCloudLogout}
       />
