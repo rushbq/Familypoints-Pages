@@ -30,10 +30,13 @@ const fetchVersionManifest = async () => {
 
   for (const source of sources) {
     try {
+      // 不要帶 Cache-Control：它不在 CORS 安全標頭清單裡，會讓跨網域請求先送
+      // preflight，而 api.github.com 不允許這個標頭、raw.githubusercontent.com
+      // 根本不回應 OPTIONS，兩個來源都會被擋掉。快取已經由 cache: 'no-store'
+      // 和網址上的 ?t= 時間戳記處理掉了。
       const response = await fetch(withCacheBuster(source), {
         cache: 'no-store',
         headers: {
-          'Cache-Control': 'no-cache',
           Accept: source === GITHUB_VERSION_API_URL
             ? 'application/vnd.github.raw+json'
             : 'application/json',
