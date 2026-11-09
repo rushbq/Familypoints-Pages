@@ -27,6 +27,7 @@ import { ActionLogger } from './ActionLogger';
 import { SettingsPanel } from './SettingsPanel';
 import { RewardRedeemer } from './RewardRedeemer';
 import { ConfirmationModal } from './ui/ConfirmationModal';
+import { ArenaMark } from './ArenaMark';
 import { BeyTop } from './BeyTop';
 import { FamilyGarden } from './FamilyGarden';
 import { BeyForge } from './BeyForge';
@@ -490,7 +491,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
           aria-label="回到首頁"
           title="BEY ARENA・回到首頁"
         >
-           <BeyTop color="cyan" size={36} speed="idle" />
+           <ArenaMark size={36} />
            <span className="sr-only">BEY ARENA，回到首頁</span>
         </button>
         
@@ -558,7 +559,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
         {/* 手機版頂部導覽 */}
         <header className="sticky top-0 bg-bey-deep/95 backdrop-blur z-30 px-4 py-2 flex justify-between items-center lg:hidden border-b border-bey-steel">
             <div className="flex items-center gap-2">
-              <BeyTop color="cyan" size={30} speed="idle" />
+              <ArenaMark size={30} />
               <div>
                 <h1 className="font-display text-base font-black italic text-bey-ink leading-none">BEY ARENA</h1>
                 <span className="font-display text-[10px] font-bold tracking-[0.22em] text-bey-cyan">FAMILY LEAGUE</span>

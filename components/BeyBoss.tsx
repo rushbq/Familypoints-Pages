@@ -92,17 +92,8 @@ export const BeyBoss: React.FC<BeyBossProps> = ({
     [def, weakened],
   );
 
-  if (!def) return null;
-
-  // 勝負與獎勵在這一刻就寫進狀態了，演出只是把已知的結果播一遍
-  const handleChallenge = () => {
-    const attempt = onChallenge();
-    if (!attempt) return;
-    setResult(attempt);
-    if (!prefersReducedMotion()) setBattle(attempt);
-  };
-
-  // 演出用的我方陣容；順序跟著孩子清單，隊色才和首頁一致
+  // 演出用的我方陣容；順序跟著孩子清單，隊色才和首頁一致。
+  // 要放在 `if (!def)` 之前：hook 的呼叫順序不能被提前 return 切斷。
   const battleSides = useMemo<BeyBattleSide[]>(
     () => allChildren.flatMap((child, index) => {
       const buildId = getLineupBuildId(entry, child.id);
@@ -120,6 +111,16 @@ export const BeyBoss: React.FC<BeyBossProps> = ({
     }),
     [allChildren, entry, forge],
   );
+
+  if (!def) return null;
+
+  // 勝負與獎勵在這一刻就寫進狀態了，演出只是把已知的結果播一遍
+  const handleChallenge = () => {
+    const attempt = onChallenge();
+    if (!attempt) return;
+    setResult(attempt);
+    if (!prefersReducedMotion()) setBattle(attempt);
+  };
 
   const statusLine = (() => {
     switch (availability) {
@@ -142,12 +143,13 @@ export const BeyBoss: React.FC<BeyBossProps> = ({
         <div className="pointer-events-none absolute inset-0 speed-lines opacity-40" aria-hidden="true" />
 
         <div className="relative flex items-center gap-3">
-          {/* 魔王用自己的色系，才分得出敵我；平日慢轉、戰鬥日才轉快，
-              避免平常看一眼就被催促 */}
+          {/* 魔王有自己的造型與色系，才分得出敵我；平日慢轉、戰鬥日才轉快，
+              讓它平常看起來是醒著的，但不會急著催你 */}
           <BeyTop
+            variant="boss"
             size={52}
             colorSet={def.color}
-            speed={availability === 'DEFEATED' || !isBattleDay() ? 'idle' : 'fast'}
+            speed={availability === 'DEFEATED' ? 'idle' : isBattleDay() ? 'fast' : 'slow'}
             className="flex-shrink-0"
           />
           <div className="min-w-0 flex-1">

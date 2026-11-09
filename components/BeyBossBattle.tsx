@@ -197,6 +197,7 @@ export const BeyBossBattle: React.FC<BeyBossBattleProps> = ({
             <div className="flex min-w-0 flex-1 flex-col items-center gap-1.5 bey-enter-right">
               <div className={`flex items-end justify-center ${latest?.won ? 'bey-recoil-right' : ''}`}>
                 <BeyTop
+                  variant="boss"
                   colorSet={boss.color}
                   size={68}
                   speed={bossToppled ? 'idle' : 'fast'}

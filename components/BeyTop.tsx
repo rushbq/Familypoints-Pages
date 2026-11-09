@@ -14,6 +14,11 @@ interface BeyTopProps {
   color?: TeamColor;
   /** 直接指定配色，優先於 color。魔王有自己的色系，不在隊色裡。 */
   colorSet?: BeyColorSet;
+  /**
+   * boss 換成尖刺星輪與不轉的眼睛。魔王跟孩子的陀螺長一樣時，
+   * 只靠顏色分敵我太弱，看久了會覺得魔王也是自己的一顆陀螺。
+   */
+  variant?: 'bey' | 'boss';
   /** 指定三個零件後，陀螺會依零件的外型與配色繪製。 */
   bladeId?: string;
   ratchetId?: string;
@@ -47,6 +52,11 @@ const BLADE_PATHS: Record<BeyBladeShape, string> = {
   drill: 'M50 1 L56 13 L52 13 L56 24 L44 24 L48 13 L44 13 Z',
   saw: 'M43 8 L47 2 L50 8 L53 2 L57 8 L55 23 L45 23 Z',
 };
+
+/** 魔王外層的尖刺輪；index 0 那根是加長的角。 */
+const BOSS_SPIKES_OUTER = 'M50.0 2.0 L60.0 29.3 L81.3 25.1 L72.4 44.9 L89.0 58.9 L68.0 64.3 L67.4 86.0 L50.0 73.0 L32.6 86.0 L32.0 64.3 L11.0 58.9 L27.6 44.9 L18.7 25.1 L40.0 29.3 Z';
+/** 內層再疊一圈小的，讓輪廓有厚度。 */
+const BOSS_SPIKES_INNER = 'M50.0 16.0 L56.1 37.4 L71.9 32.5 L63.6 46.9 L77.3 56.2 L60.9 58.7 L62.1 75.2 L50.0 64.0 L37.9 75.2 L39.1 58.7 L22.7 56.2 L36.4 46.9 L28.1 32.5 L43.9 37.4 Z';
 
 const renderBlades = (shape: BeyBladeShape, count: number, color: BeyColorSet) => {
   const path = BLADE_PATHS[shape];
@@ -133,6 +143,18 @@ const renderBit = (style: BeyBitStyle, color: BeyColorSet) => {
 };
 
 /**
+ * 魔王的眼睛。畫在不轉的那一層，尖刺在外面狂轉、眼睛不動，
+ * 看起來才像有東西在盯著你，而不是一顆零件。
+ */
+const renderBossEye = (color: BeyColorSet) => (
+  <>
+    <circle cx="50" cy="50" r="15" fill={CORE} stroke={color.deep} strokeWidth="3" />
+    <path d="M50 38 Q60 50 50 62 Q40 50 50 38 Z" fill={color.main} />
+    <path d="M50 42 Q53.5 50 50 58 Q46.5 50 50 42 Z" fill={CORE} />
+  </>
+);
+
+/**
  * 原創對戰陀螺圖形：外層刀刃環、中層齒輪、核心軸尖。
  * 給定 bladeId / ratchetId / bitId 時會依零件定義繪製，讓每種組合長得不一樣；
  * 沒給就退回單純的隊色造型。刻意只用幾何結構，不描摹任何既有商品造型。
@@ -140,6 +162,7 @@ const renderBit = (style: BeyBitStyle, color: BeyColorSet) => {
 export const BeyTop: React.FC<BeyTopProps> = ({
   color = 'cyan',
   colorSet,
+  variant = 'bey',
   bladeId,
   ratchetId,
   bitId,
@@ -186,7 +209,7 @@ export const BeyTop: React.FC<BeyTopProps> = ({
 
   // 高速旋轉時加一點偏擺，才像受力中的陀螺而不是等速的齒輪
   const wobbleClass = speed === 'fast' ? 'bey-wobble' : '';
-  const label = blade ? `${blade.name}陀螺` : '對戰陀螺';
+  const label = variant === 'boss' ? '魔王' : blade ? `${blade.name}陀螺` : '對戰陀螺';
 
   return (
     <svg
@@ -197,16 +220,25 @@ export const BeyTop: React.FC<BeyTopProps> = ({
       aria-label={label}
       className={`${wobbleClass} ${className}`.trim()}
     >
-      {/* 旋轉層：刀刃環與齒輪 */}
+      {/* 旋轉層：魔王是尖刺輪，陀螺是刀刃環與齒輪 */}
       <g className={spinClass} style={spinStyle}>
-        <circle cx="50" cy="50" r="40" fill="none" stroke={bladeColor.main} strokeWidth="4" />
-        <circle cx="50" cy="50" r="40" fill={bladeColor.main} opacity="0.08" />
-        {renderBlades(blade?.shape ?? 'spear', blade?.bladeCount ?? 4, bladeColor)}
-        {renderRatchet(ratchet?.ratchetStyle ?? 'solid', ratchetColor)}
+        {variant === 'boss' ? (
+          <>
+            <path d={BOSS_SPIKES_OUTER} fill={bladeColor.deep} />
+            <path d={BOSS_SPIKES_INNER} fill={bladeColor.main} />
+          </>
+        ) : (
+          <>
+            <circle cx="50" cy="50" r="40" fill="none" stroke={bladeColor.main} strokeWidth="4" />
+            <circle cx="50" cy="50" r="40" fill={bladeColor.main} opacity="0.08" />
+            {renderBlades(blade?.shape ?? 'spear', blade?.bladeCount ?? 4, bladeColor)}
+            {renderRatchet(ratchet?.ratchetStyle ?? 'solid', ratchetColor)}
+          </>
+        )}
       </g>
 
-      {/* 固定層：核心與軸尖 */}
-      {renderBit(bit?.bitStyle ?? 'point', bitColor)}
+      {/* 固定層：魔王的眼睛，或陀螺的核心與軸尖 */}
+      {variant === 'boss' ? renderBossEye(bladeColor) : renderBit(bit?.bitStyle ?? 'point', bitColor)}
     </svg>
   );
 };

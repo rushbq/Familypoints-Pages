@@ -172,9 +172,14 @@ const ChildForgePanel: React.FC<{
 
     if (!prefersReducedMotion()) {
       // 名字的預設值要跟 assembleBey 一致，動畫上顯示的才是實際存下來的名字
+      const celebration = { name: buildName.trim() || '無名陀螺', ...parts };
       setDrawResult(null);
-      setForged({ name: buildName.trim() || '無名陀螺', ...parts });
-      schedule(() => setForged(null), ASSEMBLE_SHOW_MS);
+      setForged(celebration);
+      // 只收掉自己這一張：連續組裝兩台時，前一個計時器不該把第二張提早關掉
+      schedule(
+        () => setForged((current) => (current === celebration ? null : current)),
+        ASSEMBLE_SHOW_MS,
+      );
     }
     setBuildName('');
   };
