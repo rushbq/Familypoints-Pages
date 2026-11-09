@@ -123,6 +123,9 @@ export const Dashboard: React.FC<DashboardProps> = ({
   // --- 狀態：控制 RewardRedeemer (兌換獎勵) 視窗 ---
   const [redeemingReward, setIsRedeemingReward] = useState<{childId: string} | null>(null);
 
+  // --- 狀態：收集模組頁簽；陀螺工房為預設 ---
+  const [collectionTab, setCollectionTab] = useState<'forge' | 'garden'>('forge');
+
   // --- 狀態：手機版雲端帳號展開 ---
   const [showCloudInfo, setShowCloudInfo] = useState(false);
 
@@ -188,22 +191,48 @@ export const Dashboard: React.FC<DashboardProps> = ({
               </div>
             )}
 
-            <FamilyGarden
-              currentUser={currentUser}
-              users={data.users}
-              garden={data.familyGarden}
-              onWaterGarden={onWaterGarden}
-              onStartGardenPlant={onStartGardenPlant}
-            />
+            {/* 兩條收集線改為頁簽，一次只顯示一個，陀螺工房為預設 */}
+            <section aria-label="收集模組">
+              <div className="mb-3 flex gap-2" role="tablist" aria-label="切換收集模組">
+                <CollectionTab
+                  active={collectionTab === 'forge'}
+                  onClick={() => setCollectionTab('forge')}
+                  icon="🌀"
+                  label="陀螺工房"
+                  controls="collection-forge"
+                />
+                <CollectionTab
+                  active={collectionTab === 'garden'}
+                  onClick={() => setCollectionTab('garden')}
+                  icon="🌱"
+                  label="鈞佑花園"
+                  controls="collection-garden"
+                />
+              </div>
 
-            <BeyForge
-              currentUser={currentUser}
-              users={data.users}
-              forge={data.beyForge}
-              onDrawPart={onDrawBeyPart}
-              onAssemble={onAssembleBey}
-              onDisassemble={onDisassembleBey}
-            />
+              {collectionTab === 'forge' ? (
+                <div id="collection-forge" role="tabpanel" className="animate-pop">
+                  <BeyForge
+                    currentUser={currentUser}
+                    users={data.users}
+                    forge={data.beyForge}
+                    onDrawPart={onDrawBeyPart}
+                    onAssemble={onAssembleBey}
+                    onDisassemble={onDisassembleBey}
+                  />
+                </div>
+              ) : (
+                <div id="collection-garden" role="tabpanel" className="animate-pop">
+                  <FamilyGarden
+                    currentUser={currentUser}
+                    users={data.users}
+                    garden={data.familyGarden}
+                    onWaterGarden={onWaterGarden}
+                    onStartGardenPlant={onStartGardenPlant}
+                  />
+                </div>
+              )}
+            </section>
 
              {/* 家長專屬：獎勵卡與集點卡 */}
              {isParent && (
@@ -648,6 +677,31 @@ const NavItem = ({ active, onClick, icon, label, bgColor, badge = 0 }: { active:
             {badge}
         </div>
     )}
+  </button>
+);
+
+// --- 收集模組頁簽（陀螺工房／鈞佑花園）---
+const CollectionTab = ({ active, onClick, icon, label, controls }: {
+  active: boolean;
+  onClick: () => void;
+  icon: string;
+  label: string;
+  controls: string;
+}) => (
+  <button
+    type="button"
+    role="tab"
+    aria-selected={active}
+    aria-controls={controls}
+    onClick={onClick}
+    className={`flex min-h-11 flex-1 items-center justify-center gap-1.5 clip-notch-sm px-3 text-sm font-black transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-bey-cyan focus-visible:ring-offset-2 focus-visible:ring-offset-bey-deep ${
+      active
+        ? 'bg-bey-cyan text-bey-void'
+        : 'bg-bey-panel text-bey-dim hover:text-bey-ink border border-bey-steel'
+    }`}
+  >
+    <span aria-hidden="true">{icon}</span>
+    {label}
   </button>
 );
 

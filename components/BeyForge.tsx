@@ -355,13 +355,9 @@ export const BeyForge: React.FC<BeyForgeProps> = ({
 
   return (
     <section aria-label="陀螺鍛造" className="space-y-3">
-      <div className="flex items-center gap-2 px-1">
-        <Icons.Sparkles size={18} className="text-bey-lime" />
-        <div>
-          <h3 className="text-base font-black text-bey-ink">陀螺工房</h3>
-          <p className="text-[11px] font-bold text-bey-dim">家長加分會累積鋼料，集滿就能鍛造零件、組裝自己的陀螺。</p>
-        </div>
-      </div>
+      <p className="px-1 text-[11px] font-bold text-bey-dim">
+        家長加分會累積鋼料，集滿就能鍛造零件、組裝自己的陀螺。
+      </p>
 
       <div className={`grid gap-3 md:gap-4 ${visibleChildren.length > 1 ? 'grid-cols-1 md:grid-cols-2' : 'grid-cols-1'}`}>
         {visibleChildren.map((child) => {
