@@ -95,6 +95,10 @@ The app has two deliberately contrasting collection loops, both fed by parent-aw
 - Both children in the lineup → full boss; a win gives each of them the boss's **exclusive part** and clears the week. One child → boss stats ×0.6; a win gives a normal rare part but **deliberately does not clear the week**, otherwise whoever plays first burns the other's shot at the exclusive part.
 - `BeyRarity` has a `BOSS` tier that `drawBeyPart` and `grantBeyPart` both exclude. A new boss part goes in `BOSS_PARTS` with a boss's `rewardPartId` pointing at it — never into the common or rare pools.
 - Parents see the panel read-only; the boss is the children's business.
+
+### Known parked code
+
+`components/SecretMailbox.tsx` is intentionally unreferenced — the mailbox UI was hidden in `a9c9cae`, not abandoned. `AppState.messages` and the `onSendMessage` / `onMarkMessageRead` props exist to keep it restorable. **Do not delete it as dead code**; removing it means removing the field from the stored state too, which is a data-model decision.
 - The boss renders with **its own `colorSet`**, not a team colour — otherwise it reads as one of the children's beys. It spins slowly on weekdays and fast only on battle days, so a locked card does not feel urgent.
 - Rules live in `components/BeyRulesModal.tsx`, written for an elementary-school reader: short sentences, second person, concrete numbers, no jargon. The numbers are interpolated from the balance constants (`DEFAULT_SCRAP_PER_DRAW`, `DUPLICATE_SCRAP_REFUND`, `UPSET_CHANCE`, `WEAKENED_MULTIPLIER`), so retuning balance never leaves the copy lying.
 - `Button` variants use an "AC squishy" style: `border-b-4` + `active:border-b-0 active:translate-y-[4px]`. Match this for custom buttons.

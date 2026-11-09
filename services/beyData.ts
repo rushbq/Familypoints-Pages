@@ -113,9 +113,6 @@ const PART_MAP = new Map(BEY_PARTS.map((part) => [part.id, part]));
 
 export const getBeyPart = (partId: string): BeyPartDef | null => PART_MAP.get(partId) ?? null;
 
-export const getBeyPartsBySlot = (slot: BeyPartSlot): BeyPartDef[] =>
-  BEY_PARTS.filter((part) => part.slot === slot);
-
 export const BEY_SLOT_LABELS: Record<BeyPartSlot, string> = {
   BLADE: '刃環',
   RATCHET: '齒輪',

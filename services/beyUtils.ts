@@ -285,9 +285,3 @@ export const removeBeyBuild = (forge: BeyForgeState, buildId: string): BeyForgeS
 
 export const getBeyBuilds = (forge: BeyForgeState, childId: string): BeyBuild[] =>
   forge.builds.filter((build) => build.childId === childId);
-
-/** 零件收集完成度，給圖鑑顯示。 */
-export const getBeyCollectionProgress = (forge: BeyForgeState, childId: string) => ({
-  owned: getOwnedParts(forge, childId).length,
-  total: BEY_PARTS.length,
-});
