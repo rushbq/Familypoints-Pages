@@ -69,9 +69,9 @@ Weights are a hierarchy, not decoration. The app previously set almost everythin
 - Dividers on dark panels use `border-bey-steel`. A tinted border like `border-bey-cyanDark/10` is invisible here.
 - `components/BeyTop.tsx` is the original spinning-top SVG (concentric blade ring + gear + core). Pass `bladeId`/`ratchetId`/`bitId` to draw a specific build, or just `color` for a plain team-colored top. All Beyblade-style art must stay original — no official logos, characters, or product renders.
 
-### Two collection modules
+### Collection modules
 
-The app has two deliberately contrasting collection loops, both fed by parent-awarded positive points but with **separate, non-competing counters**:
+The app has two deliberately contrasting collection loops, both fed by parent-awarded positive points but with **separate, non-competing counters**, plus a weekend boss fight on top of the forge:
 
 | | 家庭花園 (`familyGarden`) | 陀螺工房 (`beyForge`) |
 |---|---|---|
@@ -82,8 +82,17 @@ The app has two deliberately contrasting collection loops, both fed by parent-aw
 
 - A positive record feeds **both** counters in `App.tsx` `handleAddRecord` — they never consume each other.
 - Rare parts drop from milestones, detected by **before/after comparison** inside `handleUpdateGoalRewards` / `handleUpdateStampCards` / `handleUpdateRewardCards`. `SettingsPanel` knows nothing about the forge; keep it that way.
-- Part definitions live in `services/beyData.ts` (10 blades × 7 ratchets × 7 bits = 490 combinations). Adding a part is a data-only change; the SVG is parameterized by `shape`/`bladeCount`/`ratchetStyle`/`bitStyle`.
-- **Never build sibling-vs-sibling PvP.** The score items include 刻意吵架/搶玩具; a sanctioned win/lose between the brothers would manufacture conflict. Co-op against a system opponent is the accepted direction — see PRODUCT.md → Roadmap.
+- Part definitions live in `services/beyData.ts` (14 blades × 11 ratchets × 11 bits = 1694 combinations). Adding a part is a data-only change; the SVG is parameterized by `shape`/`bladeCount`/`ratchetStyle`/`bitStyle`.
+- **Never build sibling-vs-sibling PvP.** The score items include 刻意吵架/搶玩具; a sanctioned win/lose between the brothers would manufacture conflict. Co-op against a system opponent is the accepted direction.
+
+#### Weekly boss (`beyBoss`, `services/beyBossUtils.ts`)
+
+- **Open on Saturday and Sunday only**, one attempt per day. Weekdays show the boss's stats and a countdown with the button locked, so the week is spent forging toward a known weakness.
+- The week's boss is **derived from the date** (`getWeekKey` → `getBossForWeek`), since there is no server. 12 bosses, so a quarter before one repeats.
+- Team stats are the **sum** of the lineup's beys, so a weak bey is still a net gain. Three rounds compare attack, then defense, then stamina; the higher value wins with a 20% upset chance; two round wins take the battle.
+- Both children in the lineup → full boss; a win gives each of them the boss's **exclusive part** and clears the week. One child → boss stats ×0.6; a win gives a normal rare part but **deliberately does not clear the week**, otherwise whoever plays first burns the other's shot at the exclusive part.
+- `BeyRarity` has a `BOSS` tier that `drawBeyPart` and `grantBeyPart` both exclude. A new boss part goes in `BOSS_PARTS` with a boss's `rewardPartId` pointing at it — never into the common or rare pools.
+- Parents see the panel read-only; the boss is the children's business.
 - `Button` variants use an "AC squishy" style: `border-b-4` + `active:border-b-0 active:translate-y-[4px]`. Match this for custom buttons.
 - Path alias `@` resolves to the **project root** (not `src/`), set in `vite.config.ts`.
 - All entity IDs are `Date.now().toString()`; timestamps are Unix ms (`Date.now()`).
