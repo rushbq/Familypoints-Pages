@@ -30,11 +30,13 @@
                 steel: '#2C3B60',     /* 金屬邊框 */
                 dim: '#9FB3D9',       /* 次要文字 */
                 ink: '#E6EEFB',       /* 主要文字 */
-                cyan: '#13FFF3',      /* 主隊色・確認 */
+                cyan: '#13FFF3',      /* 系統主色：作用中、確認、焦點。不作為隊色 */
                 cyanDark: '#0A9C95',
                 blue: '#1C93E5',      /* 導覽・資訊 */
                 blueDark: '#0F5E96',
-                orange: '#FF7A2F',    /* 對手隊色・獎勵 */
+                purple: '#C44DFF',    /* 隊色一（丞鈞）。保留給隊伍識別，系統不使用 */
+                purpleDark: '#7D1FB0',
+                orange: '#FF7A2F',    /* 隊色二（佑佑）・獎勵兌換 */
                 orangeDark: '#A8441A',
                 yellow: '#FCEE21',    /* 冠軍・星等 */
                 red: '#FF4D4D',       /* 扣分・危險 */
@@ -135,6 +137,7 @@
       /* 發光文字，給分數用。 */
       .glow-cyan { text-shadow: 0 0 18px rgba(19, 255, 243, 0.45); }
       .glow-orange { text-shadow: 0 0 18px rgba(255, 122, 47, 0.45); }
+      .glow-purple { text-shadow: 0 0 18px rgba(196, 77, 255, 0.5); }
 
       /* ===== 陀螺旋轉 ===== */
       @keyframes beySpin { to { transform: rotate(360deg); } }

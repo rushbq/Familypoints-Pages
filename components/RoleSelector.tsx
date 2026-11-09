@@ -79,16 +79,16 @@ export const RoleSelector: React.FC<RoleSelectorProps> = ({ users, onSelectUser,
           </div>
           <div className={`grid gap-3 ${childUsers.length > 1 ? 'grid-cols-2' : 'grid-cols-1'}`}>
             {childUsers.map((user, index) => {
-              // 兩個孩子各有隊色：第一位主隊青、第二位對手橘。
+              // 兩個孩子各有隊色：第一位紫、第二位橘。青色是系統主色，不當隊色。
               const isHome = index % 2 === 0;
-              const team = isHome ? 'cyan' : 'orange';
+              const team = isHome ? 'purple' : 'orange';
               return (
                 <button
                   key={user.id}
                   type="button"
                   onClick={() => handleUserClick(user)}
                   className={`group relative flex min-h-44 flex-col items-center justify-center overflow-hidden bg-bey-panel p-4 text-center soft-card clip-notch transition-[transform,background-color] duration-200 hover:-translate-y-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-bey-deep ${
-                    isHome ? 'hover:bg-bey-cyan/10 focus-visible:ring-bey-cyan' : 'hover:bg-bey-orange/10 focus-visible:ring-bey-orange'
+                    isHome ? 'hover:bg-bey-purple/10 focus-visible:ring-bey-purple' : 'hover:bg-bey-orange/10 focus-visible:ring-bey-orange'
                   }`}
                 >
                   <span
@@ -103,7 +103,7 @@ export const RoleSelector: React.FC<RoleSelectorProps> = ({ users, onSelectUser,
                     <span aria-hidden="true">{user.avatar}</span>
                     {user.name}
                   </span>
-                  <span className={`relative mt-1 inline-flex items-center gap-1 font-display text-[10px] font-bold tracking-[0.18em] ${isHome ? 'text-bey-cyan' : 'text-bey-orange'}`}>
+                  <span className={`relative mt-1 inline-flex items-center gap-1 font-display text-[10px] font-bold tracking-[0.18em] ${isHome ? 'text-bey-purple' : 'text-bey-orange'}`}>
                     LAUNCH <Icons.ChevronRight size={14} />
                   </span>
                 </button>

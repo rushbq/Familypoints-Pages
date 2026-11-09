@@ -118,8 +118,9 @@ export const Dashboard: React.FC<DashboardProps> = ({
   const activeGoalReminders = visibleGoals.filter((goal) => isGoalWithinActiveWindow(goal, today));
   const pendingGoalReminders = visibleGoals.filter((goal) => isGoalPendingDecision(goal, today));
 
-  // 隊色輪替：第一位孩子主隊青、第二位對手橘
-  const colorThemes: Array<'cyan' | 'orange'> = ['cyan', 'orange'];
+  // 隊色輪替。青色是系統主色（作用中、確認、焦點），不拿來當隊色，
+  // 否則孩子的識別會和「這是可以按的東西」混在一起。
+  const colorThemes: Array<'purple' | 'orange'> = ['purple', 'orange'];
 
   // --- 狀態：日期篩選器 (預設 7 天) ---
   const [daysFilter, setDaysFilter] = useState(7);
@@ -167,6 +168,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
             ) : (
               <ChildHomeSummary
                 currentUser={currentUser}
+                teamColor={colorThemes[Math.max(0, allChildren.findIndex((child) => child.id === currentUser.id)) % colorThemes.length]}
                 score={childScores[0]?.score ?? 0}
                 rewardItems={data.rewardItems}
                 availableDiscountCardCount={getUnusedDiscountCards(data.discountCards, currentUser.id).length}
@@ -791,14 +793,20 @@ const ChildHomeSummary = ({
   score,
   rewardItems,
   availableDiscountCardCount,
+  teamColor,
   onRedeem,
 }: {
   currentUser: User;
   score: number;
   rewardItems: RewardItem[];
   availableDiscountCardCount: number;
+  teamColor: 'purple' | 'orange';
   onRedeem: () => void;
 }) => {
+  // 孩子的首頁用自己的隊色，和計分卡、工房、角色選擇一致。
+  const isHome = teamColor === 'purple';
+  const accentText = isHome ? 'text-bey-purple' : 'text-bey-orange';
+  const accentGlow = isHome ? 'glow-purple' : 'glow-orange';
   const nextReward = rewardItems
     .filter((reward) => reward.points > score)
     .sort((a, b) => a.points - b.points)[0];
@@ -814,19 +822,19 @@ const ChildHomeSummary = ({
 
       <div className="relative flex items-start gap-3 px-4 pb-3 pt-4 md:items-center md:px-5 md:pb-4 md:pt-5">
         <div className="flex-shrink-0" aria-hidden="true">
-          <BeyTop color="cyan" size={56} speed="slow" />
+          <BeyTop color={teamColor} size={56} speed="slow" />
         </div>
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1">
             <div>
-              <p className="font-display text-[10px] font-bold tracking-[0.3em] text-bey-cyan">BLADER STATUS</p>
+              <p className={`font-display text-[10px] font-bold tracking-[0.3em] ${accentText}`}>BLADER STATUS</p>
               <h2 className="text-lg font-black leading-tight text-bey-ink">
                 <span aria-hidden="true">{currentUser.avatar}</span> {currentUser.name}
               </h2>
               <p className="mt-1 text-xs font-normal text-bey-dim">{getEncouragement(score)}</p>
             </div>
             <div className="flex items-baseline gap-1">
-              <span className="text-4xl font-bold italic leading-none text-bey-cyan tabular-nums glow-cyan">{score}</span>
+              <span className={`text-4xl font-bold italic leading-none tabular-nums ${accentText} ${accentGlow}`}>{score}</span>
               <span className="font-display text-[10px] font-bold tracking-widest text-bey-dim">PTS</span>
             </div>
           </div>
@@ -1282,14 +1290,14 @@ const ScoreCard = ({ user, score, onAddPoints, onDeductPoints, onRedeem, canMana
   onDeductPoints: () => void,
   onRedeem: () => void,
   canManageScoreActions: boolean,
-  colorTheme: 'cyan' | 'orange',
+  colorTheme: 'purple' | 'orange',
   availableDiscountCardCount: number,
 }) => {
-  // 主隊青 / 對手橘：兩個孩子在首頁就是對戰的兩側。
-  const isHome = colorTheme === 'cyan';
-  const accentText = isHome ? 'text-bey-cyan' : 'text-bey-orange';
-  const accentBorder = isHome ? 'border-t-bey-cyan' : 'border-t-bey-orange';
-  const accentGlow = isHome ? 'glow-cyan' : 'glow-orange';
+  // 隊色紫 / 隊色橘：兩個孩子在首頁就是對戰的兩側。
+  const isHome = colorTheme === 'purple';
+  const accentText = isHome ? 'text-bey-purple' : 'text-bey-orange';
+  const accentBorder = isHome ? 'border-t-bey-purple' : 'border-t-bey-orange';
+  const accentGlow = isHome ? 'glow-purple' : 'glow-orange';
 
   return (
     <div className={`relative overflow-hidden bg-bey-panel soft-card clip-notch border-t-[3px] ${accentBorder} p-3 md:p-4`}>

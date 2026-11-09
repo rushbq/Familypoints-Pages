@@ -7,7 +7,7 @@ import {
   getBeyPart,
 } from '../services/beyData';
 
-type TeamColor = 'cyan' | 'orange' | 'lime' | 'yellow';
+type TeamColor = 'purple' | 'orange' | 'cyan' | 'lime' | 'yellow';
 
 interface BeyTopProps {
   /** 隊色；給沒有指定零件的場合（登入頁、導覽列、計分卡）使用。 */
@@ -25,6 +25,7 @@ interface BeyTopProps {
 }
 
 const TEAM_PALETTE: Record<TeamColor, BeyColorSet> = {
+  purple: { main: '#C44DFF', deep: '#7D1FB0' },
   cyan: { main: '#13FFF3', deep: '#0A9C95' },
   orange: { main: '#FF7A2F', deep: '#A8441A' },
   lime: { main: '#A2FF1F', deep: '#5E9410' },

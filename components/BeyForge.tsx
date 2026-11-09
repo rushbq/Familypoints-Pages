@@ -64,7 +64,7 @@ const ChildForgePanel: React.FC<{
   child: User;
   forge: BeyForgeState;
   canOperate: boolean;
-  teamColor: 'cyan' | 'orange';
+  teamColor: 'purple' | 'orange';
   onDrawPart: BeyForgeProps['onDrawPart'];
   onAssemble: BeyForgeProps['onAssemble'];
   onDisassemble: BeyForgeProps['onDisassemble'];
@@ -96,8 +96,8 @@ const ChildForgePanel: React.FC<{
     ? getBuildStats(selection.BLADE!, selection.RATCHET!, selection.BIT!)
     : { attack: 0, defense: 0, stamina: 0, total: 0 };
 
-  const accent = teamColor === 'cyan' ? 'text-bey-cyan' : 'text-bey-orange';
-  const accentBorder = teamColor === 'cyan' ? 'border-t-bey-cyan' : 'border-t-bey-orange';
+  const accent = teamColor === 'purple' ? 'text-bey-purple' : 'text-bey-orange';
+  const accentBorder = teamColor === 'purple' ? 'border-t-bey-purple' : 'border-t-bey-orange';
 
   const handleDraw = () => {
     const result = onDrawPart(child.id);
@@ -372,7 +372,7 @@ export const BeyForge: React.FC<BeyForgeProps> = ({
 
       <div className={`grid gap-3 md:gap-4 ${visibleChildren.length > 1 ? 'grid-cols-1 md:grid-cols-2' : 'grid-cols-1'}`}>
         {visibleChildren.map((child) => {
-          // 隊色沿用首頁：第一位孩子主隊青、第二位對手橘。
+          // 隊色沿用首頁：第一位孩子紫、第二位橘。
           const index = allChildren.findIndex((item) => item.id === child.id);
           return (
             <ChildForgePanel
@@ -380,7 +380,7 @@ export const BeyForge: React.FC<BeyForgeProps> = ({
               child={child}
               forge={forge}
               canOperate={isParent || child.id === currentUser.id}
-              teamColor={index % 2 === 0 ? 'cyan' : 'orange'}
+              teamColor={index % 2 === 0 ? 'purple' : 'orange'}
               onDrawPart={onDrawPart}
               onAssemble={onAssemble}
               onDisassemble={onDisassemble}
