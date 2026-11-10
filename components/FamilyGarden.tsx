@@ -12,7 +12,6 @@ import {
   isGardenPlantBloomed,
 } from '../services/gardenUtils';
 import { Button } from './ui/Button';
-import { GardenAlbum } from './GardenAlbum';
 import { GardenPlant } from './GardenPlant';
 import { getGardenScene } from './GardenScene';
 import { Icons } from './Icons';
@@ -23,10 +22,11 @@ interface FamilyGardenProps {
   users: User[];
   garden: FamilyGardenState;
   onWaterGarden: (childId: string) => void;
-  onStartGardenPlant: (speciesId: string) => void;
+  /** 圖鑑是首頁的子頁，由 Dashboard 切過去。 */
+  onOpenAlbum: () => void;
 }
 
-const STAGE_LABELS = ['種子', '發芽', '長出新葉', '小植株', '花苞', '開花'];
+export const STAGE_LABELS = ['種子', '發芽', '長出新葉', '小植株', '花苞', '開花'];
 const WATERING_FEEDBACK = ['種子喝到水了！', '嫩芽冒出來了！', '長出新的葉片了！', '植物長得更高了！', '花苞準備開花了！', '植物開花了！'];
 
 /** 澆水動畫總長度；水真正澆到土裡的時間點 */
@@ -129,7 +129,7 @@ const BloomEffect: React.FC<{ color: string; accent: string }> = ({ color, accen
   </div>
 );
 
-const getGardenName = (children: User[]): string => {
+export const getGardenName = (children: User[]): string => {
   const nameCharacters = children.slice(0, 2).map((child) => Array.from(child.name).at(-1) ?? child.name);
   return nameCharacters.length > 0 ? `${nameCharacters.join('')}花園` : '家庭花園';
 };
@@ -139,7 +139,7 @@ export const FamilyGarden: React.FC<FamilyGardenProps> = ({
   users,
   garden,
   onWaterGarden,
-  onStartGardenPlant,
+  onOpenAlbum,
 }) => {
   const activePlant = getActiveGardenPlant(garden);
   const stage = Math.min(activePlant?.waterings.length ?? 0, garden.wateringsToBloom);
@@ -161,13 +161,11 @@ export const FamilyGarden: React.FC<FamilyGardenProps> = ({
     ? getGardenPointsUntilNextWatering(garden, currentChildId)
     : garden.pointsPerWatering;
   const contributions = useMemo(() => getGardenContributions(activePlant), [activePlant]);
-  const [showAlbum, setShowAlbum] = useState(false);
   const [feedback, setFeedback] = useState<string | null>(null);
   const [isWatering, setIsWatering] = useState(false);
   const [isCelebrating, setIsCelebrating] = useState(false);
   const [isPetting, setIsPetting] = useState(false);
   const timeoutsRef = useRef<number[]>([]);
-  const albumRef = useRef<HTMLDivElement>(null);
 
   const schedule = (callback: () => void, delayMs: number) => {
     timeoutsRef.current.push(window.setTimeout(callback, delayMs));
@@ -183,19 +181,6 @@ export const FamilyGarden: React.FC<FamilyGardenProps> = ({
     timeoutsRef.current.forEach((timeoutId) => window.clearTimeout(timeoutId));
     timeoutsRef.current = [];
   }, []);
-
-  // 圖鑑在卡片最下方，展開後把它捲進畫面，才不用自己找。
-  // 等瀏覽器排完展開後的版面再捲，否則平滑捲動會停在錯的位置（標題被頂欄蓋住）。
-  useEffect(() => {
-    if (!showAlbum) return undefined;
-    const frameId = window.requestAnimationFrame(() => {
-      albumRef.current?.scrollIntoView({
-        behavior: prefersReducedMotion() ? 'auto' : 'smooth',
-        block: 'start',
-      });
-    });
-    return () => window.cancelAnimationFrame(frameId);
-  }, [showAlbum]);
 
   const handleWater = () => {
     if (!currentChildId || currentAvailableWaterings < 1 || bloomed || isWatering) return;
@@ -246,14 +231,13 @@ export const FamilyGarden: React.FC<FamilyGardenProps> = ({
         </div>
         <button
           type="button"
-          onClick={() => setShowAlbum((visible) => !visible)}
-          aria-expanded={showAlbum}
+          onClick={onOpenAlbum}
           aria-label="植物圖鑑"
           className="inline-flex min-h-11 min-w-11 flex-shrink-0 items-center justify-center gap-2 rounded-xl px-3 text-xs font-bold text-bey-cyan hover:bg-bey-cyan/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-bey-cyanDark"
         >
           <Icons.BookOpen size={16} />
           <span className="hidden sm:inline">植物圖鑑</span>
-          <Icons.ChevronDown size={14} className={`transition-transform ${showAlbum ? 'rotate-180' : ''}`} />
+          <Icons.ChevronRight size={14} />
         </button>
       </div>
 
@@ -332,7 +316,7 @@ export const FamilyGarden: React.FC<FamilyGardenProps> = ({
                 <Button
                   className="mt-3 w-full"
                   size="lg"
-                  onClick={() => setShowAlbum(true)}
+                  onClick={onOpenAlbum}
                   icon={<Icons.Leaf size={18} />}
                 >
                   選擇下一顆種子
@@ -400,19 +384,6 @@ export const FamilyGarden: React.FC<FamilyGardenProps> = ({
         </div>
       </div>
 
-      {showAlbum && (
-        <div ref={albumRef} className="scroll-mt-16 px-4 pb-4 md:px-5 md:pb-5 lg:scroll-mt-4">
-          <GardenAlbum
-            garden={garden}
-            canStartNextPlant={bloomed}
-            onStartPlant={(speciesId) => {
-              onStartGardenPlant(speciesId);
-              setShowAlbum(false);
-              setFeedback('新的種子已經種下了！');
-            }}
-          />
-        </div>
-      )}
     </section>
   );
 };

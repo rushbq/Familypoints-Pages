@@ -46,7 +46,8 @@ import {
   Camera,
   ImageOff,
   Lock,
-  Sparkles
+  Sparkles,
+  Disc3
 } from 'lucide-react';
 
 export const Icons = {
@@ -97,5 +98,6 @@ export const Icons = {
   Camera,
   ImageOff,
   Lock,
-  Sparkles
+  Sparkles,
+  Disc3
 };

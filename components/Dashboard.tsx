@@ -1,8 +1,11 @@
-import React, { useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
   AppState,
   BeyBossAttempt,
+  BeyBossState,
+  BeyForgeState,
   DiscountCard,
+  FamilyGardenState,
   GoalReward,
   RewardCard,
   RewardCardStatus,
@@ -29,10 +32,30 @@ import { RewardRedeemer } from './RewardRedeemer';
 import { ConfirmationModal } from './ui/ConfirmationModal';
 import { ArenaMark } from './ArenaMark';
 import { BeyTop } from './BeyTop';
-import { FamilyGarden } from './FamilyGarden';
+import { FamilyGarden, getGardenName, STAGE_LABELS } from './FamilyGarden';
 import { BeyForge } from './BeyForge';
 import { BeyBoss } from './BeyBoss';
 import { BeyRulesModal } from './BeyRulesModal';
+import { GardenAlbum } from './GardenAlbum';
+import {
+  getActiveGardenPlant,
+  getAvailableGardenWaterings,
+  getGardenPointsTowardNextWatering,
+  isGardenPlantBloomed,
+} from '../services/gardenUtils';
+import {
+  DEFAULT_SCRAP_PER_DRAW,
+  getAvailableBeyDraws,
+  getScrapTowardNextDraw,
+} from '../services/beyUtils';
+import {
+  getBossAvailability,
+  getBossEntry,
+  getBossForWeek,
+  getDaysUntilBattle,
+  getWeekKey,
+} from '../services/beyBossUtils';
+import { getBeyBoss } from '../services/beyBossData';
 import {
   formatGoalDateRange,
   getActiveRewardCards,
@@ -73,7 +96,13 @@ interface DashboardProps {
   onCloudLogout: () => void;
 }
 
-type Tab = 'overview' | 'log' | 'settings';
+const BACK_BUTTON_CLASS = 'inline-flex min-h-11 items-center gap-1.5 rounded-xl px-3 text-sm font-bold text-bey-dim transition-colors hover:bg-bey-panel hover:text-bey-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-bey-cyanDark';
+
+/**
+ * garden、album 不在導覽上，是首頁的子頁（首頁 → 花園 → 圖鑑）；
+ * 導覽的「首頁」在這三頁時都算作用中。
+ */
+type Tab = 'overview' | 'bey' | 'log' | 'settings' | 'garden' | 'album';
 
 export const Dashboard: React.FC<DashboardProps> = ({ 
   currentUser, 
@@ -100,6 +129,13 @@ export const Dashboard: React.FC<DashboardProps> = ({
 }) => {
   const [activeTab, setActiveTab] = useState<Tab>('overview');
   const isParent = currentUser.role === UserRole.PARENT;
+  const isHomeTab = activeTab === 'overview' || activeTab === 'garden' || activeTab === 'album';
+
+  // 切頁時捲回頂端；否則從首頁底部的花園進圖鑑，會停在新頁面的中間
+  const mainRef = useRef<HTMLElement>(null);
+  useEffect(() => {
+    mainRef.current?.scrollTo(0, 0);
+  }, [activeTab]);
 
   // --- 動態取得要顯示的 children ---
   const allChildren = data.users.filter(u => u.role === UserRole.CHILD);
@@ -136,16 +172,8 @@ export const Dashboard: React.FC<DashboardProps> = ({
   // --- 狀態：控制 RewardRedeemer (兌換獎勵) 視窗 ---
   const [redeemingReward, setIsRedeemingReward] = useState<{childId: string} | null>(null);
 
-  // --- 狀態：收集模組頁簽；陀螺工房為預設 ---
-  const [collectionTab, setCollectionTab] = useState<'forge' | 'garden'>('forge');
-
   // --- 狀態：玩法說明；規則很長，放 modal 不佔版面 ---
   const [showBeyRules, setShowBeyRules] = useState(false);
-
-  // --- 狀態：家長首頁的收集區預設收合 ---
-  // 工房／花園是孩子的事，家長首頁的任務是記分、判定目標、發卡。
-  // 攤開來家長得滑過兩個孩子的整個零件庫才看得到收藏卡。
-  const [showCollection, setShowCollection] = useState(false);
 
   // --- 狀態：手機版帳號選單（切換角色／雲端帳號）---
   const [showAccountMenu, setShowAccountMenu] = useState(false);
@@ -186,10 +214,10 @@ export const Dashboard: React.FC<DashboardProps> = ({
               />
             )}
 
-            {/* 小孩專屬區塊：目標、卡片、本週進步都是「分數怎麼來的」，
-                要排在收集區前面。工房和花園是獎勵，不是這個 App 的主線。 */}
+            {/* 小孩專屬：目標、卡片、本週進步、積分指南收成一張摘要清單，點開才看明細。
+                它們都是「分數怎麼來的」，要排在收集區前面。 */}
             {!isParent && (
-              <ChildOverviewSection
+              <ChildSummaryList
                 currentUser={currentUser}
                 records={data.records}
                 scoreItems={data.scoreItems}
@@ -247,85 +275,88 @@ export const Dashboard: React.FC<DashboardProps> = ({
               </div>
             )}
 
-            {/* 兩條收集線改為頁簽，一次只顯示一個，陀螺工房為預設 */}
-            <section aria-label="收集模組">
-              {isParent && (
-                <button
-                  type="button"
-                  onClick={() => setShowCollection((v) => !v)}
-                  aria-expanded={showCollection}
-                  className="mb-3 flex min-h-11 w-full items-center gap-2 rounded-xl border border-bey-steel bg-bey-panel px-3 text-left transition-colors hover:border-bey-cyan/40"
-                >
-                  <span className="text-base" aria-hidden="true">🌀</span>
-                  <span className="min-w-0 flex-1">
-                    <span className="block text-sm font-bold text-bey-ink">孩子的收集區</span>
-                    <span className="block text-xs font-normal text-bey-dim">陀螺工房・鈞佑花園・每週魔王</span>
-                  </span>
-                  <Icons.ChevronDown
-                    size={18}
-                    className={`flex-shrink-0 text-bey-dim transition-transform ${showCollection ? 'rotate-180' : ''}`}
-                  />
-                </button>
-              )}
-
-              {(!isParent || showCollection) && (
-              <>
-              <div className="mb-3 flex gap-2" role="tablist" aria-label="切換收集模組">
-                <CollectionTab
-                  active={collectionTab === 'forge'}
-                  onClick={() => setCollectionTab('forge')}
-                  icon="🌀"
-                  label="陀螺工房"
-                  controls="collection-forge"
-                />
-                <CollectionTab
-                  active={collectionTab === 'garden'}
-                  onClick={() => setCollectionTab('garden')}
-                  icon="🌱"
-                  label="鈞佑花園"
-                  controls="collection-garden"
-                />
-              </div>
-
-              {collectionTab === 'forge' ? (
-                <div id="collection-forge" role="tabpanel" className="animate-pop space-y-3">
-                  {/* 魔王戰的前提就是有陀螺，和工房放在同一頁，
-                      「打輸 → 看哪一項輸 → 下面就是鍛造台」在同一個畫面裡走得完 */}
-                  <BeyBoss
-                    currentUser={currentUser}
-                    users={data.users}
-                    forge={data.beyForge}
-                    boss={data.beyBoss}
-                    onSetLineup={onSetBossLineup}
-                    onChallenge={onChallengeBoss}
-                    onShowRules={() => setShowBeyRules(true)}
-                  />
-                  <BeyForge
-                    currentUser={currentUser}
-                    users={data.users}
-                    forge={data.beyForge}
-                    onDrawPart={onDrawBeyPart}
-                    onAssemble={onAssembleBey}
-                    onDisassemble={onDisassembleBey}
-                    onShowRules={() => setShowBeyRules(true)}
-                  />
-                </div>
-              ) : (
-                <div id="collection-garden" role="tabpanel" className="animate-pop">
-                  <FamilyGarden
-                    currentUser={currentUser}
-                    users={data.users}
-                    garden={data.familyGarden}
-                    onWaterGarden={onWaterGarden}
-                    onStartGardenPlant={onStartGardenPlant}
-                  />
-                </div>
-              )}
-              </>
-              )}
-            </section>
+            {/* 收集區：只放入口卡，內容在各自的頁面；有事可做的那張才亮 */}
+            <CollectionTiles
+              currentUser={currentUser}
+              users={data.users}
+              forge={data.beyForge}
+              boss={data.beyBoss}
+              garden={data.familyGarden}
+              onOpenBey={() => setActiveTab('bey')}
+              onOpenGarden={() => setActiveTab('garden')}
+            />
 
              {/* 最近紀錄已移至「日誌」頁，首頁不再重複顯示 */}
+          </div>
+        );
+      case 'bey':
+        return (
+          <div className="space-y-3 animate-pop">
+            <div>
+              <p className="font-display text-[10px] font-bold tracking-[0.3em] text-bey-cyan">BEY WORKSHOP</p>
+              <h2 className="text-xl font-black leading-tight text-bey-ink md:text-2xl">陀螺工房</h2>
+            </div>
+            {/* 魔王戰的前提就是有陀螺，和工房放在同一頁，
+                「打輸 → 看哪一項輸 → 下面就是鍛造台」在同一個畫面裡走得完 */}
+            <BeyBoss
+              currentUser={currentUser}
+              users={data.users}
+              forge={data.beyForge}
+              boss={data.beyBoss}
+              onSetLineup={onSetBossLineup}
+              onChallenge={onChallengeBoss}
+              onShowRules={() => setShowBeyRules(true)}
+            />
+            <BeyForge
+              currentUser={currentUser}
+              users={data.users}
+              forge={data.beyForge}
+              onDrawPart={onDrawBeyPart}
+              onAssemble={onAssembleBey}
+              onDisassemble={onDisassembleBey}
+              onShowRules={() => setShowBeyRules(true)}
+            />
+          </div>
+        );
+      case 'garden':
+        return (
+          <div className="space-y-3 animate-pop">
+            <button type="button" onClick={() => setActiveTab('overview')} className={BACK_BUTTON_CLASS}>
+              <Icons.ArrowLeft size={18} />
+              返回首頁
+            </button>
+            <div>
+              <p className="font-display text-[10px] font-bold tracking-[0.3em] text-bey-cyan">GARDEN</p>
+              <h2 className="text-xl font-black leading-tight text-bey-ink md:text-2xl">家庭花園</h2>
+            </div>
+            <FamilyGarden
+              currentUser={currentUser}
+              users={data.users}
+              garden={data.familyGarden}
+              onWaterGarden={onWaterGarden}
+              onOpenAlbum={() => setActiveTab('album')}
+            />
+          </div>
+        );
+      case 'album':
+        return (
+          <div className="space-y-3 animate-pop">
+            <button
+              type="button"
+              onClick={() => setActiveTab('garden')}
+              className={BACK_BUTTON_CLASS}
+            >
+              <Icons.ArrowLeft size={18} />
+              返回花園
+            </button>
+            <GardenAlbum
+              garden={data.familyGarden}
+              canStartNextPlant={isGardenPlantBloomed(getActiveGardenPlant(data.familyGarden), data.familyGarden)}
+              onStartPlant={(speciesId) => {
+                onStartGardenPlant(speciesId);
+                setActiveTab('garden');
+              }}
+            />
           </div>
         );
       case 'log': {
@@ -560,13 +591,20 @@ export const Dashboard: React.FC<DashboardProps> = ({
         
         <nav className="flex-1 space-y-1 overflow-y-auto px-2 py-2 no-scrollbar" aria-label="主要導覽">
           <NavItem
-            active={activeTab === 'overview'}
+            active={isHomeTab}
             onClick={() => setActiveTab('overview')}
             icon={<Icons.Home size={20} />}
             label="首頁"
             bgColor="bg-bey-cyan"
           />
-          <NavItem 
+          <NavItem
+            active={activeTab === 'bey'}
+            onClick={() => setActiveTab('bey')}
+            icon={<Icons.Disc3 size={20} />}
+            label="陀螺"
+            bgColor="bg-bey-cyan"
+          />
+          <NavItem
             active={activeTab === 'log'} 
             onClick={() => setActiveTab('log')} 
             icon={<Icons.ClipboardList size={20} />}
@@ -619,7 +657,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
       </aside>
 
       {/* ===== 主要內容區域 ===== */}
-      <main className="flex-1 overflow-y-auto relative no-scrollbar">
+      <main ref={mainRef} className="flex-1 overflow-y-auto relative no-scrollbar">
         {/* 手機版頂部導覽 */}
         <header className="sticky top-0 bg-bey-deep/95 backdrop-blur z-30 px-4 py-2 flex justify-between items-center lg:hidden border-b border-bey-steel">
             <div className="flex items-center gap-2">
@@ -680,10 +718,16 @@ export const Dashboard: React.FC<DashboardProps> = ({
       <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-30 bg-bey-deep/95 backdrop-blur border-t border-bey-steel shadow-[0_-4px_16px_rgba(0,0,0,0.5)]">
         <div className="flex items-stretch justify-around px-2 py-1 safe-bottom">
           <MobileNavItem
-            active={activeTab === 'overview'}
+            active={isHomeTab}
             onClick={() => setActiveTab('overview')}
             icon={<Icons.Home size={22} />}
             label="首頁"
+          />
+          <MobileNavItem
+            active={activeTab === 'bey'}
+            onClick={() => setActiveTab('bey')}
+            icon={<Icons.Disc3 size={22} />}
+            label="陀螺"
           />
           <MobileNavItem
             active={activeTab === 'log'}
@@ -756,9 +800,7 @@ const NavItem = ({ active, onClick, icon, label, bgColor, badge = 0 }: { active:
     type="button"
     onClick={onClick}
     aria-current={active ? 'page' : undefined}
-    aria-label={label}
-    title={label}
-    className={`group relative flex w-full justify-center rounded-xl p-2 transition-colors duration-200 ${
+    className={`group relative flex w-full flex-col items-center gap-1 rounded-xl px-1 py-2 transition-colors duration-200 ${
       active ? 'bg-bey-paper' : 'hover:bg-bey-panel'
     }`}
   >
@@ -771,8 +813,9 @@ const NavItem = ({ active, onClick, icon, label, bgColor, badge = 0 }: { active:
     >
       {icon}
     </div>
-    <span className="sr-only">{label}</span>
-    
+    {/* 橫式 iPad 用的就是這條側欄，只有圖示的話孩子找不到陀螺在哪 */}
+    <span className={`text-xs font-bold ${active ? 'text-bey-ink' : 'text-bey-dim group-hover:text-bey-ink'}`}>{label}</span>
+
     {badge > 0 && (
         <div className="absolute right-2 top-1 flex h-5 w-5 items-center justify-center rounded-full border-2 border-bey-deep bg-bey-red text-xs font-bold text-bey-void">
             {badge}
@@ -781,30 +824,116 @@ const NavItem = ({ active, onClick, icon, label, bgColor, badge = 0 }: { active:
   </button>
 );
 
-// --- 收集模組頁簽（陀螺工房／鈞佑花園）---
-const CollectionTab = ({ active, onClick, icon, label, controls }: {
-  active: boolean;
+// --- 首頁收集區：陀螺工房／花園的入口卡 ---
+// 只顯示一兩行狀態，內容在各自的頁面。有事可做（可鍛造、魔王可開戰、可澆水、
+// 開花可選新種子）的那張才用 cyan 邊框加小點；顏色在這裡代表「這裡有事」。
+const CollectionTile = ({ onClick, icon, title, lines, alert }: {
   onClick: () => void;
-  icon: string;
-  label: string;
-  controls: string;
+  icon: React.ReactNode;
+  title: string;
+  lines: React.ReactNode[];
+  alert: boolean;
 }) => (
   <button
     type="button"
-    role="tab"
-    aria-selected={active}
-    aria-controls={controls}
     onClick={onClick}
-    className={`flex min-h-11 flex-1 items-center justify-center gap-1.5 clip-notch-sm px-3 text-sm font-bold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-bey-cyan focus-visible:ring-offset-2 focus-visible:ring-offset-bey-deep ${
-      active
-        ? 'bg-bey-cyan text-bey-void'
-        : 'bg-bey-panel text-bey-dim hover:text-bey-ink border border-bey-steel'
+    className={`relative flex min-h-11 w-full flex-col gap-1 rounded-2xl border bg-bey-paper p-3 text-left transition-colors hover:bg-bey-panel focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-bey-cyan ${
+      alert ? 'border-bey-cyan' : 'border-bey-steel'
     }`}
   >
-    <span aria-hidden="true">{icon}</span>
-    {label}
+    {alert && <span className="absolute right-2.5 top-2.5 h-2.5 w-2.5 rounded-full bg-bey-cyan" aria-hidden="true" />}
+    <span className="flex items-center gap-2 pr-4">
+      <span className="flex-shrink-0">{icon}</span>
+      <span className="truncate text-sm font-bold text-bey-ink">{title}</span>
+    </span>
+    {lines.map((line, index) => (
+      <span key={index} className="truncate text-xs font-normal text-bey-dim">{line}</span>
+    ))}
+    {alert && <span className="sr-only">（有事可以做）</span>}
   </button>
 );
+
+const CollectionTiles = ({ currentUser, users, forge, boss, garden, onOpenBey, onOpenGarden }: {
+  currentUser: User;
+  users: User[];
+  forge: BeyForgeState;
+  boss: BeyBossState;
+  garden: FamilyGardenState;
+  onOpenBey: () => void;
+  onOpenGarden: () => void;
+}) => {
+  const isChild = currentUser.role === UserRole.CHILD;
+  const childId = currentUser.id;
+
+  // 花園：兩邊都看得到生長階段；可澆水只對孩子有意義，澆水是孩子的事
+  const plant = getActiveGardenPlant(garden);
+  const bloomed = isGardenPlantBloomed(plant, garden);
+  const stage = Math.min(plant?.waterings.length ?? 0, garden.wateringsToBloom);
+  const waterings = isChild ? getAvailableGardenWaterings(garden, childId) : 0;
+  const stageLine = bloomed ? '開花了！' : `${STAGE_LABELS[stage]} ${stage}/${garden.wateringsToBloom}`;
+  const gardenTile = (
+    <CollectionTile
+      onClick={onOpenGarden}
+      icon={<Icons.Leaf size={18} className="text-bey-cyan" />}
+      title={getGardenName(users.filter((user) => user.role === UserRole.CHILD))}
+      alert={isChild && (waterings > 0 || bloomed)}
+      lines={isChild
+        ? [
+            bloomed
+              ? <span className="font-bold text-bey-cyan">可以選下一顆種子</span>
+              : waterings > 0
+                ? <span className="font-bold text-bey-cyan">可以澆水 {waterings} 次</span>
+                : `陽光 ${getGardenPointsTowardNextWatering(garden, childId)}/${garden.pointsPerWatering}`,
+            stageLine,
+          ]
+        : [stageLine]}
+    />
+  );
+
+  if (!isChild) {
+    // 家長的陀螺工房從導覽進；首頁只留花園入口
+    return <div className="grid grid-cols-1 gap-3 md:grid-cols-2">{gardenTile}</div>;
+  }
+
+  const scrapPerDraw = forge.scrapPerDraw || DEFAULT_SCRAP_PER_DRAW;
+  const draws = getAvailableBeyDraws(forge, childId);
+  const weekKey = getWeekKey();
+  const entry = getBossEntry(boss, weekKey);
+  const bossDef = (entry ? getBeyBoss(entry.bossId) : null) ?? getBossForWeek(weekKey);
+  const availability = getBossAvailability(entry, forge, new Date());
+  const daysUntil = getDaysUntilBattle();
+  const bossLine = (() => {
+    switch (availability) {
+      case 'DEFEATED': return '魔王已擊敗 ✓';
+      case 'NOT_BATTLE_DAY': return `魔王 ${daysUntil} 天後開戰`;
+      case 'NO_LINEUP': return '魔王：先派出陀螺';
+      case 'ALREADY_TODAY': return '魔王：明天再來';
+      case 'READY': return <span className="font-bold text-bey-cyan">魔王今天可開戰</span>;
+      default: return '';
+    }
+  })();
+
+  return (
+    <div className="grid grid-cols-2 gap-3">
+      <CollectionTile
+        onClick={onOpenBey}
+        icon={<Icons.Disc3 size={18} className="text-bey-cyan" />}
+        title="陀螺工房"
+        alert={draws > 0 || availability === 'READY'}
+        lines={[
+          draws > 0
+            ? <span className="font-bold text-bey-cyan">可鍛造 {draws} 次</span>
+            : `鋼料 ${getScrapTowardNextDraw(forge, childId)}/${scrapPerDraw}`,
+          <span className="inline-flex items-center gap-1">
+            <BeyTop variant="boss" colorSet={bossDef.color} size={14} speed="idle" className="flex-shrink-0" />
+            {bossLine}
+          </span>,
+        ]}
+      />
+      {gardenTile}
+    </div>
+  );
+};
 
 // --- 手機版底部導覽按鈕元件 ---
 const MobileNavItem = ({ active, onClick, icon, label, isDanger = false }: { active: boolean, onClick: () => void, icon: React.ReactNode, label: string, isDanger?: boolean }) => (
@@ -901,23 +1030,22 @@ const ChildHomeSummary = ({
         <div className="flex-shrink-0" aria-hidden="true">
           <BeyTop color={teamColor} size={40} speed="idle" />
         </div>
-        <div className="min-w-0">
+        <div className="min-w-0 flex-shrink-0">
           <p className={`font-display text-[10px] font-bold tracking-[0.3em] ${accentText}`}>BLADER STATUS</p>
-          <h2 className="truncate text-base font-bold leading-tight text-bey-ink">
-            <span aria-hidden="true">{currentUser.avatar}</span> {currentUser.name}
-          </h2>
+          <h2 className="truncate text-base font-bold leading-tight text-bey-ink">{currentUser.name}</h2>
         </div>
+        {/* 鼓勵語放在身分列右側的空白處，不再獨佔分數下面一整列 */}
+        <p className="ml-auto min-w-0 text-right text-xs font-normal leading-snug text-bey-dim">{getEncouragement(score)}</p>
       </div>
 
       {/* 積分：整個畫面最大的東西就該是它，這是一個積分 App */}
-      <div className="relative px-4 pb-4 pt-1 text-center md:px-5">
+      <div className="relative px-4 pb-3 pt-1 text-center md:px-5">
         <div className="flex items-baseline justify-center gap-2">
           <span className={`text-6xl font-bold italic leading-none tabular-nums md:text-7xl ${accentText} ${accentGlow}`}>
             {score}
           </span>
           <span className="font-display text-xs font-bold tracking-widest text-bey-dim">PTS</span>
         </div>
-        <p className="mt-2 text-xs font-normal text-bey-dim">{getEncouragement(score)}</p>
       </div>
 
       {/* 下一個獎勵的進度 */}
@@ -1041,7 +1169,41 @@ const ParentGoalReminderSection = ({
   );
 };
 
-const ChildOverviewSection = ({ currentUser, records, scoreItems, goalRewards, rewardCards, stampCards }: {
+// --- 小孩首頁的摘要清單：目標／收藏／本週／積分指南 ---
+// 每列只顯示一行摘要，點開才在原地展開明細，一次只開一列，首頁才能一眼看完。
+type SummaryKey = 'goals' | 'cards' | 'week' | 'guide';
+
+const SummaryRow = ({ id, open, onToggle, icon, label, summary, children }: {
+  id: SummaryKey;
+  open: boolean;
+  onToggle: (id: SummaryKey) => void;
+  icon: string;
+  label: string;
+  summary: React.ReactNode;
+  children: React.ReactNode;
+}) => (
+  <div className="border-b border-bey-steel last:border-b-0">
+    <button
+      type="button"
+      onClick={() => onToggle(id)}
+      aria-expanded={open}
+      aria-controls={`summary-${id}`}
+      className="flex min-h-12 w-full items-center gap-2.5 px-3.5 py-2 text-left transition-colors hover:bg-bey-panel focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-bey-cyan md:px-4"
+    >
+      <span className="flex-shrink-0 text-base" aria-hidden="true">{icon}</span>
+      <span className="w-14 flex-shrink-0 text-sm font-bold text-bey-ink">{label}</span>
+      <span className="min-w-0 flex-1 truncate text-xs font-normal text-bey-dim">{summary}</span>
+      <Icons.ChevronRight size={18} className={`flex-shrink-0 text-bey-dim transition-transform ${open ? 'rotate-90' : ''}`} />
+    </button>
+    {open && (
+      <div id={`summary-${id}`} className="px-3.5 pb-3.5 animate-pop md:px-4">
+        {children}
+      </div>
+    )}
+  </div>
+);
+
+const ChildSummaryList = ({ currentUser, records, scoreItems, goalRewards, rewardCards, stampCards }: {
   currentUser: User;
   records: ScoreRecord[];
   scoreItems: ScoreItem[];
@@ -1049,7 +1211,8 @@ const ChildOverviewSection = ({ currentUser, records, scoreItems, goalRewards, r
   rewardCards: RewardCard[];
   stampCards: StampCard[];
 }) => {
-  const [showGuide, setShowGuide] = useState(false);
+  const [openKey, setOpenKey] = useState<SummaryKey | null>(null);
+  const toggle = (key: SummaryKey) => setOpenKey((current) => (current === key ? null : key));
   const myRecords = records.filter(r => r.childId === currentUser.id);
 
   // 本週統計
@@ -1064,89 +1227,90 @@ const ChildOverviewSection = ({ currentUser, records, scoreItems, goalRewards, r
 
   const positiveItemsByCategory = groupScoreItemsByCategory(scoreItems, ScoreType.POSITIVE);
   const negativeItemsByCategory = groupScoreItemsByCategory(scoreItems, ScoreType.NEGATIVE);
-  const hasFamilyCards = getActiveRewardCards(rewardCards, currentUser.id).length > 0
-    || getActiveStampCards(stampCards, currentUser.id).length > 0;
+  const activeRewardCards = getActiveRewardCards(rewardCards, currentUser.id);
+  const activeStampCards = getActiveStampCards(stampCards, currentUser.id);
+  const hasFamilyCards = activeRewardCards.length > 0 || activeStampCards.length > 0;
+
+  const firstGoal = goalRewards[0];
+  const goalSummary = firstGoal
+    ? `${firstGoal.targetText}・到 ${firstGoal.endDate.slice(5).replace('-', '/')}${goalRewards.length > 1 ? `（另 ${goalRewards.length - 1} 個）` : ''}`
+    : '';
+
+  const cardsSummary = [
+    activeRewardCards.length > 0 ? `獎勵卡 ${activeRewardCards.length} 張` : '',
+    activeStampCards.length === 1
+      ? `集點卡 ${Math.min(activeStampCards[0].stamps, activeStampCards[0].targetStamps)}/${activeStampCards[0].targetStamps}`
+      : activeStampCards.length > 1 ? `集點卡 ${activeStampCards.length} 張` : '',
+  ].filter(Boolean).join('・');
 
   return (
-    <div className="space-y-3 md:space-y-4">
-      {goalRewards.length > 0 && (
-        <Card className="bg-bey-orange/10">
-          <div className="flex items-center mb-2.5 gap-2">
-            <div className="w-7 h-7 bg-bey-orange/20 rounded-lg text-bey-orange flex items-center justify-center"><Icons.Calendar size={15} /></div>
-            <h3 className="text-sm md:text-base font-bold text-bey-ink">這段時間的努力目標</h3>
-          </div>
+    <section aria-label="我的摘要" className="overflow-hidden rounded-2xl border border-bey-steel bg-bey-paper">
+      {firstGoal && (
+        <SummaryRow id="goals" open={openKey === 'goals'} onToggle={toggle} icon="🎯" label="目標" summary={goalSummary}>
           <div className="space-y-2">
             {goalRewards.map((goal) => (
-              <div key={goal.id} className="bg-bey-paper/85 rounded-xl p-3">
-                <p className="text-sm font-bold text-bey-ink leading-snug">{goal.targetText}</p>
-                <div className="flex flex-wrap items-center justify-between gap-1 mt-1.5">
+              <div key={goal.id} className="rounded-xl bg-bey-void/40 p-3">
+                <p className="text-sm font-bold leading-snug text-bey-ink">{goal.targetText}</p>
+                <div className="mt-1.5 flex flex-wrap items-center justify-between gap-1">
                   <p className="text-xs font-normal text-bey-dim">{formatGoalDateRange(goal)}</p>
                   <p className="text-xs font-bold text-bey-orange">達成可獲得 5 折卡</p>
                 </div>
               </div>
             ))}
           </div>
-        </Card>
+        </SummaryRow>
       )}
 
-      <div className={`grid gap-3 ${hasFamilyCards ? 'md:grid-cols-2' : 'grid-cols-1'}`}>
-        {hasFamilyCards && (
+      {hasFamilyCards && (
+        <SummaryRow id="cards" open={openKey === 'cards'} onToggle={toggle} icon="🎁" label="收藏" summary={cardsSummary}>
           <FamilyCardsSection
             childId={currentUser.id}
-            childName={currentUser.name}
             rewardCards={rewardCards}
             stampCards={stampCards}
             isParent={false}
+            bare
           />
-        )}
+        </SummaryRow>
+      )}
 
-        <Card className="bg-bey-paper">
-          <div className="mb-3 flex items-center gap-2">
-            <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-bey-blue/15 text-bey-blue"><Icons.TrendingUp size={15} /></div>
-            <h3 className="text-sm font-bold text-bey-ink md:text-base">這週的進步</h3>
+      <SummaryRow
+        id="week"
+        open={openKey === 'week'}
+        onToggle={toggle}
+        icon="📈"
+        label="本週"
+        summary={
+          <>
+            淨得分 <span className={`font-bold ${weekNet >= 0 ? 'text-bey-lime' : 'text-bey-red'}`}>{weekNet >= 0 ? '+' : ''}{weekNet}</span>
+            （加 {weekPositive.length}・扣 {weekNegative.length}）
+          </>
+        }
+      >
+        <div className="grid grid-cols-3 gap-2">
+          <div className="rounded-xl bg-bey-lime/10 p-2 text-center">
+            <div className="text-xl font-black text-bey-lime">{weekPositive.length}</div>
+            <div className="text-xs font-normal text-bey-dim">加分</div>
           </div>
-          <div className="grid grid-cols-3 gap-2">
-            <div className="rounded-xl bg-bey-lime/10 p-2 text-center">
-              <div className="text-xl font-black text-bey-lime">{weekPositive.length}</div>
-              <div className="text-xs font-normal text-bey-dim">加分</div>
-            </div>
-            <div className="rounded-xl bg-bey-red/10 p-2 text-center">
-              <div className="text-xl font-black text-bey-red">{weekNegative.length}</div>
-              <div className="text-xs font-normal text-bey-dim">扣分</div>
-            </div>
-            <div className={`${weekNet >= 0 ? 'bg-bey-lime/10' : 'bg-bey-red/10'} rounded-xl p-2 text-center`}>
-              <div className={`text-xl font-black ${weekNet >= 0 ? 'text-bey-lime' : 'text-bey-red'}`}>
-                {weekNet >= 0 ? '+' : ''}{weekNet}
-              </div>
-              <div className="text-xs font-normal text-bey-dim">淨得分</div>
-            </div>
+          <div className="rounded-xl bg-bey-red/10 p-2 text-center">
+            <div className="text-xl font-black text-bey-red">{weekNegative.length}</div>
+            <div className="text-xs font-normal text-bey-dim">扣分</div>
           </div>
-        </Card>
-      </div>
+          <div className={`${weekNet >= 0 ? 'bg-bey-lime/10' : 'bg-bey-red/10'} rounded-xl p-2 text-center`}>
+            <div className={`text-xl font-black ${weekNet >= 0 ? 'text-bey-lime' : 'text-bey-red'}`}>
+              {weekNet >= 0 ? '+' : ''}{weekNet}
+            </div>
+            <div className="text-xs font-normal text-bey-dim">淨得分</div>
+          </div>
+        </div>
+      </SummaryRow>
 
-      <Card className="bg-bey-paper">
-        <button
-          type="button"
-          onClick={() => setShowGuide((v) => !v)}
-          className="flex min-h-11 w-full items-center gap-2"
-          aria-expanded={showGuide}
-        >
-          <div className="w-7 h-7 bg-bey-cyan/15 rounded-lg text-bey-cyan flex items-center justify-center"><Icons.BookOpen size={15} /></div>
-          <h3 className="text-sm md:text-base font-bold text-bey-ink">積分項目指南</h3>
-          <span className="ml-auto flex items-center gap-1 text-xs font-normal text-bey-dim">
-            {showGuide ? '收合' : '展開'}
-            <Icons.ChevronRight size={18} className={`transition-transform ${showGuide ? 'rotate-90' : ''}`} />
-          </span>
-        </button>
-        {showGuide && (
-          <div className="grid grid-cols-1 xl:grid-cols-2 gap-3 mt-3 animate-pop">
-            <ScoreGuidePanel title="可以怎麼加分" itemsByCategory={positiveItemsByCategory} type={ScoreType.POSITIVE} />
-            <ScoreGuidePanel title="哪些行為會扣分" itemsByCategory={negativeItemsByCategory} type={ScoreType.NEGATIVE} />
-          </div>
-        )}
-      </Card>
-
-    </div>
+      <SummaryRow id="guide" open={openKey === 'guide'} onToggle={toggle} icon="📖" label="指南" summary="怎麼加分、哪些會扣分">
+        <div className="grid grid-cols-1 gap-3 xl:grid-cols-2">
+          <ScoreGuidePanel title="可以怎麼加分" itemsByCategory={positiveItemsByCategory} type={ScoreType.POSITIVE} />
+          <ScoreGuidePanel title="哪些行為會扣分" itemsByCategory={negativeItemsByCategory} type={ScoreType.NEGATIVE} />
+        </div>
+      </SummaryRow>
+    </section>
   );
 };
 
@@ -1158,6 +1322,7 @@ const FamilyCardsSection = ({
   stampCards,
   isParent,
   onRedeemRewardCard,
+  bare = false,
 }: {
   childId: string;
   childName?: string;
@@ -1165,6 +1330,8 @@ const FamilyCardsSection = ({
   stampCards: StampCard[];
   isParent: boolean;
   onRedeemRewardCard?: (card: RewardCard) => void;
+  /** 只要內容，不要外框與標題；放進孩子首頁摘要清單展開區時用，免得卡片裡又套一張卡片。 */
+  bare?: boolean;
 }) => {
   const activeRewardCards = getActiveRewardCards(rewardCards, childId);
   const activeStampCards = getActiveStampCards(stampCards, childId);
@@ -1173,13 +1340,8 @@ const FamilyCardsSection = ({
     return null;
   }
 
-  return (
-    <Card className="bg-bey-paper">
-      <div className="flex items-center mb-3 gap-2">
-        <div className="w-7 h-7 bg-bey-yellow/20 rounded-lg text-bey-yellow flex items-center justify-center"><Icons.Gift size={15} /></div>
-        <h3 className="text-sm md:text-base font-bold text-bey-ink truncate">{childName ? `${childName}的收藏` : '我的卡片'}</h3>
-      </div>
-
+  const body = (
+    <>
       {activeRewardCards.length > 0 && (
         <div className="mb-3">
           <p className="mb-2 text-xs font-bold text-bey-yellow">獎勵卡</p>
@@ -1225,6 +1387,18 @@ const FamilyCardsSection = ({
           </div>
         </div>
       )}
+    </>
+  );
+
+  if (bare) return <div>{body}</div>;
+
+  return (
+    <Card className="bg-bey-paper">
+      <div className="flex items-center mb-3 gap-2">
+        <div className="w-7 h-7 bg-bey-yellow/20 rounded-lg text-bey-yellow flex items-center justify-center"><Icons.Gift size={15} /></div>
+        <h3 className="text-sm md:text-base font-bold text-bey-ink truncate">{childName ? `${childName}的收藏` : '我的卡片'}</h3>
+      </div>
+      {body}
     </Card>
   );
 };

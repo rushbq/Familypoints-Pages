@@ -1,8 +1,11 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { BeyBossAttempt, BeyBossRound } from '../types';
 import { BeyPartDef } from '../services/beyData';
 import { BeyBossDef } from '../services/beyBossData';
 import { getDecidedRounds, ROUND_LABELS } from '../services/beyBossUtils';
+import { buildArenaScript } from '../services/beyArenaScript';
+import { BeyArenaCanvas } from './BeyArenaCanvas';
 import { BeyTop } from './BeyTop';
 import { Button } from './ui/Button';
 import { Icons } from './Icons';
@@ -24,11 +27,6 @@ interface BeyBossBattleProps {
   rewardPart: BeyPartDef | null;
   onClose: () => void;
 }
-
-/** 兩軍滑入場的時間。 */
-const ENTER_MS = 700;
-/** 每回合的演出長度：數值跑動、撞擊、勝負。 */
-const ROUND_MS = 1150;
 
 /** 數值從 0 跑到最終值，讓孩子有時間比大小。 */
 const useCountUp = (target: number, durationMs: number): number => {
@@ -94,8 +92,11 @@ export const BeyBossBattle: React.FC<BeyBossBattleProps> = ({
   onClose,
 }) => {
   const decided = useMemo(() => getDecidedRounds(attempt.rounds), [attempt]);
+  // 比數列與場上的撞擊讀同一份時間軸：撞下去的那一刻，下面的比數才跳出來
+  const script = useMemo(() => buildArenaScript(decided), [decided]);
   const [revealed, setRevealed] = useState(0);
   const [done, setDone] = useState(false);
+  const [skipped, setSkipped] = useState(false);
   const timeoutsRef = useRef<number[]>([]);
 
   const clearTimeouts = () => {
@@ -104,16 +105,12 @@ export const BeyBossBattle: React.FC<BeyBossBattleProps> = ({
   };
 
   useEffect(() => {
-    decided.forEach((_, index) => {
-      timeoutsRef.current.push(
-        window.setTimeout(() => setRevealed(index + 1), ENTER_MS + index * ROUND_MS),
-      );
+    script.rounds.forEach((round, index) => {
+      timeoutsRef.current.push(window.setTimeout(() => setRevealed(index + 1), round.impactMs));
     });
-    timeoutsRef.current.push(
-      window.setTimeout(() => setDone(true), ENTER_MS + decided.length * ROUND_MS),
-    );
+    timeoutsRef.current.push(window.setTimeout(() => setDone(true), script.totalMs));
     return clearTimeouts;
-  }, [decided]);
+  }, [script]);
 
   useEffect(() => {
     const handleKey = (event: KeyboardEvent) => {
@@ -128,20 +125,20 @@ export const BeyBossBattle: React.FC<BeyBossBattleProps> = ({
     clearTimeouts();
     setRevealed(decided.length);
     setDone(true);
+    setSkipped(true);
   };
 
-  const latest = revealed > 0 ? decided[revealed - 1] : null;
-  const teamToppled = done && !attempt.won;
-  const bossToppled = done && attempt.won;
-
-  return (
+  // 掛到 body：元件本身在 <main> 的堆疊層裡，留在原地會被頂欄與底部導覽蓋住
+  return createPortal(
     <div
       role="dialog"
       aria-modal="true"
       aria-label="魔王戰"
-      className="fixed inset-0 z-50 flex items-center justify-center bg-bey-void/95 p-4"
+      className="fixed inset-0 z-50 flex overflow-y-auto bg-bey-void/95 p-4"
+      // 點背景關閉只在演完之後生效：一天只有一次，別讓手滑錯過演出
+      onClick={done ? onClose : undefined}
     >
-      <div className="w-full max-w-md">
+      <div className="m-auto w-full max-w-md" onClick={(event) => event.stopPropagation()}>
         <div className="mb-2 flex items-center justify-between gap-2">
           <p className="font-display text-[11px] font-bold tracking-[0.26em]" style={{ color: boss.color.main }}>
             BATTLE
@@ -163,52 +160,21 @@ export const BeyBossBattle: React.FC<BeyBossBattleProps> = ({
             <div className="pointer-events-none absolute inset-0 speed-lines opacity-50" aria-hidden="true" />
           )}
 
-          {/* 戰場：每揭曉一回合就震一下，爆冷震得更久 */}
-          <div
-            key={revealed}
-            className={`relative flex items-stretch gap-2 ${
-              revealed === 0 ? '' : latest?.upset ? 'bey-impact-hard' : 'bey-impact'
-            }`}
-          >
-            <div className="flex min-w-0 flex-1 flex-col items-center gap-1.5 bey-enter-left">
-              <div className={`flex items-end justify-center gap-1 ${latest && !latest.won ? 'bey-recoil-left' : ''}`}>
-                {sides.map((side) => (
-                  <BeyTop
-                    key={side.childName}
-                    color={side.teamColor}
-                    size={sides.length > 1 ? 54 : 68}
-                    speed={teamToppled ? 'idle' : 'fast'}
-                    bladeId={side.bladeId}
-                    ratchetId={side.ratchetId}
-                    bitId={side.bitId}
-                    className={teamToppled ? 'bey-topple' : ''}
-                  />
-                ))}
-              </div>
-              <p className="truncate text-center text-xs font-bold text-bey-ink">
-                {sides.map((side) => side.childName).join('＋')}
-              </p>
-            </div>
+          {/* 名稱列 */}
+          <div className="relative mb-2 flex items-center gap-2">
+            <p className="min-w-0 flex-1 truncate text-xs font-bold text-bey-ink">
+              {sides.map((side) => side.childName).join('＋')}
+            </p>
+            <span className="flex-shrink-0 font-display text-sm font-black tracking-[0.1em] text-bey-dim">VS</span>
+            <p className="min-w-0 flex-1 truncate text-right text-xs font-bold" style={{ color: boss.color.main }}>
+              {boss.name}
+              {attempt.weakened && <span className="ml-1 font-normal text-bey-dim">減弱版</span>}
+            </p>
+          </div>
 
-            <div className="flex flex-shrink-0 items-center">
-              <span className="font-display text-sm font-black tracking-[0.1em] text-bey-dim">VS</span>
-            </div>
-
-            <div className="flex min-w-0 flex-1 flex-col items-center gap-1.5 bey-enter-right">
-              <div className={`flex items-end justify-center ${latest?.won ? 'bey-recoil-right' : ''}`}>
-                <BeyTop
-                  variant="boss"
-                  colorSet={boss.color}
-                  size={68}
-                  speed={bossToppled ? 'idle' : 'fast'}
-                  className={bossToppled ? 'bey-topple' : ''}
-                />
-              </div>
-              <p className="truncate text-center text-xs font-bold" style={{ color: boss.color.main }}>
-                {boss.name}
-                {attempt.weakened && <span className="ml-1 font-normal text-bey-dim">減弱版</span>}
-              </p>
-            </div>
+          {/* 戰場：俯視競技場。結果仍由下方的比數列與結語用文字傳達 */}
+          <div className="relative overflow-hidden rounded-xl border border-bey-steel">
+            <BeyArenaCanvas sides={sides} boss={boss} attempt={attempt} skipped={skipped} />
           </div>
 
           {/* 回合比數，逐回合出現 */}
@@ -268,6 +234,7 @@ export const BeyBossBattle: React.FC<BeyBossBattleProps> = ({
           )}
         </div>
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 };
