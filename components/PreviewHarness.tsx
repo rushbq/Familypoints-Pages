@@ -4,6 +4,7 @@ import {
   BeyBossAttempt,
   DiscountCard,
   GoalReward,
+  ScoreCategory,
   RewardCard,
   RewardItem,
   ScoreItem,
@@ -26,18 +27,61 @@ import {
   assembleBey,
   awardSpecificPart,
   drawBeyPart,
+  getBeyBuilds,
   grantBeyPart,
   removeBeyBuild,
 } from '../services/beyUtils';
-import { challengeBoss, getWeekKey, setLineup } from '../services/beyBossUtils';
+import {
+  challengeBoss,
+  getBossEntry,
+  getEffectiveBossStats,
+  getTeamStats,
+  getWeekKey,
+  setLineup,
+} from '../services/beyBossUtils';
+import { getBeyBoss } from '../services/beyBossData';
+import { daysUntilRealSaturday, getDevDayOffset, setDevDayOffset } from '../services/devClock';
+import { BattleOutcome, DevTestPanel } from './DevTestPanel';
+
+const ROUND_ORDER = ['attack', 'defense', 'stamina'] as const;
+
+/**
+ * 依指定結果產生魔王戰用的亂數。resolveBattle 每回合抽一次：
+ * 小於 UPSET_CHANCE 就爆冷。要必勝，就在我方落後的回合爆冷、領先的回合不爆冷；必敗反過來。
+ */
+const makeBattleRandom = (data: AppState, outcome: BattleOutcome): (() => number) => {
+  if (outcome === 'random') return Math.random;
+  const entry = getBossEntry(data.beyBoss, getWeekKey());
+  const def = entry ? getBeyBoss(entry.bossId) : null;
+  if (!def) return Math.random;
+  const team = getTeamStats(entry, data.beyForge);
+  const boss = getEffectiveBossStats(def, team.memberCount < 2);
+  let round = 0;
+  return () => {
+    const stat = ROUND_ORDER[round % ROUND_ORDER.length];
+    round += 1;
+    const favoured = team[stat] >= boss[stat];
+    return favoured === (outcome === 'win') ? 0.99 : 0;
+  };
+};
 
 /**
  * 開發預覽用的 Dashboard 外殼（僅 import.meta.env.DEV）。
  * 用本地 state 模擬 App.tsx 的資料流，讓沒有 Firebase 登入時也能預覽並互動。
  * 網址加上 ?preview=child、?preview=parent 或 ?preview=roles 即可預覽指定入口。
+ * 畫面左下角的「🧪 測試」是測試模式：切換身分、時光機、加分、指定魔王戰結果。
  */
 export const PreviewHarness: React.FC<{ role: string }> = ({ role }) => {
   const [data, setData] = useState<AppState>(() => getMockState());
+  const [viewAsId, setViewAsId] = useState<string>(() => {
+    const users = getMockState().users;
+    return (role === 'parent'
+      ? users.find((u) => u.role === UserRole.PARENT)
+      : users.find((u) => u.role === UserRole.CHILD))?.id ?? users[0].id;
+  });
+  const [battleOutcome, setBattleOutcome] = useState<BattleOutcome>('random');
+  // 時光機的偏移量存在 devClock 裡；這個 state 只是讓畫面跟著重畫
+  const [dayOffset, setDayOffset] = useState(getDevDayOffset());
 
   if (role === 'roles') {
     return (
@@ -50,10 +94,7 @@ export const PreviewHarness: React.FC<{ role: string }> = ({ role }) => {
     );
   }
 
-  const currentUser: User =
-    role === 'parent'
-      ? data.users.find((u) => u.role === UserRole.PARENT)!
-      : data.users.find((u) => u.role === UserRole.CHILD)!;
+  const currentUser: User = data.users.find((u) => u.id === viewAsId) ?? data.users[0];
 
   const onAddRecord = (record: Omit<ScoreRecord, 'id' | 'timestamp'>): ScoreRecord => {
     const timestamp = Date.now();
@@ -95,7 +136,14 @@ export const PreviewHarness: React.FC<{ role: string }> = ({ role }) => {
     const timestamp = Date.now();
     let outcome: BeyBossAttempt | null = null;
     setData((prev) => {
-      const result = challengeBoss(prev.beyBoss, prev.beyForge, getWeekKey(), timestamp.toString(), timestamp);
+      const result = challengeBoss(
+        prev.beyBoss,
+        prev.beyForge,
+        getWeekKey(),
+        timestamp.toString(),
+        timestamp,
+        makeBattleRandom(prev, battleOutcome),
+      );
       if (!result.attempt) return prev;
       outcome = result.attempt;
       let beyForge = prev.beyForge;
@@ -111,8 +159,68 @@ export const PreviewHarness: React.FC<{ role: string }> = ({ role }) => {
     return outcome;
   };
 
+  // --- 測試模式的操作 ---
+  const shiftClock = (days: number) => {
+    setDevDayOffset(days);
+    setDayOffset(days);
+  };
+
+  const addTestPoints = (childId: string, points: number) => {
+    const child = data.users.find((u) => u.id === childId);
+    onAddRecord({
+      childId,
+      childName: child?.name ?? '',
+      itemId: '__test__',
+      itemName: points > 0 ? '測試加分' : '測試扣分',
+      pointsChange: points,
+      scoreCategory: ScoreCategory.DAILY,
+      note: '測試模式',
+      createdById: 'test',
+      createdByName: '測試模式',
+    });
+  };
+
+  // 沒有陀螺的孩子先發一組零件組起來，再把每個孩子的第一顆派上場
+  const lineupBoth = () => {
+    const timestamp = Date.now();
+    setData((prev) => {
+      let beyForge = prev.beyForge;
+      let beyBoss = prev.beyBoss;
+      prev.users.filter((u) => u.role === UserRole.CHILD).forEach((child, index) => {
+        if (getBeyBuilds(beyForge, child.id).length === 0) {
+          const parts = ['blade_wing_blue', 'ratchet_dashed_cyan', 'bit_ball_blue'];
+          parts.forEach((partId, p) => {
+            beyForge = awardSpecificPart(beyForge, child.id, partId, `${timestamp}_t${index}${p}`, timestamp);
+          });
+          beyForge = assembleBey(beyForge, child.id, '測試陀螺', parts[0], parts[1], parts[2], `${timestamp}_tb${index}`, timestamp);
+        }
+        const build = getBeyBuilds(beyForge, child.id)[0];
+        if (build) beyBoss = setLineup(beyBoss, getWeekKey(), child.id, build.id);
+      });
+      return { ...prev, beyForge, beyBoss };
+    });
+  };
+
+  const resetBossWeek = () => {
+    const weekKey = getWeekKey();
+    setData((prev) => ({
+      ...prev,
+      beyBoss: {
+        ...prev.beyBoss,
+        entries: prev.beyBoss.entries.map((entry) => (entry.weekKey === weekKey
+          ? { ...entry, attempts: [], defeatedAt: null }
+          : entry)),
+      },
+    }));
+  };
+
+  const now = new Date();
+  const dateLabel = `${now.getMonth() + 1}/${now.getDate()}（${'日一二三四五六'[now.getDay()]}）`;
+
   return (
+    <>
     <Dashboard
+      key={viewAsId}
       currentUser={currentUser}
       data={data}
       onLogout={() => window.alert('（預覽模式）登出')}
@@ -153,5 +261,22 @@ export const PreviewHarness: React.FC<{ role: string }> = ({ role }) => {
       cloudEmail="preview@example.com"
       onCloudLogout={() => window.alert('（預覽模式）切換帳號')}
     />
+    <DevTestPanel
+      users={data.users}
+      viewAsId={viewAsId}
+      onViewAs={setViewAsId}
+      dateLabel={dateLabel}
+      dayOffset={dayOffset}
+      onShiftDays={(days) => shiftClock(dayOffset + days)}
+      onJumpToSaturday={() => shiftClock(daysUntilRealSaturday())}
+      onResetClock={() => shiftClock(0)}
+      onAddPoints={addTestPoints}
+      battleOutcome={battleOutcome}
+      onBattleOutcome={setBattleOutcome}
+      onLineupBoth={lineupBoth}
+      onResetBossWeek={resetBossWeek}
+      onResetAll={() => setData(getMockState())}
+    />
+    </>
   );
 };

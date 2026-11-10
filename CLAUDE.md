@@ -10,6 +10,8 @@ npm run build      # Production build to dist/
 npm run preview    # Preview the production build locally
 ```
 
+**Local test mode:** with `npm run dev`, open `/?preview=child` or `/?preview=parent` (`?preview=roles` for the role picker). `components/PreviewHarness.tsx` runs the Dashboard on in-memory mock data (no Firebase; a reload resets it), and its floating 🧪 測試 button opens `components/DevTestPanel.tsx`, which lets you switch the identity you view as, add or deduct points, force the boss outcome, line up both children, reset this week's boss and reset all data. The time machine (`services/devClock.ts`) swaps the global `Date` so that only argument-less `new Date()` and `Date.now()` are shifted. A forced win or loss passes a crafted `random` to `challengeBoss`, which upsets the rounds as needed. All of this is DEV-only and never bundled; production code must not import it.
+
 There is **no test runner and no linter** configured. `tsc --noEmit` runs automatically at the end of a session (`.claude/hooks/typecheck.mjs`) — don't add it to a task's steps. UI text, JSDoc comments, and `console.log` messages are in **Traditional Chinese (zh-TW)**.
 
 **Always reply to the user in Traditional Chinese (zh-TW).**

@@ -65,7 +65,7 @@ const RoundRow: React.FC<{ round: BeyBossRound; index: number; animate: boolean 
 
   return (
     <div className="flex items-center gap-2 rounded-lg border border-bey-steel bg-bey-void/50 px-2.5 py-1.5 animate-pop">
-      <span className="w-12 flex-shrink-0 text-xs font-normal text-bey-dim">第 {index + 1} 回合</span>
+      <span className="flex-shrink-0 whitespace-nowrap text-xs font-normal text-bey-dim">第 {index + 1} 回合</span>
       <span className="w-8 flex-shrink-0 text-xs font-bold text-bey-ink">{ROUND_LABELS[round.stat]}</span>
       <span className="flex-1 text-xs font-bold tabular-nums text-bey-dim">
         <span className="text-bey-ink">{teamValue}</span>
