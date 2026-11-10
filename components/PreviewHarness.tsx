@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import {
   AppState,
-  BeyBossAttempt,
   DiscountCard,
   GoalReward,
   ScoreCategory,
@@ -28,10 +27,10 @@ import {
   awardSpecificPart,
   drawBeyPart,
   getBeyBuilds,
-  grantBeyPart,
   removeBeyBuild,
 } from '../services/beyUtils';
 import {
+  awardBossRewards,
   challengeBoss,
   getBossEntry,
   getEffectiveBossStats,
@@ -112,15 +111,18 @@ export const PreviewHarness: React.FC<{ role: string }> = ({ role }) => {
     return newRecord;
   };
 
+  // 和 App.tsx 一樣：結果在 setState 外面先算好、亂數先抽好，不從 updater 裡帶出來
   const onDrawBeyPart = (childId: string) => {
     const timestamp = Date.now();
-    let outcome: { partId: string | null; isDuplicate: boolean } = { partId: null, isDuplicate: false };
+    const roll = Math.random();
+    const draw = (forge: AppState['beyForge']) => drawBeyPart(forge, childId, timestamp.toString(), timestamp, () => roll);
+    const result = draw(data.beyForge);
+    if (!result.partId) return { partId: null, isDuplicate: false };
     setData((prev) => {
-      const result = drawBeyPart(prev.beyForge, childId, timestamp.toString(), timestamp);
-      outcome = { partId: result.partId, isDuplicate: result.isDuplicate };
-      return result.partId ? { ...prev, beyForge: result.forge } : prev;
+      const next = draw(prev.beyForge);
+      return next.partId ? { ...prev, beyForge: next.forge } : prev;
     });
-    return outcome;
+    return { partId: result.partId, isDuplicate: result.isDuplicate };
   };
 
   const onWaterGarden = (childId: string) => {
@@ -134,29 +136,22 @@ export const PreviewHarness: React.FC<{ role: string }> = ({ role }) => {
 
   const onChallengeBoss = () => {
     const timestamp = Date.now();
-    let outcome: BeyBossAttempt | null = null;
+    const now = new Date(timestamp);
+    const battleRandom = makeBattleRandom(data, battleOutcome);
+    const rolls = Array.from({ length: 8 }, () => battleRandom());
+    const challenge = (state: AppState) => {
+      let index = 0;
+      const random = () => rolls[index++ % rolls.length];
+      const result = challengeBoss(state.beyBoss, state.beyForge, getWeekKey(now), timestamp.toString(), timestamp, random, now);
+      return { result, beyForge: awardBossRewards(state.beyForge, result, timestamp, random) };
+    };
+    const { result } = challenge(data);
+    if (!result.attempt) return null;
     setData((prev) => {
-      const result = challengeBoss(
-        prev.beyBoss,
-        prev.beyForge,
-        getWeekKey(),
-        timestamp.toString(),
-        timestamp,
-        makeBattleRandom(prev, battleOutcome),
-      );
-      if (!result.attempt) return prev;
-      outcome = result.attempt;
-      let beyForge = prev.beyForge;
-      prev.users.filter((u) => u.role === UserRole.CHILD).forEach((child, index) => {
-        if (result.rewardPartId) {
-          beyForge = awardSpecificPart(beyForge, child.id, result.rewardPartId, `${timestamp}_b${index}`, timestamp);
-        } else if (result.grantRare) {
-          beyForge = grantBeyPart(beyForge, child.id, 'BOSS', `${timestamp}_br${index}`, timestamp).forge;
-        }
-      });
-      return { ...prev, beyBoss: result.state, beyForge };
+      const next = challenge(prev);
+      return next.result.attempt ? { ...prev, beyBoss: next.result.state, beyForge: next.beyForge } : prev;
     });
-    return outcome;
+    return result.attempt;
   };
 
   // --- 測試模式的操作 ---

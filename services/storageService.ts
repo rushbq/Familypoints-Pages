@@ -1,23 +1,36 @@
-import { doc, getDoc, onSnapshot, setDoc } from 'firebase/firestore';
+import { FirestoreError, doc, getDoc, onSnapshot, runTransaction, setDoc } from 'firebase/firestore';
 import { AppState, ScoreRecord } from '../types';
 import {
   db as localDb,
   initializeDatabase,
   getDefaultState,
 } from './database';
-import { normalizeScoreItem, normalizeScoreRecord } from './familyUtils';
+import { normalizeScoreItem, normalizeScoreRecord, pruneOldRecords } from './familyUtils';
 import { normalizeFamilyGarden } from './gardenUtils';
 import { normalizeBeyForge } from './beyUtils';
 import { normalizeBeyBoss } from './beyBossUtils';
 import { auth, firestore } from './firebase';
 
+/** 對狀態的一次修改。必須是純函式：同樣的輸入永遠得到同樣的輸出，因為它可能被重套好幾次。 */
+export type StateMutation = (state: AppState) => AppState;
+
 /**
- * 儲存操作結果介面
+ * 雲端文件裡記錄「最近套用過哪些操作」的欄位，不屬於 AppState。
+ * 收到快照時用它判斷本機還沒確認的操作是不是已經寫進雲端了。
  */
-export interface SaveResult {
-  success: boolean;
-  error?: string;
-}
+const APPLIED_OPS_FIELD = '_ops';
+const MAX_APPLIED_OPS = 50;
+
+/** 離線、逾時、衝突這類錯誤，等一下再試就會好；其他錯誤（權限、文件過大）重試也沒用。 */
+const RETRYABLE_ERROR_CODES = new Set(['unavailable', 'deadline-exceeded', 'aborted', 'resource-exhausted']);
+
+export const isRetryableSaveError = (error: unknown): boolean =>
+  error instanceof FirestoreError && RETRYABLE_ERROR_CODES.has(error.code);
+
+const readAppliedOps = (raw: Record<string, unknown> | undefined): string[] => {
+  const ops = raw?.[APPLIED_OPS_FIELD];
+  return Array.isArray(ops) ? ops.filter((op): op is string => typeof op === 'string') : [];
+};
 
 export const normalizeAppState = (state?: Partial<AppState>): AppState => {
   const defaults = getDefaultState();
@@ -123,8 +136,12 @@ const loadFallbackState = (): AppState => {
   return normalizeAppState();
 };
 
+/**
+ * 即時監聽雲端狀態。appliedOps 是雲端已經套用過的操作 id，
+ * 讓呼叫端把這些操作從「還沒確認」的清單裡拿掉。
+ */
 export const subscribeState = (
-  onStateChange: (state: AppState) => void,
+  onStateChange: (state: AppState, appliedOps: string[]) => void,
   onError?: (error: unknown) => void,
 ): (() => void) => {
   try {
@@ -134,12 +151,13 @@ export const subscribeState = (
       getStateRef(uid),
       (snapshot) => {
         if (snapshot.exists()) {
-          onStateChange(normalizeAppState(snapshot.data() as Partial<AppState>));
+          const raw = snapshot.data();
+          onStateChange(normalizeAppState(raw as Partial<AppState>), readAppliedOps(raw));
           return;
         }
 
         void bootstrapCloudState(uid)
-          .then(onStateChange)
+          .then((state) => onStateChange(state, []))
           .catch((error) => onError?.(error));
       },
       (error) => onError?.(error),
@@ -151,19 +169,32 @@ export const subscribeState = (
 };
 
 /**
- * 將完整狀態儲存至 Firestore
+ * 把一次操作套在「雲端最新的狀態」上，用交易寫回。
+ *
+ * 以前是把本機整份狀態 setDoc 上去，兩台裝置同時操作（或一台離線後才連上）時，
+ * 後寫的會整份蓋掉先寫的。改成交易後，每次都是讀雲端最新版、套上這次的修改再寫，
+ * 另一台裝置的變更不會被吃掉；同時有人寫入時 Firestore 會自動重跑交易。
+ * 交易需要連線，離線時會丟出可重試的錯誤，由呼叫端排隊等連線恢復。
+ *
+ * 同一個 opId 只會套用一次：交易其實成功、但回應在路上斷掉時，重試不會重複加分。
+ * 每次寫入順便把超過保留期限的紀錄併成結餘，文件才不會長到 Firestore 的 1 MiB 上限。
  */
-export const saveState = async (state: AppState): Promise<SaveResult> => {
-  try {
-    const uid = getCurrentUid();
-    await setDoc(getStateRef(uid), normalizeAppState(state));
+export const commitStateMutation = async (opId: string, mutate: StateMutation): Promise<void> => {
+  const ref = getStateRef(getCurrentUid());
 
-    return { success: true };
-  } catch (err) {
-    const errorMessage = err instanceof Error ? err.message : '未知錯誤';
-    console.error('❌ 儲存雲端狀態失敗:', errorMessage);
-    return { success: false, error: errorMessage };
-  }
+  await runTransaction(firestore, async (transaction) => {
+    const snapshot = await transaction.get(ref);
+    const raw = snapshot.exists() ? snapshot.data() : undefined;
+    const appliedOps = readAppliedOps(raw);
+    if (appliedOps.includes(opId)) return;
+
+    const current = normalizeAppState(raw as Partial<AppState> | undefined);
+    const next = pruneOldRecords(normalizeAppState(mutate(current)), Date.now());
+    transaction.set(ref, {
+      ...next,
+      [APPLIED_OPS_FIELD]: [...appliedOps, opId].slice(-MAX_APPLIED_OPS),
+    });
+  });
 };
 
 /**

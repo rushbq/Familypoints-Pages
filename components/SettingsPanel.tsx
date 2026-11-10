@@ -498,13 +498,15 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
       message: `確定要兌換「${card.title}」的禮物「${card.rewardLabel}」嗎？兌換後卡片會標記為已兌換並保留紀錄。`,
       variant: 'primary',
       onConfirm: () => {
+        // 時間在外面先取好：updater 等雲端確認時可能被重套，每次都要得到同一個結果
+        const redeemedAt = Date.now();
         onUpdateStampCards((items) =>
           items.map((item) =>
             item.id === card.id
               ? {
                   ...item,
                   status: StampCardStatus.REDEEMED,
-                  redeemedAt: Date.now(),
+                  redeemedAt,
                   redeemedById: resolver.id,
                   redeemedByName: resolver.name,
                 }
@@ -646,7 +648,7 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
                     type="date"
                     value={newGoal.startDate}
                     onChange={(e) => setNewGoal({ ...newGoal, startDate: e.target.value })}
-                    className="compact-date-input block min-h-11 min-w-0 w-full max-w-full rounded-xl border border-bey-steel bg-bey-paper px-2 py-2 text-sm font-bold text-bey-ink outline-none focus:border-bey-orange focus:ring-2 focus:ring-bey-yellow/30"
+                    className="compact-date-input block min-h-11 min-w-0 w-full max-w-full rounded-xl border border-bey-steel bg-bey-paper px-2 py-2 text-sm font-bold text-bey-ink outline-none focus:border-bey-cyan focus:ring-2 focus:ring-bey-cyan/20"
                   />
                 </div>
                 <div className="min-w-0">
@@ -655,7 +657,7 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
                     type="date"
                     value={newGoal.endDate}
                     onChange={(e) => setNewGoal({ ...newGoal, endDate: e.target.value })}
-                    className="compact-date-input block min-h-11 min-w-0 w-full max-w-full rounded-xl border border-bey-steel bg-bey-paper px-2 py-2 text-sm font-bold text-bey-ink outline-none focus:border-bey-orange focus:ring-2 focus:ring-bey-yellow/30"
+                    className="compact-date-input block min-h-11 min-w-0 w-full max-w-full rounded-xl border border-bey-steel bg-bey-paper px-2 py-2 text-sm font-bold text-bey-ink outline-none focus:border-bey-cyan focus:ring-2 focus:ring-bey-cyan/20"
                   />
                 </div>
               </div>
@@ -666,12 +668,12 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
                     type="text"
                     value={newGoal.targetText}
                     onChange={(e) => setNewGoal({ ...newGoal, targetText: e.target.value })}
-                    className="w-full px-3 py-2.5 border border-bey-steel rounded-xl focus:ring-2 focus:ring-bey-yellow/30 focus:border-bey-orange outline-none bg-bey-paper text-bey-ink font-bold"
+                    className="w-full px-3 py-2.5 border border-bey-steel rounded-xl focus:ring-2 focus:ring-bey-cyan/20 focus:border-bey-cyan outline-none bg-bey-paper text-bey-ink font-bold"
                     placeholder="例如：這週每天主動整理書包"
                   />
                 </div>
                 <div className="flex justify-end">
-                  <Button onClick={handleAddGoalReward} className="bg-bey-orange text-bey-void border-bey-orangeDark hover:bg-bey-orange/90 min-w-[11rem]" icon={<Icons.Plus size={20} />}>
+                  <Button onClick={handleAddGoalReward} className="bg-bey-yellow text-bey-void border-bey-yellowDark hover:bg-bey-yellow/90 min-w-[11rem]" icon={<Icons.Plus size={20} />}>
                       新增目標
                   </Button>
                 </div>
@@ -891,7 +893,7 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
       )}
 
       {activeTab === 'rewards' && (
-        <Card title="🎁 獎勵兌換項目管理" className="bg-bey-orange/10 border-bey-orange/40">
+        <Card title="🎁 獎勵兌換項目管理" className="bg-bey-yellow/10 border-bey-yellow/40">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-3 md:gap-4 items-end mb-4">
             <div className="col-span-1 md:col-span-2">
                 <label className="block text-sm font-bold text-bey-ink mb-2 ml-1">獎勵名稱</label>
@@ -899,7 +901,7 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
                 type="text" 
                 value={newReward.label}
                 onChange={e => setNewReward({...newReward, label: e.target.value})}
-                className="w-full px-3 py-2.5 border border-bey-steel rounded-xl focus:ring-2 focus:ring-bey-orange/30 focus:border-bey-orange outline-none text-bey-ink font-bold bg-bey-paper"
+                className="w-full px-3 py-2.5 border border-bey-steel rounded-xl focus:ring-2 focus:ring-bey-cyan/20 focus:border-bey-cyan outline-none text-bey-ink font-bold bg-bey-paper"
                 placeholder="例如：玩 Switch 30分鐘"
                 />
             </div>
@@ -909,11 +911,11 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
                 type="number" 
                 value={newReward.points}
                 onChange={e => setNewReward({...newReward, points: Number(e.target.value)})}
-                className="w-full px-3 py-2.5 border border-bey-steel rounded-xl focus:ring-2 focus:ring-bey-orange/30 focus:border-bey-orange outline-none text-bey-ink font-bold bg-bey-paper"
+                className="w-full px-3 py-2.5 border border-bey-steel rounded-xl focus:ring-2 focus:ring-bey-cyan/20 focus:border-bey-cyan outline-none text-bey-ink font-bold bg-bey-paper"
                 />
             </div>
             <div className="flex items-end">
-                <Button onClick={handleAddRewardItem} className="w-full bg-bey-orange text-bey-void border-bey-orangeDark hover:brightness-110" icon={<Icons.Plus size={20} />}>
+                <Button onClick={handleAddRewardItem} className="w-full bg-bey-yellow text-bey-void border-bey-yellowDark hover:brightness-110" icon={<Icons.Plus size={20} />}>
                     新增獎勵
                 </Button>
             </div>
@@ -930,14 +932,14 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
 
           <div className="mt-3 grid grid-cols-1 gap-3 md:grid-cols-2 md:gap-4">
              {appData.rewardItems.map(item => (
-                <div key={item.id} className="flex items-center justify-between p-3 bg-bey-paper rounded-xl border border-bey-orange/40 shadow-sm">
+                <div key={item.id} className="flex items-center justify-between p-3 bg-bey-paper rounded-xl border border-bey-yellow/40 shadow-sm">
                    <div className="flex items-center gap-4">
-                       <div className="w-10 h-10 bg-bey-orange/10 rounded-xl flex items-center justify-center text-2xl">
+                       <div className="w-10 h-10 bg-bey-yellow/10 rounded-xl flex items-center justify-center text-2xl">
                            {item.icon || '🎁'}
                        </div>
                        <div>
                            <div className="font-black text-bey-ink text-sm md:text-base">{item.label}</div>
-                           <div className="text-xs font-bold px-2 py-0.5 rounded-full inline-block bg-bey-orange text-bey-void">
+                           <div className="text-xs font-bold px-2 py-0.5 rounded-full inline-block bg-bey-yellow text-bey-void">
                                {item.points} pt
                            </div>
                        </div>
@@ -1102,7 +1104,7 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
       {activeTab === 'stampCards' && (
         <Card title="🏅 集點卡管理" className="bg-bey-yellow/10 border-bey-yellow/40">
           <p className="text-sm font-normal text-bey-dim mb-3">
-            由家長手動蓋章的集點卡，<span className="text-bey-orange">獨立於積分</span>（不加分、不扣分）。集滿即可兌換家長指定的實體禮物。
+            由家長手動蓋章的集點卡，<span className="text-bey-yellow">獨立於積分</span>（不加分、不扣分）。集滿即可兌換家長指定的實體禮物。
           </p>
 
           <div className="space-y-3 mb-4">
@@ -1121,7 +1123,7 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
                   type="text"
                   value={newStampCard.title}
                   onChange={(e) => setNewStampCard({ ...newStampCard, title: e.target.value })}
-                  className="w-full px-3 py-2.5 border border-bey-steel rounded-xl focus:ring-2 focus:ring-bey-yellow/30 focus:border-bey-orange outline-none bg-bey-paper text-bey-ink font-bold"
+                  className="w-full px-3 py-2.5 border border-bey-steel rounded-xl focus:ring-2 focus:ring-bey-cyan/20 focus:border-bey-cyan outline-none bg-bey-paper text-bey-ink font-bold"
                   placeholder="例如：暑假閱讀集點"
                 />
               </div>
@@ -1136,7 +1138,7 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
                       type="button"
                       key={n}
                       onClick={() => setNewStampCard({ ...newStampCard, targetStamps: n })}
-                      className={`min-h-11 px-5 py-3 rounded-xl font-black border transition-all ${newStampCard.targetStamps === n ? 'bg-bey-orange text-bey-void border-bey-orangeDark' : 'bg-bey-paper text-bey-dim border-bey-steel hover:border-bey-steel'}`}
+                      className={`min-h-11 px-5 py-3 rounded-xl font-black border transition-all ${newStampCard.targetStamps === n ? 'bg-bey-yellow text-bey-void border-bey-yellowDark' : 'bg-bey-paper text-bey-dim border-bey-steel hover:border-bey-steel'}`}
                     >
                       {n} 點
                     </button>
@@ -1146,7 +1148,7 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
                     min={1}
                     value={newStampCard.targetStamps}
                     onChange={(e) => setNewStampCard({ ...newStampCard, targetStamps: Number(e.target.value) })}
-                    className="w-24 p-3 border border-bey-steel rounded-xl focus:ring-2 focus:ring-bey-yellow/30 focus:border-bey-orange outline-none bg-bey-paper text-bey-ink font-bold text-center"
+                    className="w-24 p-3 border border-bey-steel rounded-xl focus:ring-2 focus:ring-bey-cyan/20 focus:border-bey-cyan outline-none bg-bey-paper text-bey-ink font-bold text-center"
                   />
                 </div>
               </div>
@@ -1156,7 +1158,7 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
                   type="text"
                   value={newStampCard.rewardLabel}
                   onChange={(e) => setNewStampCard({ ...newStampCard, rewardLabel: e.target.value })}
-                  className="w-full px-3 py-2.5 border border-bey-steel rounded-xl focus:ring-2 focus:ring-bey-yellow/30 focus:border-bey-orange outline-none bg-bey-paper text-bey-ink font-bold"
+                  className="w-full px-3 py-2.5 border border-bey-steel rounded-xl focus:ring-2 focus:ring-bey-cyan/20 focus:border-bey-cyan outline-none bg-bey-paper text-bey-ink font-bold"
                   placeholder="例如：一本新的故事書"
                 />
               </div>
@@ -1172,7 +1174,7 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
             />
 
             <div className="flex justify-end">
-              <Button onClick={handleAddStampCard} className="bg-bey-orange text-bey-void border-bey-orangeDark hover:brightness-105 min-w-[11rem]" icon={<Icons.Plus size={20} />}>
+              <Button onClick={handleAddStampCard} className="bg-bey-yellow text-bey-void border-bey-yellowDark hover:brightness-105 min-w-[11rem]" icon={<Icons.Plus size={20} />}>
                 建立集點卡
               </Button>
             </div>
@@ -1184,7 +1186,7 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
                 const complete = isStampCardComplete(card);
                 const filled = Math.min(card.stamps, card.targetStamps);
                 return (
-                  <div key={card.id} className={`p-3 rounded-xl border shadow-sm ${complete ? 'bg-bey-yellow/20 border-bey-orange/40' : 'bg-bey-paper border-bey-ink/5'}`}>
+                  <div key={card.id} className={`p-3 rounded-xl border shadow-sm ${complete ? 'bg-bey-yellow/20 border-bey-yellow/40' : 'bg-bey-paper border-bey-ink/5'}`}>
                     <div className="flex items-center justify-between gap-2 mb-2">
                       <span className="text-sm font-bold px-3 py-0.5 rounded-full bg-bey-blue/10 text-bey-blue">{childNameById(card.childId)}</span>
                       <button
@@ -1202,7 +1204,7 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
                       {Array.from({ length: card.targetStamps }).map((_, idx) => (
                         <span
                           key={idx}
-                          className={`w-7 h-7 rounded-full flex items-center justify-center text-sm border ${idx < filled ? 'bg-bey-orange text-bey-void border-bey-orangeDark' : 'bg-bey-paper text-bey-dim border-bey-steel'}`}
+                          className={`w-7 h-7 rounded-full flex items-center justify-center text-sm border ${idx < filled ? 'bg-bey-yellow text-bey-void border-bey-yellowDark' : 'bg-bey-paper text-bey-dim border-bey-steel'}`}
                         >
                           {idx < filled ? '★' : '☆'}
                         </span>
@@ -1218,7 +1220,7 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
                         蓋章 +1
                       </Button>
                       {complete && (
-                        <Button size="sm" className="bg-bey-orange text-bey-void border-bey-orangeDark hover:brightness-105" onClick={() => handleRedeemStampCard(card)} icon={<Icons.Gift size={16} />}>
+                        <Button size="sm" className="bg-bey-yellow text-bey-void border-bey-yellowDark hover:brightness-105" onClick={() => handleRedeemStampCard(card)} icon={<Icons.Gift size={16} />}>
                           兌換禮物
                         </Button>
                       )}
@@ -1273,9 +1275,9 @@ const ChildRadioGroup: React.FC<{
   accent: 'yellow' | 'pink' | 'orange';
 }> = ({ name, label, value, childrenUsers, onChange, accent }) => {
   const selectedClass = {
-    yellow: 'border-bey-orange bg-bey-yellow/35 text-bey-ink',
+    yellow: 'border-bey-yellow bg-bey-yellow/35 text-bey-ink',
     pink: 'border-bey-yellow bg-bey-yellow/10 text-bey-ink',
-    orange: 'border-bey-orange bg-bey-orange/10 text-bey-ink',
+    orange: 'border-bey-yellow bg-bey-yellow/10 text-bey-ink',
   }[accent];
 
   return (
@@ -1323,9 +1325,9 @@ const IconChoiceGrid: React.FC<{
   const selectedClass = {
     green: 'border-bey-cyan bg-bey-cyan/15 text-bey-cyan',
     red: 'border-bey-red bg-bey-red/10 text-bey-red',
-    purple: 'border-bey-orange bg-bey-orange/10 text-bey-orange',
+    purple: 'border-bey-yellow bg-bey-yellow/10 text-bey-yellow',
     pink: 'border-bey-yellow bg-bey-yellow/10 text-bey-yellow',
-    orange: 'border-bey-orange bg-bey-yellow/25 text-bey-orange',
+    orange: 'border-bey-yellow bg-bey-yellow/25 text-bey-yellow',
   }[tone];
 
   return (
@@ -1455,11 +1457,11 @@ const GoalSection: React.FC<GoalSectionProps> = ({ title, goals, users, appData,
               <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-bey-blue/10 text-bey-blue">
                 {child?.name ?? '未指定孩子'}
               </span>
-              <span className="rounded-full bg-bey-yellow/20 px-2 py-0.5 text-xs font-bold text-bey-orange">
+              <span className="rounded-full bg-bey-yellow/20 px-2 py-0.5 text-xs font-bold text-bey-yellow">
                 {getGoalRewardStatusLabel(goal.status)}
               </span>
               {linkedCardCount > 0 && (
-                <span className="rounded-full bg-bey-orange/10 px-2 py-0.5 text-xs font-bold text-bey-orange">
+                <span className="rounded-full bg-bey-yellow/10 px-2 py-0.5 text-xs font-bold text-bey-yellow">
                   已發 5 折卡
                 </span>
               )}

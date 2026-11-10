@@ -322,6 +322,8 @@ export interface BeyBossAttempt {
   dateKey: string;
   /** 只有一人派出時打的是減弱版，獎勵較小。 */
   weakened: boolean;
+  /** 這場出戰的孩子。舊紀錄沒有這個欄位，視為整隊都打過。 */
+  childIds?: string[];
   rounds: BeyBossRound[];
   won: boolean;
 }

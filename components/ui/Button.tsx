@@ -27,7 +27,7 @@ export const Button: React.FC<ButtonProps> = ({
     // 紅（扣分／危險）
     danger: "bg-bey-red text-bey-void border-b-[3px] border-[#A32B2B] hover:brightness-110 active:border-b-0",
     // 對手橘（獎勵兌換）
-    reward: "bg-bey-orange text-bey-void border-b-[3px] border-bey-orangeDark hover:brightness-110 active:border-b-0",
+    reward: "bg-bey-yellow text-bey-void border-b-[3px] border-bey-yellowDark hover:brightness-110 active:border-b-0",
     // 金屬外框
     outline: "bg-bey-paper border border-bey-steel text-bey-ink hover:bg-bey-panel hover:border-bey-cyan/50 active:translate-y-0",
     // 透明

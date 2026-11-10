@@ -9,7 +9,7 @@ import {
 } from '../types';
 import { BEY_BOSSES, BeyBossDef, getBeyBoss } from './beyBossData';
 import { getTodayDateKey } from './familyUtils';
-import { getBeyBuilds, getBuildStats } from './beyUtils';
+import { awardSpecificPart, getBeyBuilds, getBuildStats, grantBeyPart } from './beyUtils';
 
 /** 只有週六、週日開戰。平日看得到魔王情報，但打不了。 */
 const BATTLE_WEEKDAYS = new Set([0, 6]); // 0 = 週日, 6 = 週六
@@ -101,8 +101,25 @@ const ensureEntry = (state: BeyBossState, weekKey: string): { state: BeyBossStat
 
 export const isBossDefeated = (entry: BeyBossEntry | null): boolean => Boolean(entry?.defeatedAt);
 
-export const hasAttemptedToday = (entry: BeyBossEntry | null, today = getTodayDateKey()): boolean =>
-  Boolean(entry?.attempts.some((attempt) => attempt.dateKey === today));
+/**
+ * 這組出戰成員今天還能不能打。
+ * 兩人一起的完整版每天一次；一個人的減弱版每人每天一次。兩種分開算，
+ * 所以先單打的孩子不會用掉兩人一起打完整版（拿專屬零件）的機會。
+ */
+export const hasAttemptedToday = (
+  entry: BeyBossEntry | null,
+  childIds: string[],
+  today = getTodayDateKey(),
+): boolean => {
+  const isTeam = childIds.length >= 2;
+  return Boolean(entry?.attempts.some((attempt) => {
+    if (attempt.dateKey !== today) return false;
+    // 舊紀錄沒記出戰的是誰，保守當作全隊今天都打過
+    if (!attempt.childIds) return true;
+    if (isTeam) return !attempt.weakened;
+    return attempt.weakened && attempt.childIds.includes(childIds[0]);
+  }));
+};
 
 /** 孩子為本週派出哪一顆陀螺。 */
 export const getLineupBuildId = (entry: BeyBossEntry | null, childId: string): string | null =>
@@ -130,6 +147,8 @@ export interface BossTeam {
   stamina: number;
   /** 實際派出的人數；1 人就是減弱版。 */
   memberCount: number;
+  /** 實際派出的孩子。 */
+  childIds: string[];
 }
 
 /** 隊伍數值 = 所有已派出陀螺的三圍相加，所以再弱的陀螺都是淨貢獻。 */
@@ -137,7 +156,7 @@ export const getTeamStats = (
   entry: BeyBossEntry | null,
   forge: BeyForgeState,
 ): BossTeam => {
-  const base = { attack: 0, defense: 0, stamina: 0, memberCount: 0 };
+  const base: BossTeam = { attack: 0, defense: 0, stamina: 0, memberCount: 0, childIds: [] };
   if (!entry) return base;
 
   return entry.lineup.reduce((acc, slot) => {
@@ -149,6 +168,7 @@ export const getTeamStats = (
       defense: acc.defense + stats.defense,
       stamina: acc.stamina + stats.stamina,
       memberCount: acc.memberCount + 1,
+      childIds: [...acc.childIds, slot.childId],
     };
   }, base);
 };
@@ -174,8 +194,9 @@ export const getBossAvailability = (
 ): BossAvailability => {
   if (isBossDefeated(entry)) return 'DEFEATED';
   if (!isBattleDay(now)) return 'NOT_BATTLE_DAY';
-  if (getTeamStats(entry, forge).memberCount === 0) return 'NO_LINEUP';
-  if (hasAttemptedToday(entry, getTodayDateKey(now))) return 'ALREADY_TODAY';
+  const team = getTeamStats(entry, forge);
+  if (team.memberCount === 0) return 'NO_LINEUP';
+  if (hasAttemptedToday(entry, team.childIds, getTodayDateKey(now))) return 'ALREADY_TODAY';
   return 'READY';
 };
 
@@ -226,6 +247,8 @@ export interface ChallengeResult {
   rewardPartId: string | null;
   /** 打贏減弱版的安慰獎：一個一般稀有零件。 */
   grantRare: boolean;
+  /** 這場出戰的孩子；獎勵只發給他們，沒上場的不拿。 */
+  childIds: string[];
 }
 
 export const challengeBoss = (
@@ -238,12 +261,11 @@ export const challengeBoss = (
   now = new Date(),
 ): ChallengeResult => {
   const entry = getBossEntry(state, weekKey);
-  if (getBossAvailability(entry, forge, now) !== 'READY' || !entry) {
-    return { state, attempt: null, rewardPartId: null, grantRare: false };
-  }
+  const none: ChallengeResult = { state, attempt: null, rewardPartId: null, grantRare: false, childIds: [] };
+  if (getBossAvailability(entry, forge, now) !== 'READY' || !entry) return none;
 
   const boss = getBeyBoss(entry.bossId);
-  if (!boss) return { state, attempt: null, rewardPartId: null, grantRare: false };
+  if (!boss) return none;
 
   const team = getTeamStats(entry, forge);
   const weakened = team.memberCount < 2;
@@ -254,6 +276,7 @@ export const challengeBoss = (
     attemptedAt: timestamp,
     dateKey: getTodayDateKey(now),
     weakened,
+    childIds: team.childIds,
     rounds,
     won,
   };
@@ -277,8 +300,25 @@ export const challengeBoss = (
     attempt,
     rewardPartId: clearedForWeek ? boss.rewardPartId : null,
     grantRare: won && weakened,
+    childIds: team.childIds,
   };
 };
+
+/** 把魔王戰的獎勵發給這場出戰的孩子。App 與測試模式共用，兩邊的發獎規則才不會分岔。 */
+export const awardBossRewards = (
+  forge: BeyForgeState,
+  result: ChallengeResult,
+  timestamp: number,
+  random: () => number = Math.random,
+): BeyForgeState => result.childIds.reduce((next, childId, index) => {
+  if (result.rewardPartId) {
+    return awardSpecificPart(next, childId, result.rewardPartId, `${timestamp}_boss${index}`, timestamp);
+  }
+  if (result.grantRare) {
+    return grantBeyPart(next, childId, 'BOSS', `${timestamp}_bossr${index}`, timestamp, random).forge;
+  }
+  return next;
+}, forge);
 
 /** 本週可派出的陀螺清單。 */
 export const getSelectableBuilds = (forge: BeyForgeState, childId: string) =>

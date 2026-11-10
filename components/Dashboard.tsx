@@ -516,7 +516,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
           item.id === cardToUse.id
             ? {
                 ...item,
-                usedAt: Date.now(),
+                usedAt: record.timestamp,
                 usedById: currentUser.id,
                 usedByName: currentUser.name,
                 usedOnRecordId: record.id,
@@ -546,13 +546,15 @@ export const Dashboard: React.FC<DashboardProps> = ({
       createdByName: currentUser.name,
     });
 
+    // 時間在外面先取好：updater 等雲端確認時可能被重套，每次都要得到同一個結果
+    const redeemedAt = Date.now();
     onUpdateRewardCards((items) =>
       items.map((item) =>
         item.id === card.id
           ? {
               ...item,
               status: RewardCardStatus.REDEEMED,
-              redeemedAt: Date.now(),
+              redeemedAt,
               redeemedById: currentUser.id,
               redeemedByName: currentUser.name,
               redeemedRecordId: record?.id ?? null,
@@ -1146,7 +1148,7 @@ const ParentGoalReminderSection = ({
   return (
     <Card className="bg-bey-paper">
       <div className="flex items-center mb-3 gap-2">
-        <div className="w-8 h-8 bg-bey-orange/15 rounded-lg text-bey-orange flex items-center justify-center"><Icons.Calendar size={17} /></div>
+        <div className="w-8 h-8 bg-bey-yellow/15 rounded-lg text-bey-yellow flex items-center justify-center"><Icons.Calendar size={17} /></div>
         <h3 className="text-base font-black text-bey-ink">目標提醒</h3>
         <div className="ml-auto flex gap-1.5 text-xs font-bold">
           {pendingGoals.length > 0 && <span className="px-2 py-1 rounded-full bg-bey-red/10 text-bey-red">待判定 {pendingGoals.length}</span>}
@@ -1253,7 +1255,7 @@ const ChildSummaryList = ({ currentUser, records, scoreItems, goalRewards, rewar
                 <p className="text-sm font-bold leading-snug text-bey-ink">{goal.targetText}</p>
                 <div className="mt-1.5 flex flex-wrap items-center justify-between gap-1">
                   <p className="text-xs font-normal text-bey-dim">{formatGoalDateRange(goal)}</p>
-                  <p className="text-xs font-bold text-bey-orange">達成可獲得 5 折卡</p>
+                  <p className="text-xs font-bold text-bey-yellow">達成可獲得 5 折卡</p>
                 </div>
               </div>
             ))}
@@ -1379,7 +1381,7 @@ const FamilyCardsSection = ({
 
       {activeStampCards.length > 0 && (
         <div>
-          <p className="mb-2 text-xs font-bold text-bey-orange">集點卡</p>
+          <p className="mb-2 text-xs font-bold text-bey-yellow">集點卡</p>
           <div className="space-y-1.5">
             {activeStampCards.map((card) => (
               <StampCardRow key={card.id} card={card} />
@@ -1415,15 +1417,15 @@ const StampCardRow = ({ card }: { card: StampCard }) => {
           <p className="text-xs font-bold text-bey-ink leading-tight break-words">{card.title}</p>
           <p className="truncate text-xs font-normal text-bey-dim">{card.rewardIcon || '🎁'} {card.rewardLabel}</p>
         </div>
-        <span className={`flex-shrink-0 rounded-full px-2 py-0.5 text-xs font-bold ${complete ? 'bg-bey-orange text-bey-void' : 'bg-bey-paper text-bey-dim'}`}>
+        <span className={`flex-shrink-0 rounded-full px-2 py-0.5 text-xs font-bold ${complete ? 'bg-bey-yellow text-bey-void' : 'bg-bey-paper text-bey-dim'}`}>
           {filled}/{card.targetStamps}
         </span>
       </div>
       <div className="h-2 rounded-full bg-bey-paper overflow-hidden" aria-label={`已集 ${filled} 點，共 ${card.targetStamps} 點`}>
-        <div className="h-full rounded-full bg-bey-orange" style={{ width: `${Math.min((filled / card.targetStamps) * 100, 100)}%` }} />
+        <div className="h-full rounded-full bg-bey-yellow" style={{ width: `${Math.min((filled / card.targetStamps) * 100, 100)}%` }} />
       </div>
       {complete && (
-        <p className="mt-2 text-xs font-bold text-bey-orange">集滿了，可以兌換禮物！</p>
+        <p className="mt-2 text-xs font-bold text-bey-yellow">集滿了，可以兌換禮物！</p>
       )}
     </div>
   );

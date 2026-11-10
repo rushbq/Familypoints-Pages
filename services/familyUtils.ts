@@ -100,7 +100,7 @@ export const resolveRecordCategory = (
     return record.scoreCategory;
   }
 
-  if (isRewardRecord(record, rewardIds)) {
+  if (record.itemId === CARRYOVER_ITEM_ID || isRewardRecord(record, rewardIds)) {
     return null;
   }
 
@@ -119,6 +119,59 @@ export const normalizeScoreRecord = (
   ...record,
   scoreCategory: resolveRecordCategory(record, scoreItemMap, rewardIds),
 });
+
+/** 加扣分紀錄保留幾個月；更早的紀錄併成每個孩子一筆「結餘」。 */
+export const RECORD_RETENTION_MONTHS = 3;
+export const CARRYOVER_ITEM_ID = '__carryover__';
+
+/**
+ * 把超過保留期限的紀錄刪掉，改成每個孩子一筆結餘紀錄。
+ *
+ * 分數是所有紀錄 pointsChange 的總和，直接刪紀錄會讓分數變少，
+ * 所以刪掉的分數要原封不動搬進結餘。舊的結餘也一起重算，每個孩子永遠只有一筆。
+ * 花園陽光、鋼料這些累計值不是從紀錄算的，不受影響。
+ */
+export const pruneOldRecords = <T extends { records: ScoreRecord[] }>(state: T, now: number): T => {
+  const cutoffDate = new Date(now);
+  cutoffDate.setMonth(cutoffDate.getMonth() - RECORD_RETENTION_MONTHS);
+  const cutoff = cutoffDate.getTime();
+
+  const isExpired = (record: ScoreRecord) => record.timestamp < cutoff;
+  // 只有結餘本身過期的話不用動，否則每次寫入都會把結餘重寫一次
+  if (!state.records.some((record) => isExpired(record) && record.itemId !== CARRYOVER_ITEM_ID)) {
+    return state;
+  }
+
+  const carried = new Map<string, { childName: string; points: number }>();
+  state.records.filter(isExpired).forEach((record) => {
+    const entry = carried.get(record.childId) ?? { childName: record.childName, points: 0 };
+    entry.points += record.pointsChange;
+    if (record.itemId !== CARRYOVER_ITEM_ID) entry.childName = record.childName;
+    carried.set(record.childId, entry);
+  });
+
+  const carryoverRecords: ScoreRecord[] = Array.from(carried.entries())
+    .filter(([, entry]) => entry.points !== 0)
+    .map(([childId, entry]) => ({
+      id: `${CARRYOVER_ITEM_ID}_${childId}`,
+      childId,
+      childName: entry.childName,
+      itemId: CARRYOVER_ITEM_ID,
+      itemName: `${RECORD_RETENTION_MONTHS} 個月前的累計分數`,
+      pointsChange: entry.points,
+      scoreCategory: null,
+      // 放在保留期限前一刻，讓它永遠排在最舊的位置
+      timestamp: cutoff - 1,
+      note: `超過 ${RECORD_RETENTION_MONTHS} 個月的紀錄已整理成這一筆，分數不變`,
+      createdById: 'system',
+      createdByName: '系統',
+    }));
+
+  return {
+    ...state,
+    records: [...carryoverRecords, ...state.records.filter((record) => !isExpired(record))],
+  };
+};
 
 export const getTodayDateKey = (date = new Date()): string => {
   const year = date.getFullYear();

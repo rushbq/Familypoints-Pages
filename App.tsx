@@ -1,6 +1,11 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { onAuthStateChanged, signOut, User as FirebaseUser } from 'firebase/auth';
-import { saveState, SaveResult, subscribeState } from './services/storageService';
+import {
+  commitStateMutation,
+  isRetryableSaveError,
+  StateMutation,
+  subscribeState,
+} from './services/storageService';
 import {
   AppState,
   BeyBossAttempt,
@@ -30,16 +35,51 @@ import {
 import {
   addBeyScrap,
   assembleBey,
-  awardSpecificPart,
   drawBeyPart,
   grantBeyPart,
   removeBeyBuild,
 } from './services/beyUtils';
 import {
+  awardBossRewards,
   challengeBoss,
   getWeekKey,
   setLineup,
 } from './services/beyBossUtils';
+
+/** 一筆還沒被雲端確認的操作。 */
+interface PendingOp {
+  id: string;
+  mutate: StateMutation;
+  /** 交易已經成功，只是還在等快照回來確認。 */
+  committed: boolean;
+}
+
+const SYNC_RETRY_MS = 5000;
+
+const createOpId = () => `${Date.now()}_${Math.random().toString(36).slice(2, 10)}`;
+
+/**
+ * 先把亂數抽好，回傳一個「每次呼叫都從頭重播同一串亂數」的產生器。
+ * 操作在等雲端確認時會被重套好幾次，每次都必須抽出同一個零件、同一場勝負。
+ */
+const preRollRandom = (count = 8): (() => () => number) => {
+  const rolls = Array.from({ length: count }, () => Math.random());
+  return () => {
+    let index = 0;
+    return () => rolls[index++ % count];
+  };
+};
+
+/** 離線或連線不穩時，等網路恢復或過幾秒再試。 */
+const waitForRetry = () => new Promise<void>((resolve) => {
+  const done = () => {
+    window.clearTimeout(timer);
+    window.removeEventListener('online', done);
+    resolve();
+  };
+  const timer = window.setTimeout(done, SYNC_RETRY_MS);
+  window.addEventListener('online', done);
+});
 
 /**
  * 應用程式主元件
@@ -59,9 +99,29 @@ const App: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
   // 錯誤狀態
   const [error, setError] = useState<string | null>(null);
-  // 儲存警告（空間不足時顯示）
+  // 儲存警告（離線或寫入失敗時顯示）
   const [saveWarning, setSaveWarning] = useState<string | null>(null);
-  const lastSyncedStateRef = useRef<string | null>(null);
+  const saveWarningTimerRef = useRef<number | undefined>(undefined);
+  // 雲端最後一次快照的狀態；畫面上的 data = 它 + 還沒確認的操作
+  const serverStateRef = useRef<AppState | null>(null);
+  const pendingOpsRef = useRef<PendingOp[]>([]);
+  // 和 data 同一份，但同步更新：連點兩下時第二下要看得到第一下的結果
+  const latestDataRef = useRef<AppState | null>(null);
+  const isFlushingRef = useRef(false);
+
+  const showSaveWarning = useCallback((message: string) => {
+    window.clearTimeout(saveWarningTimerRef.current);
+    setSaveWarning(message);
+    saveWarningTimerRef.current = window.setTimeout(() => setSaveWarning(null), 5000);
+  }, []);
+
+  /** 用雲端狀態重新套上所有還沒確認的操作，得到畫面上該顯示的狀態。 */
+  const rebuildData = useCallback(() => {
+    const base = serverStateRef.current;
+    const next = base ? pendingOpsRef.current.reduce((state, op) => op.mutate(state), base) : null;
+    latestDataRef.current = next;
+    setData(next);
+  }, []);
 
   // 初始化：監聽 Firebase 登入狀態
   useEffect(() => {
@@ -80,19 +140,22 @@ const App: React.FC = () => {
 
   // Firebase 登入後，開始監聽 Firestore 雲端資料
   useEffect(() => {
+    serverStateRef.current = null;
+    pendingOpsRef.current = [];
     if (!cloudUser) {
-      setData(null);
+      rebuildData();
       setIsLoading(false);
-      lastSyncedStateRef.current = null;
       return;
     }
 
     setIsLoading(true);
 
     const unsubscribe = subscribeState(
-      (loadedData) => {
-        lastSyncedStateRef.current = JSON.stringify(loadedData);
-        setData(loadedData);
+      (loadedData, appliedOps) => {
+        serverStateRef.current = loadedData;
+        // 已經寫進雲端的操作不用再自己套一次，否則會重複（例如同一筆加分出現兩次）
+        pendingOpsRef.current = pendingOpsRef.current.filter((op) => !appliedOps.includes(op.id));
+        rebuildData();
         setError(null);
         setIsLoading(false);
       },
@@ -104,32 +167,55 @@ const App: React.FC = () => {
     );
 
     return unsubscribe;
-  }, [cloudUser]);
+  }, [cloudUser, rebuildData]);
 
-  // 儲存資料的函式
-  const persistData = useCallback(async (newData: AppState) => {
-    const serializedState = JSON.stringify(newData);
-
-    if (serializedState === lastSyncedStateRef.current) {
-      return;
+  /** 依序把還沒寫進雲端的操作用交易送出；離線時排隊等連線恢復。 */
+  const flushPendingOps = useCallback(async () => {
+    if (isFlushingRef.current) return;
+    isFlushingRef.current = true;
+    try {
+      let op = pendingOpsRef.current.find((item) => !item.committed);
+      while (op) {
+        try {
+          await commitStateMutation(op.id, op.mutate);
+          op.committed = true;
+        } catch (err) {
+          if (isRetryableSaveError(err)) {
+            showSaveWarning('⚠️ 目前離線，恢復連線後會自動同步，先別關掉 App');
+            await waitForRetry();
+            op = pendingOpsRef.current.find((item) => !item.committed);
+            continue;
+          }
+          // 權限或資料本身的問題，重試也不會好：放棄這筆，畫面退回雲端的狀態
+          const failed = op;
+          console.error('❌ 儲存雲端狀態失敗:', err);
+          showSaveWarning(`⚠️ 儲存失敗：${err instanceof Error ? err.message : '未知錯誤'}`);
+          pendingOpsRef.current = pendingOpsRef.current.filter((item) => item !== failed);
+          rebuildData();
+        }
+        op = pendingOpsRef.current.find((item) => !item.committed);
+      }
+    } finally {
+      isFlushingRef.current = false;
     }
+  }, [rebuildData, showSaveWarning]);
 
-    const result: SaveResult = await saveState(newData);
-    
-    if (!result.success) {
-      setSaveWarning(`⚠️ 儲存失敗: ${result.error}`);
-      setTimeout(() => setSaveWarning(null), 5000);
-    } else {
-      lastSyncedStateRef.current = serializedState;
-    }
-  }, []);
+  /** 所有狀態修改的唯一入口：先更新畫面，再在背景寫進雲端。 */
+  const applyMutation = (mutate: StateMutation) => {
+    if (!serverStateRef.current) return;
+    pendingOpsRef.current = [...pendingOpsRef.current, { id: createOpId(), mutate, committed: false }];
+    rebuildData();
+    void flushPendingOps();
+  };
 
-  // 監聽資料變更：當 data 改變時，自動寫入 Firestore
+  // 還有沒寫進雲端的操作時，關掉分頁前先提醒
   useEffect(() => {
-    if (data && cloudUser && !isLoading && !isAuthLoading) {
-      persistData(data);
-    }
-  }, [cloudUser, data, isAuthLoading, isLoading, persistData]);
+    const handleBeforeUnload = (event: BeforeUnloadEvent) => {
+      if (pendingOpsRef.current.some((op) => !op.committed)) event.preventDefault();
+    };
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, []);
 
   // --- 事件處理函式 ---
 
@@ -147,15 +233,14 @@ const App: React.FC = () => {
   };
 
   const handleAddRecord = (record: Omit<ScoreRecord, 'id' | 'timestamp'>): ScoreRecord | null => {
-    if (!data) return null;
+    if (!latestDataRef.current) return null;
     const timestamp = Date.now();
     const newRecord: ScoreRecord = {
       ...record,
       id: timestamp.toString(),
       timestamp,
     };
-    setData((prev) => {
-      if (!prev) return prev;
+    applyMutation((prev) => {
       const recordCreator = prev.users.find((user) => user.id === newRecord.createdById);
       const shouldCountForGarden = newRecord.pointsChange > 0 && recordCreator?.role === UserRole.PARENT;
 
@@ -175,20 +260,20 @@ const App: React.FC = () => {
   };
 
   const handleUpdateItems = (items: ScoreItem[]) => {
-    setData((prev) => (prev ? { ...prev, scoreItems: items } : prev));
+    applyMutation((prev) => ({ ...prev, scoreItems: items }));
   };
 
   const handleUpdateRewardItems = (items: RewardItem[]) => {
-    setData((prev) => (prev ? { ...prev, rewardItems: items } : prev));
+    applyMutation((prev) => ({ ...prev, rewardItems: items }));
   };
 
   const handleWaterGarden = (childId: string) => {
     if (!currentUser || currentUser.role !== UserRole.CHILD || currentUser.id !== childId) return;
+    const child = currentUser;
     const timestamp = Date.now();
 
-    setData((prev) => {
-      if (!prev) return prev;
-      const result = waterFamilyGarden(prev.familyGarden, currentUser, timestamp.toString(), timestamp);
+    applyMutation((prev) => {
+      const result = waterFamilyGarden(prev.familyGarden, child, timestamp.toString(), timestamp);
       return result.didWater ? { ...prev, familyGarden: result.garden } : prev;
     });
   };
@@ -197,7 +282,7 @@ const App: React.FC = () => {
     if (!currentUser) return;
     const timestamp = Date.now();
 
-    setData((prev) => prev ? {
+    applyMutation((prev) => ({
       ...prev,
       familyGarden: startFamilyGardenPlant(
         prev.familyGarden,
@@ -205,25 +290,30 @@ const App: React.FC = () => {
         timestamp.toString(),
         timestamp,
       ),
-    } : prev);
+    }));
   };
 
   /**
    * 孩子按下鍛造，抽一個普通零件。
    * 回傳結果讓畫面顯示抽到什麼；重複零件會退鋼料而不入庫。
+   * 結果在 setState 外面先算好：放在 updater 裡的話，React 不一定會立刻執行它，
+   * 畫面就拿不到結果，鍛造次數卻已經扣掉了。
    */
   const handleDrawBeyPart = (childId: string) => {
+    const current = latestDataRef.current;
+    if (!current) return { partId: null, isDuplicate: false };
     const timestamp = Date.now();
-    let outcome: { partId: string | null; isDuplicate: boolean } = { partId: null, isDuplicate: false };
+    const random = preRollRandom(1);
+    const draw = (forge: AppState['beyForge']) => drawBeyPart(forge, childId, timestamp.toString(), timestamp, random());
 
-    setData((prev) => {
-      if (!prev) return prev;
-      const result = drawBeyPart(prev.beyForge, childId, timestamp.toString(), timestamp);
-      outcome = { partId: result.partId, isDuplicate: result.isDuplicate };
-      return result.partId ? { ...prev, beyForge: result.forge } : prev;
+    const result = draw(current.beyForge);
+    if (!result.partId) return { partId: null, isDuplicate: false };
+
+    applyMutation((prev) => {
+      const next = draw(prev.beyForge);
+      return next.partId ? { ...prev, beyForge: next.forge } : prev;
     });
-
-    return outcome;
+    return { partId: result.partId, isDuplicate: result.isDuplicate };
   };
 
   const handleAssembleBey = (
@@ -234,53 +324,52 @@ const App: React.FC = () => {
     bitId: string,
   ) => {
     const timestamp = Date.now();
-    setData((prev) => (prev ? {
+    applyMutation((prev) => ({
       ...prev,
       beyForge: assembleBey(prev.beyForge, childId, name, bladeId, ratchetId, bitId, timestamp.toString(), timestamp),
-    } : prev));
+    }));
   };
 
   const handleDisassembleBey = (buildId: string) => {
-    setData((prev) => (prev ? { ...prev, beyForge: removeBeyBuild(prev.beyForge, buildId) } : prev));
+    applyMutation((prev) => ({ ...prev, beyForge: removeBeyBuild(prev.beyForge, buildId) }));
   };
 
   /** 孩子為本週魔王派出（或收回）一顆陀螺。 */
   const handleSetBossLineup = (childId: string, buildId: string | null) => {
     if (!currentUser || currentUser.role !== UserRole.CHILD || currentUser.id !== childId) return;
-    setData((prev) => (prev ? {
+    const weekKey = getWeekKey();
+    applyMutation((prev) => ({
       ...prev,
-      beyBoss: setLineup(prev.beyBoss, getWeekKey(), childId, buildId),
-    } : prev));
+      beyBoss: setLineup(prev.beyBoss, weekKey, childId, buildId),
+    }));
   };
 
   /**
    * 挑戰本週魔王。回傳這次的三回合結果讓畫面揭曉；
-   * 打贏完整版時兩個孩子各拿一個專屬零件，打贏減弱版則各拿一個一般稀有零件。
+   * 打贏完整版時出戰的兩個孩子各拿一個專屬零件，打贏減弱版則只有出戰的那個孩子拿一個一般稀有零件。
+   * 和鍛造一樣，結果在 setState 外面先算好，亂數也先抽好，重套時才會是同一場。
    */
   const handleChallengeBoss = () => {
+    const current = latestDataRef.current;
+    if (!current || !currentUser || currentUser.role !== UserRole.CHILD) return null;
     const timestamp = Date.now();
-    let outcome: BeyBossAttempt | null = null;
+    const now = new Date(timestamp);
+    const weekKey = getWeekKey(now);
+    const random = preRollRandom();
+    const challenge = (state: AppState) => {
+      const rolls = random();
+      const result = challengeBoss(state.beyBoss, state.beyForge, weekKey, timestamp.toString(), timestamp, rolls, now);
+      return { result, beyForge: awardBossRewards(state.beyForge, result, timestamp, rolls) };
+    };
 
-    setData((prev) => {
-      if (!prev) return prev;
-      const result = challengeBoss(prev.beyBoss, prev.beyForge, getWeekKey(), timestamp.toString(), timestamp);
-      if (!result.attempt) return prev;
-      outcome = result.attempt;
+    const { result } = challenge(current);
+    if (!result.attempt) return null;
 
-      let beyForge = prev.beyForge;
-      const children = prev.users.filter((user) => user.role === UserRole.CHILD);
-      children.forEach((child, index) => {
-        if (result.rewardPartId) {
-          beyForge = awardSpecificPart(beyForge, child.id, result.rewardPartId, `${timestamp}_boss${index}`, timestamp);
-        } else if (result.grantRare) {
-          beyForge = grantBeyPart(beyForge, child.id, 'BOSS', `${timestamp}_bossr${index}`, timestamp).forge;
-        }
-      });
-
-      return { ...prev, beyBoss: result.state, beyForge };
+    applyMutation((prev) => {
+      const next = challenge(prev);
+      return next.result.attempt ? { ...prev, beyBoss: next.result.state, beyForge: next.beyForge } : prev;
     });
-
-    return outcome;
+    return result.attempt;
   };
 
   /**
@@ -288,17 +377,19 @@ const App: React.FC = () => {
    * 用前後比對偵測，SettingsPanel 不需要知道鍛造系統的存在。
    */
   const handleUpdateGoalRewards = (updater: (items: GoalReward[]) => GoalReward[]) => {
-    setData((prev) => {
-      if (!prev) return prev;
+    const timestamp = Date.now();
+    const random = preRollRandom();
+    applyMutation((prev) => {
       const goalRewards = updater(prev.goalRewards);
       const before = new Map(prev.goalRewards.map((goal) => [goal.id, goal.status]));
       const achieved = goalRewards.filter((goal) => (
         goal.status === GoalRewardStatus.ACHIEVED && before.get(goal.id) !== GoalRewardStatus.ACHIEVED
       ));
 
+      const rolls = random();
       let beyForge = prev.beyForge;
       achieved.forEach((goal, index) => {
-        beyForge = grantBeyPart(beyForge, goal.childId, 'GOAL', `${Date.now()}_${index}`, Date.now()).forge;
+        beyForge = grantBeyPart(beyForge, goal.childId, 'GOAL', `${timestamp}_${index}`, timestamp, rolls).forge;
       });
 
       return { ...prev, goalRewards, beyForge };
@@ -306,20 +397,22 @@ const App: React.FC = () => {
   };
 
   const handleUpdateDiscountCards = (updater: (items: DiscountCard[]) => DiscountCard[]) => {
-    setData((prev) => (prev ? { ...prev, discountCards: updater(prev.discountCards) } : prev));
+    applyMutation((prev) => ({ ...prev, discountCards: updater(prev.discountCards) }));
   };
 
   /** 家長新發出獎勵卡時掉一個稀有零件。 */
   const handleUpdateRewardCards = (updater: (items: RewardCard[]) => RewardCard[]) => {
-    setData((prev) => {
-      if (!prev) return prev;
+    const timestamp = Date.now();
+    const random = preRollRandom();
+    applyMutation((prev) => {
       const rewardCards = updater(prev.rewardCards);
       const existing = new Set(prev.rewardCards.map((card) => card.id));
       const issued = rewardCards.filter((card) => !existing.has(card.id));
 
+      const rolls = random();
       let beyForge = prev.beyForge;
       issued.forEach((card, index) => {
-        beyForge = grantBeyPart(beyForge, card.childId, 'REWARD_CARD', `${Date.now()}_rc${index}`, Date.now()).forge;
+        beyForge = grantBeyPart(beyForge, card.childId, 'REWARD_CARD', `${timestamp}_rc${index}`, timestamp, rolls).forge;
       });
 
       return { ...prev, rewardCards, beyForge };
@@ -328,17 +421,19 @@ const App: React.FC = () => {
 
   /** 集點卡兌換（集滿）時掉一個稀有零件。 */
   const handleUpdateStampCards = (updater: (items: StampCard[]) => StampCard[]) => {
-    setData((prev) => {
-      if (!prev) return prev;
+    const timestamp = Date.now();
+    const random = preRollRandom();
+    applyMutation((prev) => {
       const stampCards = updater(prev.stampCards);
       const before = new Map(prev.stampCards.map((card) => [card.id, card.status]));
       const redeemed = stampCards.filter((card) => (
         card.status === StampCardStatus.REDEEMED && before.get(card.id) !== StampCardStatus.REDEEMED
       ));
 
+      const rolls = random();
       let beyForge = prev.beyForge;
       redeemed.forEach((card, index) => {
-        beyForge = grantBeyPart(beyForge, card.childId, 'STAMP', `${Date.now()}_sc${index}`, Date.now()).forge;
+        beyForge = grantBeyPart(beyForge, card.childId, 'STAMP', `${timestamp}_sc${index}`, timestamp, rolls).forge;
       });
 
       return { ...prev, stampCards, beyForge };
@@ -352,16 +447,15 @@ const App: React.FC = () => {
       timestamp: Date.now(),
       isRead: false
     };
-    setData((prev) => (prev ? {
+    applyMutation((prev) => ({
       ...prev,
       messages: [...prev.messages, newMessage]
-    } : prev));
+    }));
   };
 
   const handleMarkMessageRead = (id: string) => {
-    setData((prev) => {
-      if (!prev) return prev;
-      const updatedMessages = prev.messages.map(m => 
+    applyMutation((prev) => {
+      const updatedMessages = prev.messages.map(m =>
         m.id === id ? { ...m, isRead: true } : m
       );
       return { ...prev, messages: updatedMessages };
@@ -479,7 +573,7 @@ const App: React.FC = () => {
 // --- 儲存警告 Toast 元件 ---
 const SaveWarningToast: React.FC<{ message: string }> = ({ message }) => (
   <div className="fixed bottom-20 md:bottom-4 left-1/2 -translate-x-1/2 z-50 animate-pop">
-    <div className="bg-bey-orange text-white px-4 py-2 rounded-xl soft-card text-sm font-bold flex items-center gap-2">
+    <div className="bg-bey-red text-bey-void px-4 py-2 rounded-xl soft-card text-sm font-bold flex items-center gap-2">
       <span>⚠️</span>
       <span>{message}</span>
     </div>

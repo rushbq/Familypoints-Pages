@@ -97,14 +97,14 @@ export const RewardRedeemer: React.FC<RewardRedeemerProps> = ({
         className="fixed inset-0 z-50 flex items-center justify-center p-3 bg-bey-void/80 animate-pop"
         onClick={onClose}
       >
-        {/* 視窗容器 - 使用紫色調代表商店/兌換 */}
+        {/* 視窗容器：獎勵一律用 bey-yellow，橘色是隊色，不能拿來代表兌換 */}
         <div
           className="bg-bey-paper rounded-2xl w-full max-w-3xl soft-card overflow-hidden flex flex-col max-h-[94vh] relative"
           onClick={(event) => event.stopPropagation()}
         >
           
           {/* 標題區塊 */}
-          <div className="px-4 py-3 flex justify-between items-center bg-bey-orange text-bey-void">
+          <div className="px-4 py-3 flex justify-between items-center bg-bey-yellow text-bey-void">
             <div className="flex items-center gap-2.5">
               <div className="bg-bey-paper/20 p-2 rounded-full">
                   <Icons.Gift size={20} />
@@ -114,7 +114,7 @@ export const RewardRedeemer: React.FC<RewardRedeemerProps> = ({
                       獎勵兌換中心
                   </h2>
                   <p className="font-bold opacity-85 text-xs">
-                      {targetChildName}｜<span className="text-bey-yellow">{currentScore} 分</span>｜5 折卡 {availableDiscountCards.length} 張
+                      {targetChildName}｜{currentScore} 分｜5 折卡 {availableDiscountCards.length} 張
                   </p>
               </div>
             </div>
@@ -139,7 +139,7 @@ export const RewardRedeemer: React.FC<RewardRedeemerProps> = ({
                   onClick={() => hasDiscountCards && setUseDiscountCard((prev) => !prev)}
                   className={`px-3 py-2 rounded-lg border text-xs font-bold transition-colors ${
                     useDiscountCard && hasDiscountCards
-                      ? 'bg-bey-orange text-bey-void border-bey-orangeDark'
+                      ? 'bg-bey-yellow text-bey-void border-bey-yellowDark'
                       : hasDiscountCards
                         ? 'bg-bey-paper text-bey-ink border-bey-steel hover:border-bey-ink/30'
                         : 'bg-bey-ink/5 text-bey-ink/30 border-transparent cursor-not-allowed'
@@ -164,12 +164,12 @@ export const RewardRedeemer: React.FC<RewardRedeemerProps> = ({
                       ${!canAfford ? 'opacity-50 cursor-not-allowed bg-bey-void/40 border-bey-steel grayscale' : ''}
                       ${
                         selectedItemId === item.id
-                          ? 'bg-bey-paper border-bey-orange ring-2 ring-bey-orange/40'
+                          ? 'bg-bey-paper border-bey-yellow ring-2 ring-bey-yellow/40'
                           : canAfford ? 'bg-bey-paper border-bey-steel hover:border-bey-ink/20 active:border-b-0 active:translate-y-[3px]' : ''
                       }`}
                   >
                     {/* 價格標籤 */}
-                    <div className="absolute top-1.5 right-1.5 px-2 py-0.5 rounded-full text-bey-void font-bold text-xs bg-bey-orange">
+                    <div className="absolute top-1.5 right-1.5 px-2 py-0.5 rounded-full text-bey-void font-bold text-xs bg-bey-yellow">
                         {finalCost} pt
                     </div>
 
@@ -192,7 +192,7 @@ export const RewardRedeemer: React.FC<RewardRedeemerProps> = ({
 
                     {/* 選中標記 */}
                     {selectedItemId === item.id && (
-                        <div className="absolute bottom-1 left-1 text-bey-orange text-xs font-bold">
+                        <div className="absolute bottom-1 left-1 text-bey-yellow text-xs font-bold">
                             ✓
                         </div>
                     )}
@@ -214,7 +214,7 @@ export const RewardRedeemer: React.FC<RewardRedeemerProps> = ({
             <Button 
               type="button" // 明確指定 type 防止 form submit 行為
               variant="primary" 
-              className="flex-[2] bg-bey-orange text-bey-void border-bey-orangeDark hover:brightness-110"
+              className="flex-[2] bg-bey-yellow text-bey-void border-bey-yellowDark hover:brightness-110"
               disabled={!selectedItemId}
               onClick={handleRedeemClick}
               icon={<Icons.Gift size={18} strokeWidth={3} />}

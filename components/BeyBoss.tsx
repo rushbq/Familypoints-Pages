@@ -127,7 +127,7 @@ export const BeyBoss: React.FC<BeyBossProps> = ({
       case 'DEFEATED': return '本週已擊敗，下週換新魔王';
       case 'NOT_BATTLE_DAY': return daysUntil === 1 ? '明天（週六）開戰' : `還有 ${daysUntil} 天開戰`;
       case 'NO_LINEUP': return '先派出陀螺才能開戰';
-      case 'ALREADY_TODAY': return '今天已經挑戰過了，明天再來';
+      case 'ALREADY_TODAY': return weakened ? '你今天已經單打過了，找隊友一起打完整版吧' : '今天已經一起挑戰過了，明天再來';
       case 'READY': return weakened ? '只有一人出戰，只能打減弱版' : '兩人到齊，可以打完整版！';
       default: return '';
     }

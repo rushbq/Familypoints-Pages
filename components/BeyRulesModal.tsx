@@ -96,7 +96,8 @@ export const BeyRulesModal: React.FC<BeyRulesModalProps> = ({ isOpen, onClose })
             </h3>
             <ol className="space-y-3">
               <Rule n={1} title="什麼時候可以打？">
-                只有<b className="text-bey-ink">星期六和星期天</b>可以打，一天一次。
+                只有<b className="text-bey-ink">星期六和星期天</b>可以打。
+                兩個人一起打，一天一次；一個人打，每個人一天一次，而且不會用掉兩個人一起打的那一次。
                 其他日子可以先看魔王有多強，但不能開打。
               </Rule>
               <Rule n={2} title="平常日要做什麼？">
@@ -122,7 +123,7 @@ export const BeyRulesModal: React.FC<BeyRulesModalProps> = ({ isOpen, onClose })
               </Rule>
               <Rule n={7} title="只有一個人可以打嗎？">
                 可以，但只能打比較弱的魔王（能力剩下 {weakPercent}%），
-                贏了拿一個厲害的零件，但<b className="text-bey-ink">拿不到專屬零件</b>。
+                贏了<b className="text-bey-ink">只有你</b>拿一個厲害的零件，但<b className="text-bey-ink">拿不到專屬零件</b>。
                 專屬零件要兩個人一起才有，而且這種時候魔王不會消失，
                 等另一個人準備好還可以再打一次。
               </Rule>
