@@ -258,8 +258,8 @@ const drawTop = (
 
   ctx.rotate(angle);
   if (image) {
-    // BeyTop 的 viewBox 是 100，外圈刀刃半徑 40；放大讓外圈剛好落在碰撞半徑上
-    const drawSize = radius * 2 * (50 / 42);
+    // BeyTop 的 viewBox 是 100，外圈能量環半徑 47；放大讓外圈剛好落在碰撞半徑上
+    const drawSize = radius * 2 * (50 / 47);
     ctx.drawImage(image, -drawSize / 2, -drawSize / 2, drawSize, drawSize);
   } else {
     ctx.fillStyle = fallback;
@@ -272,7 +272,7 @@ const drawTop = (
 
 /** 魔王的眼睛不轉：在旋轉的貼圖上再蓋一顆固定的。座標沿用 BeyTop 的 viewBox。 */
 const drawBossEye = (ctx: CanvasRenderingContext2D, boss: BeyBossDef, x: number, y: number, radius: number, fall: number) => {
-  const k = (radius * 2 * (50 / 42)) / 100;
+  const k = (radius * 2 * (50 / 47)) / 100;
   ctx.save();
   ctx.translate(x, y);
   if (fall > 0) {
